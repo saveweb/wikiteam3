@@ -225,33 +225,60 @@ def makeXmlFromPage(page: dict) -> str:
                 size = rev["size"]
             else:
                 size = 0
-            text_element = E.text(str(rev["*"]), bytes=str(size))
-            text_element.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+
+            # Create rev object
             revision = E.revision(
                 E.id(str(rev["revid"])),
                 E.timestamp(rev["timestamp"]),
-                text_element,
             )
-            # The username may be deleted/suppressed
-            if "user" in rev:
+
+            # The text, user, comment, sha1 may be deleted/suppressed
+            if 'texthidden' in rev:
+                text = ''
+                revision.append(E.text(text, **{
+                    'bytes': str(size),
+                    'deleted': 'deleted',
+                }))
+            else:
+                text = str(rev["*"])
+                revision.append(E.text(text, **{
+                    'bytes': str(size),
+                    '{http://www.w3.org/XML/1998/namespace}space': 'preserve',
+                }))
+
+            if not "user" in rev:
+                if not "userhidden" in rev:
+                    print("Warning: user not hidden but missing user in pageid %d revid %d" % (page['pageid'], rev['revid']))
+                revision.append(E.contributor(deleted="deleted"))
+            else:
                 revision.append(
                     E.contributor(
                         E.username(str(rev["user"])),
                         E.id(str(userid)),
                     )
                 )
-            else:
-                revision.append(E.contributor(deleted="deleted"))
-            if "comment" in rev and rev["comment"]:
+
+            if not "sha1" in rev:
+                if "sha1hidden" in rev:
+                    revision.append(E.sha1()) # stub
+                else:
+                    # The sha1 may not have been backfilled on older wikis or lack for other reasons (Wikia).
+                    pass
+            elif "sha1" in rev:
+                revision.append(E.sha1(rev["sha1"]))
+
+
+            if 'commenthidden' in rev:
+                revision.append(E.comment(deleted="deleted"))
+            elif "comment" in rev and rev["comment"]:
                 revision.append(E.comment(str(rev["comment"])))
+
             if "contentmodel" in rev:
                 revision.append(E.model(rev["contentmodel"]))
             # Sometimes a missing parentid is not replaced with a 0 as it should.
             if "parentid" in rev:
                 revision.append(E.parentid(str(rev["parentid"])))
-            # The sha1 may not have been backfilled on older wikis or lack for other reasons (Wikia).
-            if "sha1" in rev:
-                revision.append(E.sha1(rev["sha1"]))
+
             p.append(revision)
     except KeyError as e:
         print(e)
