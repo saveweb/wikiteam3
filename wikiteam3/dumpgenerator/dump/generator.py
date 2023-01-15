@@ -30,14 +30,14 @@ from wikiteam3.utils import truncateFilename
 from wikiteam3.utils import undoHTMLEntities
 from wikiteam3.utils import avoidWikimediaProjects
 
-from .page.image import Image
-from .misc.index_php import saveIndexPHP
-from .misc.special_logs import saveLogs
-from .misc.special_version import saveSpecialVersion
-from .page.page_titles import getPageTitles, readTitles
-from .misc.site_info import saveSiteInfo
-from .xmlrev.xml_dump import generateXMLDump
-from .xmlrev.xml_integrity import checkXMLIntegrity
+from wikiteam3.dumpgenerator.dump.image.image import Image
+from wikiteam3.dumpgenerator.dump.misc.index_php import saveIndexPHP
+from wikiteam3.dumpgenerator.dump.misc.special_logs import saveLogs
+from wikiteam3.dumpgenerator.dump.misc.special_version import saveSpecialVersion
+from wikiteam3.dumpgenerator.api.page_titles import getPageTitles, readTitles
+from wikiteam3.dumpgenerator.dump.misc.site_info import saveSiteInfo
+from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generateXMLDump
+from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import checkXMLIntegrity
 
 # From https://stackoverflow.com/a/57008707
 class Tee(object):

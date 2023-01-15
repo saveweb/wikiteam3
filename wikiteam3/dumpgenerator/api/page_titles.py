@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import mwclient
 
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.dump.xmlrev.namespaces import getNamespacesAPI, getNamespacesScraper
+from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI, getNamespacesScraper
 from wikiteam3.utils import domain2prefix, cleanHTML, undoHTMLEntities
 from wikiteam3.dumpgenerator.config import Config
 

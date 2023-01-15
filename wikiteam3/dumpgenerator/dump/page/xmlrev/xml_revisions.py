@@ -7,9 +7,9 @@ import requests
 
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
 from wikiteam3.dumpgenerator.log import logerror
-from .namespaces import getNamespacesAPI
-from wikiteam3.dumpgenerator.dump.page.page_titles import readTitles
-from wikiteam3.dumpgenerator.dump.page.page_xml import makeXmlFromPage, makeXmlPageFromRaw
+from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI
+from wikiteam3.dumpgenerator.api.page_titles import readTitles
+from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import makeXmlFromPage, makeXmlPageFromRaw
 from wikiteam3.dumpgenerator.config import Config
 
 def getXMLRevisions(config: Config=None, session=None, allpages=False, start=None):

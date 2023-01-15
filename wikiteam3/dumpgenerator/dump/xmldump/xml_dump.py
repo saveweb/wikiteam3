@@ -6,13 +6,13 @@ from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.utils import domain2prefix
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
 from wikiteam3.dumpgenerator.log import logerror
-from wikiteam3.dumpgenerator.dump.page.page_titles import readTitles
-from wikiteam3.dumpgenerator.dump.page.page_xml import getXMLPage
+from wikiteam3.dumpgenerator.api.page_titles import readTitles
+from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import getXMLPage
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.utils import cleanXML, undoHTMLEntities
-from .xml_header import getXMLHeader
-from .xml_revisions import getXMLRevisions
-from .xml_truncate import truncateXMLDump
+from wikiteam3.dumpgenerator.dump.xmldump.xml_header import getXMLHeader
+from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions import getXMLRevisions
+from wikiteam3.dumpgenerator.dump.xmldump.xml_truncate import truncateXMLDump
 
 def generateXMLDump(config: Config=None, titles: Iterable[str]=None, start=None, session=None):
     """Generates a XML dump for a list of titles or from revision IDs"""

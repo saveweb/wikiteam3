@@ -6,11 +6,11 @@ from typing import *
 
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.utils import domain2prefix
-from wikiteam3.dumpgenerator.exceptions import PageMissingError, FileSha1Error, FileSizeError
+from wikiteam3.dumpgenerator.exceptions import PageMissingError, FileSizeError
 from wikiteam3.dumpgenerator.api import getJSON
 from wikiteam3.dumpgenerator.api import handleStatusCode
 from wikiteam3.dumpgenerator.log import logerror
-from .page_xml import getXMLPage
+from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import getXMLPage
 from wikiteam3.utils import truncateFilename, sha1File
 from wikiteam3.utils import cleanHTML, undoHTMLEntities
 from wikiteam3.dumpgenerator.config import Config
