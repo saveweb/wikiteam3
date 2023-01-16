@@ -21,15 +21,19 @@ class Delay:
 
             time.sleep(0.1)
 
-    def __init__(self, config: Config=None, session=None):
+    def __init__(self, config: Config=None, session=None, delay=None):
         """Add a delay if configured for that"""
-        if config.delay > 0:
-            ellipses_animation = threading.Thread(target=self.animate)
-            ellipses_animation.daemon = True
-            ellipses_animation.start()
+        if delay is None:
+            delay = config.delay
+        if delay <= 0:
+            return
 
-            time.sleep(config.delay)
+        ellipses_animation = threading.Thread(target=self.animate)
+        ellipses_animation.daemon = True
+        ellipses_animation.start()
 
-            with self.lock:
-                self.done = True
-                print("\r" + " " * len(self.ellipses) + "\r", end="")
+        time.sleep(delay)
+
+        with self.lock:
+            self.done = True
+            print("\r" + " " * len(self.ellipses) + "\r", end="")
