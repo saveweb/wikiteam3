@@ -79,6 +79,11 @@ def getArgumentParser():
         help="download all revisions from an API generator. MediaWiki 1.27+ only.",
     )
     groupDownload.add_argument(
+        "--xmlrevisions_page",
+        action="store_true",
+        help="download all revisions from an API generator, but query page by page MediaWiki 1.27+ only.",
+    )
+    groupDownload.add_argument(
         "--images", action="store_true", help="generates an image dump"
     )
     groupDownload.add_argument(
@@ -292,7 +297,8 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
         "images": args.images,
         "logs": False,
         "xml": args.xml,
-        "xmlrevisions": args.xmlrevisions,
+        "xmlrevisions": args.xmlrevisions or args.xmlrevisions_page,
+        "xmlrevisions_page": args.xmlrevisions_page,
         "namespaces": namespaces,
         "exnamespaces": exnamespaces,
         "path": args.path and os.path.normpath(args.path) or "",

@@ -3,17 +3,20 @@ from lxml.builder import E
 
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
 
-def makeXmlPageFromRaw(xml) -> str:
+def makeXmlPageFromRaw(xml, arvcontinue) -> str:
     """Discard the metadata around a <page> element in <mediawiki> string"""
     root = etree.XML(xml)
     find = etree.XPath("//*[local-name() = 'page']")
+    page = find(root)[0]
+    if arvcontinue is not None:
+        page.attrib['arvcontinue'] = arvcontinue
     # The tag will inherit the namespace, like:
     # <page xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     # FIXME: pretty_print doesn't seem to work, only adds a newline
-    return etree.tostring(find(root)[0], pretty_print=True, encoding="unicode")
+    return etree.tostring(page, pretty_print=True, encoding="unicode")
 
 
-def makeXmlFromPage(page: dict) -> str:
+def makeXmlFromPage(page: dict, arvcontinue) -> str:
     """Output an XML document as a string from a page as in the API JSON"""
     try:
         p = E.page(
@@ -21,6 +24,8 @@ def makeXmlFromPage(page: dict) -> str:
             E.ns(str(page["ns"])),
             E.id(str(page["pageid"])),
         )
+        if arvcontinue is not None:
+            p.attrib['arvcontinue'] = arvcontinue
         for rev in page["revisions"]:
             # Older releases like MediaWiki 1.16 do not return all fields.
             if "userid" in rev:

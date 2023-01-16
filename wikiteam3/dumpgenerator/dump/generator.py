@@ -171,6 +171,7 @@ class DumpGenerator:
             # checking xml dump
             xmliscomplete = False
             lastxmltitle = None
+            lastxmlrevid = None
             try:
                 with FileReadBackwards(
                     "%s/%s-%s-%s.xml"
@@ -188,10 +189,14 @@ class DumpGenerator:
                             xmliscomplete = True
                             break
 
+                        xmlrevid = re.search(r"    <id>([^<]+)</id>", l)
+                        if xmlrevid:
+                            lastxmlrevid = int(xmlrevid.group(1))
                         xmltitle = re.search(r"<title>([^<]+)</title>", l)
                         if xmltitle:
                             lastxmltitle = undoHTMLEntities(text=xmltitle.group(1))
                             break
+
             except:
                 pass  # probably file does not exists
 
@@ -199,13 +204,13 @@ class DumpGenerator:
                 print("XML dump was completed in the previous session")
             elif lastxmltitle:
                 # resuming...
-                print('Resuming XML dump from "%s"' % (lastxmltitle))
+                print('Resuming XML dump from "%s" (revision id %s)' % (lastxmltitle, lastxmlrevid))
                 titles = readTitles(config, start=lastxmltitle)
                 generateXMLDump(
                     config=config,
                     titles=titles,
-                    start=lastxmltitle,
                     session=other["session"],
+                    resume=True,
                 )
             else:
                 # corrupt? only has XML header?

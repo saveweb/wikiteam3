@@ -53,6 +53,7 @@ class Config:
     xml: bool = False
     curonly: bool = False
     xmlrevisions: bool = False
+    xmlrevisions_page: bool = False
     images: bool = False
     namespaces: List[int] = None
     exnamespaces: List[int] = None
