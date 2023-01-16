@@ -34,7 +34,6 @@ from wikiteam3.dumpgenerator.dump.image.image import Image
 from wikiteam3.dumpgenerator.dump.misc.index_php import saveIndexPHP
 from wikiteam3.dumpgenerator.dump.misc.special_logs import saveLogs
 from wikiteam3.dumpgenerator.dump.misc.special_version import saveSpecialVersion
-from wikiteam3.dumpgenerator.api.page_titles import getPageTitles, readTitles
 from wikiteam3.dumpgenerator.dump.misc.site_info import saveSiteInfo
 from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generateXMLDump
 from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import checkXMLIntegrity
@@ -122,13 +121,12 @@ class DumpGenerator:
 
     @staticmethod
     def createNewDump(config: Config=None, other: Dict=None):
+        # we do lazy title dumping here :)
         images = []
         print("Trying generating a new dump into a new directory...")
         if config.xml:
-            getPageTitles(config=config, session=other["session"])
-            titles = readTitles(config)
-            generateXMLDump(config=config, titles=titles, session=other["session"])
-            checkXMLIntegrity(config=config, titles=titles, session=other["session"])
+            generateXMLDump(config=config, session=other["session"])
+            checkXMLIntegrity(config=config, session=other["session"])
         if config.images:
             images += Image.getImageNames(config=config, session=other["session"])
             Image.saveImageNames(config=config, images=images, session=other["session"])
@@ -143,30 +141,6 @@ class DumpGenerator:
         images = []
         print("Resuming previous dump process...")
         if config.xml:
-            titles = readTitles(config)
-            try:
-                with FileReadBackwards(
-                    "%s/%s-%s-titles.txt"
-                    % (
-                        config.path,
-                        domain2prefix(config=config, session=other["session"]),
-                        config.date,
-                    ),
-                    encoding="utf-8",
-                ) as frb:
-                    lasttitle = frb.readline().strip()
-                    if lasttitle == "":
-                        lasttitle = frb.readline().strip()
-            except:
-                lasttitle = ""  # probably file does not exists
-            if lasttitle == "--END--":
-                # titles list is complete
-                print("Title list was completed in the previous session")
-            else:
-                print("Title list is incomplete. Reloading...")
-                # do not resume, reload, to avoid inconsistences, deleted pages or
-                # so
-                getPageTitles(config=config, session=other["session"])
 
             # checking xml dump
             xmliscomplete = False
@@ -205,18 +179,15 @@ class DumpGenerator:
             elif lastxmltitle:
                 # resuming...
                 print('Resuming XML dump from "%s" (revision id %s)' % (lastxmltitle, lastxmlrevid))
-                titles = readTitles(config, start=lastxmltitle)
                 generateXMLDump(
                     config=config,
-                    titles=titles,
                     session=other["session"],
                     resume=True,
                 )
             else:
                 # corrupt? only has XML header?
                 print("XML is corrupt? Regenerating...")
-                titles = readTitles(config)
-                generateXMLDump(config=config, titles=titles, session=other["session"])
+                generateXMLDump(config=config, session=other["session"])
 
         if config.images:
             # load images list

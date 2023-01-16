@@ -19,8 +19,17 @@ from wikiteam3.dumpgenerator.dump.xmldump.xml_truncate import truncateXMLDump, p
 def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=None, useAllrevisions=False):
     try:
         r_timestamp = "<timestamp>([^<]+)</timestamp>"
+        r_arvcontinue = '<page arvcontinue="(.*?)">'
+
+        lastArvcontinue = None
         for xml in getXMLRevisions(config=config, session=session, lastPage=lastPage, useAllrevision=useAllrevisions):
             numrevs = len(re.findall(r_timestamp, xml))
+            arvcontinueRe = re.findall(r_arvcontinue, xml)
+            if arvcontinueRe:
+                curArvcontinue = arvcontinueRe[0]
+                if lastArvcontinue != curArvcontinue:
+                    Delay(config=config, session=session)
+                    lastArvcontinue = curArvcontinue
             # Due to how generators work, it's expected this may be less
             xml = cleanXML(xml=xml)
             xmlfile.write(xml)
@@ -28,7 +37,7 @@ def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=
             xmltitle = re.search(r"<title>([^<]+)</title>", xml)
             title = undoHTMLEntities(text=xmltitle.group(1))
             print(f'{title}, {numrevs} edits (--xmlrevisions)')
-            Delay(config=config, session=session)
+            # Delay(config=config, session=session)
     except AttributeError as e:
         print(e)
         print("This API library version is not working")
@@ -54,7 +63,7 @@ def doXMLExportDump(config: Config=None, session=None, xmlfile=None, lastPage=No
         lock = False
 
     c = 1
-    for title in readTitles(config, start):
+    for title in readTitles(config, session=session, start=start):
         if not title:
             continue
         if title == start:  # start downloading from start, included
@@ -81,9 +90,8 @@ def doXMLExportDump(config: Config=None, session=None, xmlfile=None, lastPage=No
         c += 1
 
 
-def generateXMLDump(config: Config=None, titles: Iterable[str]=None, resume=False, session=None):
+def generateXMLDump(config: Config=None, resume=False, session=None):
     """Generates a XML dump for a list of titles or from revision IDs"""
-    # TODO: titles is now unused.
 
     header, config = getXMLHeader(config=config, session=session)
     footer = "</mediawiki>\n"  # new line at the end

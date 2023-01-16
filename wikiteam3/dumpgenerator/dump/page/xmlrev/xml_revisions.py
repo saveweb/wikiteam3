@@ -193,7 +193,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
         # We could also use the allpages API as generator but let's be consistent.
         print("Getting titles to export the latest revision for each")
         c = 0
-        for title in readTitles(config, start=start):
+        for title in readTitles(config, session=session, start=start):
             # TODO: respect verbose flag, reuse output from getXMLPage
             print(f"    {title}")
             # TODO: as we're doing one page and revision at a time, we might
@@ -239,7 +239,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
         titlelist = []
         # TODO: Decide a suitable number of a batched request. Careful:
         # batched responses may not return all revisions.
-        for titlelist in readTitles(config, start=start, batch=False):
+        for titlelist in readTitles(config, session=session, start=start, batch=False):
             if type(titlelist) is not list:
                 titlelist = [titlelist]
             for title in titlelist:
@@ -374,7 +374,7 @@ def getXMLRevisions(config: Config=None, session=None, useAllrevision=True, last
         except (KeyError, mwclient.errors.InvalidResponse) as e:
             print(e)
             # TODO: check whether the KeyError was really for a missing arv API
-            print("Warning. Could not use allrevisions. Wiki too old? Try to use --xmlrevisions")
+            print("Warning. Could not use allrevisions. Wiki too old? Try to use --xmlrevisions_page")
             sys.exit()
     else:
         # Find last title
