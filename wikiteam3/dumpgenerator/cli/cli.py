@@ -22,6 +22,9 @@ from wikiteam3.dumpgenerator.config import Config, newConfig
 
 from typing import *
 
+from ...utils.user_agent import setupUserAgent
+
+
 def getArgumentParser():
     parser = argparse.ArgumentParser(description="")
 
@@ -181,7 +184,11 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
                 backoff = self.get_backoff_time()
                 if backoff <= 0:
                     return
-                Delay(config=None, session=session, delay=backoff)
+                if response is not None:
+                    msg = 'req retry (%s)' % response.status
+                else:
+                    msg = None
+                Delay(config=None, session=session, msg=msg, delay=backoff)
 
         __retries__ = CustomRetry(
             total=int(args.retries), backoff_factor=1.5,
@@ -195,6 +202,7 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
         pass
     session.cookies = cj
     session.headers.update({"User-Agent": getUserAgent()})
+    setupUserAgent(session)
     if args.user and args.password:
         session.auth = (args.user, args.password)
 
