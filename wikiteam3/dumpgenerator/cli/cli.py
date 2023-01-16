@@ -96,6 +96,9 @@ def getArgumentParser():
         metavar="1,2,3",
         help="comma-separated value of namespaces to exclude",
     )
+    parser.add_argument(
+        "--api_chunksize", metavar="50", default=50, help="Chunk size for MediaWiki API (arvlimit, ailimit, etc.)"
+    )
 
     # Meta info params
     groupMeta = parser.add_argument_group(
@@ -295,6 +298,7 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
         "api": api,
         "failfast": args.failfast,
         "http_method": "POST",
+        "api_chunksize": args.api_chunksize,
         "index": index,
         "images": args.images,
         "logs": False,

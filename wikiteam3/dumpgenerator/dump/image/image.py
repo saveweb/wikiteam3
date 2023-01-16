@@ -317,7 +317,7 @@ class Image:
                 "aiprop": "url|user|size|sha1",
                 "aifrom": aifrom,
                 "format": "json",
-                "ailimit": 50,
+                "ailimit": config.api_chunksize,
             }
             # FIXME Handle HTTP Errors HERE
             r = session.get(url=config.api, params=params, timeout=30)
@@ -398,7 +398,7 @@ class Image:
                     "action": "query",
                     "generator": "allpages",
                     "gapnamespace": 6,
-                    "gaplimit": 50, # The value must be between 1 and 500.
+                    "gaplimit": config.api_chunksize, # The value must be between 1 and 500.
                                     # TODO: Is it OK to set it higher, for speed?
                     "gapfrom": gapfrom,
                     "prop": "imageinfo",

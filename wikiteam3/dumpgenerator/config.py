@@ -58,6 +58,7 @@ class Config:
     namespaces: List[int] = None
     exnamespaces: List[int] = None
 
+    api_chunksize: int = 0  # arvlimit, ailimit, etc
     export: str = '' # Special:Export page name
     http_method: str = ''
 

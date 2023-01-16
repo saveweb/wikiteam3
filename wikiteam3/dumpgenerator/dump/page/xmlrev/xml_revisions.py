@@ -36,7 +36,7 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
         arvparams = {
             "action": "query",
             "list": "allrevisions",
-            "arvlimit": 50,
+            "arvlimit": config.api_chunksize,
             "arvnamespace": namespace,
         }
         if _arvcontinue is not None:
