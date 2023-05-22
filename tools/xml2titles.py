@@ -3,9 +3,12 @@ Extracts all titles from a XML dump file and writes them to `*-xml2titles.txt`.
 
 requirements:
     file_read_backwards
+    tqdm
 '''
 
 import dataclasses
+import timeit
+import io
 import os
 import argparse
 import tqdm
@@ -40,6 +43,7 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
     '''only work on level <= 3 of the XML tree'''
 
     fileSize = 0
+
     class page__:
         # TODO
         pass
@@ -49,6 +53,7 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
         self.tqdm_progress = tqdm.tqdm(
             total=self.fileSize, unit="B", unit_scale=True, unit_divisor=1024, desc="Parsing XML"
         )
+        self.tqdm_updated = 0
         self.globalParsedBytes = 0
         self.debugCount = 0
         self.silent = False
@@ -60,27 +65,28 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
         self.page = {}
         self.pageTagsCount = 0
         self.pageRevisionsCount = 0
+
         # title
         self.inTitle = False
         self.title = None
         self.titleTagsCount = 0
+
         # ns
         self.inNs = False
         self.ns = None
         self.nsTagsCount = 0
+
         # id
         self.inId = False
         self.id = None
         self.idTagsCount = 0
+
         # revision
         self.inRevision = False
-        self.revision = None
         self.revisionTagsCount = 0
 
-    def __del__(self):
-        self.close_tqdm()
-
     def close_tqdm(self):
+        self.tqdm_progress.update(self.globalParsedBytes - self.tqdm_updated)
         self.tqdm_progress.close()
     
     def __debugCount(self):
@@ -88,11 +94,18 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
         print(self.debugCount)
 
     def resetPageTag(self):
-        self.title = self.ns = self.id = self.revision = None
+        self.title = self.ns = self.id = None
         self.pageRevisionsCount = 0
         # print("resetPageTag")
 
     def startElement(self, name, attrs):
+        self.globalParsedBytes += len(name)+2 + self.depth*2# +2 for '<' and '>'; *2 for ' ' space
+        if len(attrs) > 0:
+            str_total = 0
+            str_total += sum([len(str(k))+len(str(v))+4 for k,v in attrs.items()])
+            self.globalParsedBytes += str_total
+
+
         self.depth+=1
         if self.depth > 3:
             self.startElementOverDepth3(name, attrs)
@@ -116,6 +129,13 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
             self.revisionTagsCount += 1
 
     def endElement(self, name):
+        ''' if depth > 3, call endElementOverDepth3()\n
+            if Element is page, call resetPageTag()
+        '''
+        self.globalParsedBytes += len(name) + 2
+        # +3 for '</', '>'
+
+
         if self.depth > 3:
             self.endElementOverDepth3(name)
             self.depth-=1
@@ -143,11 +163,12 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
         if name == "revision":
             self.inRevision = False
 
-    def characters(self, content, not_parse_tags=["?"]):
+    def characters(self, content: str, not_parse_tags=["?"]):
         bufferSize = len(content.encode("utf-8"))
         self.globalParsedBytes += bufferSize
-        # print(bufferSize)
-        self.tqdm_progress.update(bufferSize) # NOTE: sum(bufferSize...) != fileSize
+        if self.globalParsedBytes > self.tqdm_updated + 1024*1024:
+            self.tqdm_progress.update(self.globalParsedBytes - self.tqdm_updated)
+            self.tqdm_updated = self.globalParsedBytes
 
 
         if self.inPage:
@@ -160,7 +181,8 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
         if self.inId:
             self.cjoin("id", content) if 'id' not in not_parse_tags else None
         if self.inRevision:
-            self.cjoin("revision", content) if 'revision' not in not_parse_tags else None
+            pass
+
 
     def endDocument(self):
         if self.depth != 0:
@@ -172,10 +194,12 @@ class XMLBaseHandler(xml.sax.handler.ContentHandler):
     def endElementOverDepth3(self, name):
         pass
     
-    def cjoin(self, obj, content):
+    def cjoin(self, obj: str, content):
         ''' self.obj = self.obj + content if self.obj is not None else content 
 
         obj: str
+
+        NOTE: cjoin() has very low performance on large obj, please use io.StringIO instead.
         '''
         if hasattr(self, obj):
             if getattr(self, obj) is None:
@@ -195,7 +219,6 @@ class TitlesHandler(XMLBaseHandler):
         self.set_titles = set()
         self.list_titles = []
     def endElement(self, name):
-        # print(self.revision) if name == "page" else None
         super().endElement(name)
         if name == "page":
             if self.page['title'] is not None:
@@ -206,52 +229,73 @@ class TitlesHandler(XMLBaseHandler):
                     self.list_titles.append(self.page['title']) # unique
                     if not self.silent:
                         print(self.page)
-    def characters(self, content):
-        return super().characters(content, not_parse_tags=["revision"])
 
-class PagesHandler(XMLBaseHandler):
+class RevsHandler(XMLBaseHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pageTextsAttrs = []
-        self.pageTextsRealLength = 0
+        self.rev = {}
+        self.revtextAttrs = []
+        self.revtextRealLength = 0
 
         # text
         self.inText = False
-        self.pageTexts: str = None
+        self.revText: io.StringIO = io.StringIO()
         self.textTagsCount = 0
+        # sha1
+        self.inSha1 = False
+        self.revSha1: str = ''
+
 
     # TODO
     def startElementOverDepth3(self, name, attrs):
-        super().startElementOverDepth3(name, attrs)
+        # super().startElementOverDepth3(name, attrs)
+
+        # text
         if name == 'text' and attrs:
-            self.pageTextsAttrs.append(attrs.items())
-            self.page['textsAttrs'] = self.pageTextsAttrs
+            self.revtextAttrs = dict(attrs)
+            self.rev['textAttrs'] = self.revtextAttrs
         if name == 'text':
             self.inText = True
             self.textTagsCount += 1
+
+        # sha1
+        if name == 'sha1':
+            self.inSha1 = True
     
     def endElementOverDepth3(self, name):
-        super().endElementOverDepth3(name)
+
+        # super().endElementOverDepth3(name)
         if name == 'text':
             self.inText = False
+        if name == 'sha1':
+            self.inSha1 = False
 
-    def resetPageTag(self):
-        super().resetPageTag()
-        self.pageTextsAttrs = []
-        self.pageTextsRealLength = -1
-        self.pageTexts: str = None
+    def resetRevTag(self):
+        self.revtextAttrs = {}
+        self.globalParsedBytes += self.revtextRealLength
+        self.revtextRealLength = 0
+        self.revText: io.StringIO = io.StringIO()
+        self.revSha1 = ''
+
 
     def endElement(self, name):
-        self.pageTextsRealLength = len(self.pageTexts.encode('utf-8')) if self.pageTexts is not None else 0
-        self.page['textsRealLength'] = self.pageTextsRealLength
+        if name == 'text':
+            self.revtextRealLength = len(self.revText.getvalue().encode('utf-8')) if self.revText is not None else 0
+            self.rev['textRealLength'] = self.revtextRealLength
+        if name == "revision":
+            print(self.rev, self.title, self.revSha1)
+            self.resetRevTag()
         super().endElement(name)
-        # if name == "page":
-        #     print(self.page)
-    
-    def characters(self, content, *args, **kwargs):
-        super().characters(content, *args, **kwargs)
-        if self.inText:
-            self.cjoin("pageTexts", content)
+
+
+    def characters(self, content):
+        if self.inSha1:
+            self.cjoin('revSha1', content)
+        elif self.inText:
+            self.revText.write(content)
+        else:
+            super().characters(content)
+
 
 
 class MediaNsHandler(XMLBaseHandler):
@@ -278,8 +322,6 @@ class MediaNsHandler(XMLBaseHandler):
                     self.mediaNsPagesID_set.add(self.page['id'])
                     # self.mediaNsPages.append(self.page)
                     print(self.page)
-    def characters(self, content):
-        return super().characters(content, not_parse_tags=["revision"])
 
 def get_titles_from_xml(xmlfile, return_type="list", silent=False):
     '''Return a list/set of titles from a XML dump file.\n
@@ -288,9 +330,10 @@ def get_titles_from_xml(xmlfile, return_type="list", silent=False):
     The `list` keeps the order of XML file, and is unique.
     '''
     # xmlfile_size = os.path.getsize(xmlfile)
+    parse_start = timeit.default_timer()
     parser = xml.sax.make_parser()
     handler = TitlesHandler(os.path.getsize(xmlfile))
-    # handler = PagesHandler(os.path.getsize(xmlfile)) # TODO
+    # handler = RevsHandler(os.path.getsize(xmlfile)) # TODO
     # handler = MediaNsHandler(os.path.getsize(xmlfile)) # TODO
     handler.silent = silent
     parser.setContentHandler(handler)
@@ -304,7 +347,8 @@ def get_titles_from_xml(xmlfile, return_type="list", silent=False):
             'revisionTagsCount:', handler.revisionTagsCount)
     # print('MediaNsPages (Name):', len(handler.mediaNsPagesName_set))
     # print('MediaNsPages (ID):', len(handler.mediaNsPagesID_set))
-
+    parse_end = timeit.default_timer()
+    print('Parse time:', parse_end - parse_start)
     if len(handler.set_titles) != len(handler.list_titles):
         raise RuntimeError("len(set_titles) and (list_titles) are not equal!")
 
