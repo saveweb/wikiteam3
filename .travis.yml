@@ -1,9 +1,0 @@
-language: python
-python: 3.8
-install:
-  - pip install poetry
-  - poetry install
-script:
-  - poetry run pytest --verbose -s
-notifications:
-  email: false
