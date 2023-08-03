@@ -116,4 +116,9 @@ def main():
 
 
 if __name__ == "__main__":
+    raise DeprecationWarning(
+    """
+    # NOTE: This script is no longer working. It is kept here for historical
+    # <https://github.com/WikiTeam/wikiteam/issues/417>
+    """)
     main()

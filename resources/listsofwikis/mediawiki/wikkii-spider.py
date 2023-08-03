@@ -33,4 +33,10 @@ def main():
 
 
 if __name__ == "__main__":
+    raise DeprecationWarning(
+    """
+    NOTE: wikkii is dead.
+    <https://wikiindex.org/Wikkii.com>
+    <https://wiki.archiveteam.org/index.php/Wikkii>
+    """)
     main()
