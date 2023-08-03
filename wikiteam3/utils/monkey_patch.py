@@ -4,7 +4,7 @@ from wikiteam3.dumpgenerator.cli.delay import Delay
 
 def mod_requests_text(requests: requests):
     """ Monkey patch `requests.Response.text` to remove BOM """
-    def new_text(self):
+    def new_text(self: requests.Response):
         return self.content.lstrip(b'\xef\xbb\xbf').decode(self.encoding)
     requests.Response.text = property(new_text)
 

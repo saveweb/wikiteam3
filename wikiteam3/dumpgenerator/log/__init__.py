@@ -1,1 +1,1 @@
-from .log_error import logerror
+from .log_error import log_error

@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "wikiteam3"
-version = "3.0.0"
-description = "Tools for downloading and preserving wikis. We archive wikis, from Wikipedia to tiniest wikis. As of 2020, WikiTeam has preserved more than 250,000 wikis."
+version = "4.0.0"
+description = "Tools for downloading and preserving wikis. We archive wikis, from Wikipedia to tiniest wikis."
 license = "GPL-3.0-or-later"
 authors = ["WikiTeam Contributors <https://github.com/WikiTeam/wikiteam/graphs/contributors>"]
 maintainers = [

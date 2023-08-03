@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import *
 import sys
 import time
 from urllib.parse import urlparse
@@ -9,7 +8,7 @@ import mwclient
 import requests
 
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
-from wikiteam3.dumpgenerator.log import logerror
+from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI
 from wikiteam3.dumpgenerator.api.page_titles import readTitles
 from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import makeXmlFromPage, makeXmlPageFromRaw
@@ -289,7 +288,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 else:
                     raise
             except mwclient.errors.InvalidResponse:
-                logerror(
+                log_error(
                     config=config, to_stdout=True,
                     text="Error: page inaccessible? Could not export page: %s"
                          % ("; ".join(titlelist)),
@@ -304,7 +303,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 try:
                     pages = prequest["query"]["pages"]
                 except KeyError:
-                    logerror(
+                    log_error(
                         config=config, to_stdout=True,
                         text="Error: page inaccessible? Could not export page: %s"
                              % ("; ".join(titlelist)),
@@ -316,7 +315,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                         xml = makeXmlFromPage(pages[pageid], None)
                         yield xml
                     except PageMissingError:
-                        logerror(
+                        log_error(
                             config=config, to_stdout=True,
                             text="Error: empty revision from API. Could not export page: %s"
                                  % ("; ".join(titlelist)),
@@ -396,7 +395,7 @@ def getXMLRevisions(config: Config=None, session=None, useAllrevision=True, last
             print(e)
             # TODO: check whether the KeyError was really for a missing arv API
             print("Warning. Could not use allrevisions. Wiki too old? Try to use --xmlrevisions_page")
-            sys.exit()
+            sys.exit(1)
     else:
         # Find last title
         if lastPage is not None:
@@ -416,4 +415,4 @@ def getXMLRevisions(config: Config=None, session=None, useAllrevision=True, last
         except mwclient.errors.MwClientError as e:
             print(e)
             print("This mwclient version seems not to work for us. Exiting.")
-            sys.exit()
+            sys.exit(1)

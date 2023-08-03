@@ -1,6 +1,6 @@
 from io import StringIO
-from typing import *
 import os
+from typing import Optional
 
 import lxml.etree
 from file_read_backwards import FileReadBackwards

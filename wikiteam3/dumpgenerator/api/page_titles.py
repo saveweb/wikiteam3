@@ -7,7 +7,7 @@ from file_read_backwards import FileReadBackwards
 
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI, getNamespacesScraper
-from wikiteam3.utils import domain2prefix, cleanHTML, undoHTMLEntities
+from wikiteam3.utils import url2prefix_from_config, clean_HTML, undo_HTML_entities
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.utils.monkey_patch import DelaySession
 
@@ -55,7 +55,7 @@ def getPageTitlesScraper(config: Config=None, session=None):
         )
         r = session.get(url=url, timeout=30)
         raw = r.text
-        raw = cleanHTML(raw)
+        raw = clean_HTML(raw)
 
         r_title = r'title="(?P<title>[^>]+)">'
         r_suballpages = ""
@@ -127,7 +127,7 @@ def getPageTitlesScraper(config: Config=None, session=None):
                     # print ('Fetching URL: ', url)
                     r = session.get(url=url, timeout=10)
                     raw = str(r.text)
-                    raw = cleanHTML(raw)
+                    raw = clean_HTML(raw)
                     rawacum += raw  # merge it after removed junk
                     print(
                         "    Reading",
@@ -149,7 +149,7 @@ def getPageTitlesScraper(config: Config=None, session=None):
         c = 0
         m = re.compile(r_title).finditer(rawacum)
         for i in m:
-            t = undoHTMLEntities(text=i.group("title"))
+            t = undo_HTML_entities(text=i.group("title"))
             if not t.startswith("Special:"):
                 if t not in titles:
                     titles.append(t)
@@ -191,7 +191,7 @@ def getPageTitles(config: Config=None, session=None):
         titles = getPageTitlesScraper(config=config, session=session)
 
     titlesfilename = "{}-{}-titles.txt".format(
-        domain2prefix(config=config), config.date
+        url2prefix_from_config(config=config), config.date
     )
     titlesfile = open(
         "{}/{}".format(config.path, titlesfilename), "wt", encoding="utf-8"
@@ -216,7 +216,7 @@ def checkTitleOk(config: Config=None, ):
                 "%s/%s-%s-titles.txt"
                 % (
                         config.path,
-                        domain2prefix(config=config),
+                        url2prefix_from_config(config=config),
                         config.date,
                 ),
                 encoding="utf-8",
@@ -238,7 +238,7 @@ def readTitles(config: Config=None, session=None, start=None, batch=False):
         getPageTitles(config=config, session=session)
 
     titlesfilename = "{}-{}-titles.txt".format(
-        domain2prefix(config=config), config.date
+        url2prefix_from_config(config=config), config.date
     )
     titlesfile = open("{}/{}".format(config.path, titlesfilename), encoding="utf-8")
 

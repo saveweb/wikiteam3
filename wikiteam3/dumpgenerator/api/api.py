@@ -1,16 +1,15 @@
-from typing import *
 import re
-import time
-from urllib.parse import urlparse, urlunparse, urljoin
+from typing import Optional
+from urllib.parse import urlparse, urljoin
 
 import mwclient
 import requests
 
-from .get_json import getJSON
-from wikiteam3.utils import getUserAgent
+from wikiteam3.dumpgenerator.api.get_json import get_JSON
+from wikiteam3.utils import get_UserAgent
 
 
-def checkAPI(api="", session: requests.Session=None):
+def check_API(api: str, session: requests.Session=None):
     """Checking API availability"""
     global cj
     # handle redirects
@@ -36,7 +35,7 @@ def checkAPI(api="", session: requests.Session=None):
     if "MediaWiki API is not enabled for this site." in r.text:
         return None
     try:
-        result = getJSON(r)
+        result = get_JSON(r)
         index = None
         if result:
             try:
@@ -55,14 +54,14 @@ def checkAPI(api="", session: requests.Session=None):
     return None
 
 
-def mwGetAPIAndIndex(url="", session: requests.Session=None):
+def mediawiki_get_API_and_Index(url: str, session: requests.Session=None):
     """Returns the MediaWiki API and Index.php"""
 
     api = ""
     index = ""
     if not session:
         session = requests.Session()  # Create a new session
-        session.headers.update({"User-Agent": getUserAgent()})
+        session.headers.update({"User-Agent": get_UserAgent()})
     r = session.post(url=url, timeout=120)
     result = r.text
 
@@ -114,11 +113,11 @@ def mwGetAPIAndIndex(url="", session: requests.Session=None):
     return api, index
 
 
-def checkRetryAPI(api="", apiclient=False, session: requests.Session=None):
-    """Call checkAPI and mwclient if necessary"""
+def check_retry_API(api: str, apiclient=False, session: requests.Session=None):
+    """Call check_API and mwclient if necessary"""
     check = None
     try:
-        check = checkAPI(api, session=session)
+        check = check_API(api, session=session)
     except requests.exceptions.ConnectionError as e:
         print("Connection error: %s" % (str(e)))
 

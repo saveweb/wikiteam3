@@ -1,12 +1,13 @@
 """ Always available login methods.(mw 1.16-1.39)
     Even oler versions of MW may work, but not tested. """
 
-import lxml.html
-from typing import *
+from typing import Optional
 
+import lxml.html
 import requests
 
-def indexLogin(index:str ,session: requests.Session, username: str, password: str) -> Optional[requests.Session]:
+
+def index_login(index:str ,session: requests.Session, username: str, password: str) -> Optional[requests.Session]:
     """ Try to login to a wiki using username and password through `Special:UserLogin`.
     (tested on MW 1.16...1.39) """
     wpEditToken = None

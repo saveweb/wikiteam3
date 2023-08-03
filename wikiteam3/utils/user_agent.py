@@ -3,7 +3,7 @@ import random
 import requests
 
 
-def getUserAgents():
+def get_UserAgents():
     """Return a cool user-agent to hide Python user-agent"""
     useragents = [
         # firefox
@@ -314,12 +314,12 @@ def getUserAgents():
     ]
     return useragents
 
-def getUserAgent():
-    return random.choice(getUserAgents())
+def get_UserAgent():
+    return random.choice(get_UserAgents())
 
-def setupUserAgent(session: requests.Session):
+def setup_UserAgent(session: requests.Session):
     session._orirequest = session.request
     def newrequest(*args, **kwargs):
-        session.headers.update({"User-Agent": getUserAgent()})
+        session.headers.update({"User-Agent": get_UserAgent()})
         return session._orirequest(*args, **kwargs)
     session.request = newrequest

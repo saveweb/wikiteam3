@@ -2,11 +2,11 @@ import json
 import os
 
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.api import getJSON
+from wikiteam3.dumpgenerator.api import get_JSON
 from wikiteam3.dumpgenerator.config import Config
 
 
-def saveSiteInfo(config: Config=None, session=None):
+def save_siteinfo(config: Config=None, session=None):
     """Save a file with site info"""
 
     if config.api:
@@ -28,7 +28,7 @@ def saveSiteInfo(config: Config=None, session=None):
                 timeout=10,
             )
             # MediaWiki 1.11-1.12
-            if not "query" in getJSON(r):
+            if not "query" in get_JSON(r):
                 r = session.get(
                     url=config.api,
                     params={
@@ -40,7 +40,7 @@ def saveSiteInfo(config: Config=None, session=None):
                     timeout=10,
                 )
             # MediaWiki 1.8-1.10
-            if not "query" in getJSON(r):
+            if not "query" in get_JSON(r):
                 r = session.get(
                     url=config.api,
                     params={
@@ -51,7 +51,7 @@ def saveSiteInfo(config: Config=None, session=None):
                     },
                     timeout=10,
                 )
-            result = getJSON(r)
+            result = get_JSON(r)
             Delay(config=config, session=session)
             with open(
                 "%s/siteinfo.json" % (config.path), "w", encoding="utf-8"

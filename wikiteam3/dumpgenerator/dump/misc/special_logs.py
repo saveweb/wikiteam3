@@ -1,7 +1,7 @@
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.dumpgenerator.cli import Delay
 
-def saveLogs(config: Config=None, session=None):
+def save_SpecialLog(config: Config=None, session=None):
     """Save Special:Log"""
     # get all logs from Special:Log
     """parse
@@ -19,4 +19,5 @@ def saveLogs(config: Config=None, session=None):
     <option value="">Todos los registros</option>
     </select>
 """
+    raise NotImplementedError() # TODO
     Delay(config=config, session=session)

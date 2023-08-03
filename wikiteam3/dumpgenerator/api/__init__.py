@@ -1,4 +1,4 @@
-from .api import checkAPI, checkRetryAPI, mwGetAPIAndIndex
-from .get_json import getJSON
-from .handle_status_code import handleStatusCode
-from .wiki_check import getWikiEngine
+from .api import check_API, check_retry_API, mediawiki_get_API_and_Index
+from .get_json import get_JSON
+from .handle_status_code import handle_StatusCode
+from .wiki_check import get_WikiEngine

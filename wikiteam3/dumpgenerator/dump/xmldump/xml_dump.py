@@ -1,20 +1,20 @@
 import re
 import sys
-from typing import *
 
 import lxml.etree
 
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.utils import domain2prefix
+from wikiteam3.utils import url2prefix_from_config
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
-from wikiteam3.dumpgenerator.log import logerror
+from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.page_titles import readTitles
-from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import getXMLPage
+from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
 from wikiteam3.dumpgenerator.config import Config
-from wikiteam3.utils import cleanXML, undoHTMLEntities
+from wikiteam3.utils import clean_XML, undo_HTML_entities
 from wikiteam3.dumpgenerator.dump.xmldump.xml_header import getXMLHeader
 from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions import getXMLRevisions
 from wikiteam3.dumpgenerator.dump.xmldump.xml_truncate import truncateXMLDump, parseLastPageChunk
+
 
 def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=None, useAllrevisions=False):
     try:
@@ -31,17 +31,17 @@ def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=
                     Delay(config=config, session=session)
                     lastArvcontinue = curArvcontinue
             # Due to how generators work, it's expected this may be less
-            xml = cleanXML(xml=xml)
+            xml = clean_XML(xml=xml)
             xmlfile.write(xml)
 
             xmltitle = re.search(r"<title>([^<]+)</title>", xml)
-            title = undoHTMLEntities(text=xmltitle.group(1))
+            title = undo_HTML_entities(text=xmltitle.group(1))
             print(f'{title}, {numrevs} edits (--xmlrevisions)')
             # Delay(config=config, session=session)
     except AttributeError as e:
         print(e)
         print("This API library version is not working")
-        sys.exit()
+        sys.exit(1)
     except UnicodeEncodeError as e:
         print(e)
 
@@ -74,11 +74,11 @@ def doXMLExportDump(config: Config=None, session=None, xmlfile=None, lastPage=No
         if c % 10 == 0:
             print(f"\n->  Downloaded {c} pages\n")
         try:
-            for xml in getXMLPage(config=config, title=title, session=session):
-                xml = cleanXML(xml=xml)
+            for xml in get_XML_page(config=config, title=title, session=session):
+                xml = clean_XML(xml=xml)
                 xmlfile.write(xml)
         except PageMissingError:
-            logerror(
+            log_error(
                 config=config, to_stdout=True,
                 text='The page "%s" was missing in the wiki (probably deleted)'
                      % title,
@@ -90,13 +90,13 @@ def doXMLExportDump(config: Config=None, session=None, xmlfile=None, lastPage=No
         c += 1
 
 
-def generateXMLDump(config: Config=None, resume=False, session=None):
+def generate_XML_dump(config: Config=None, resume=False, session=None):
     """Generates a XML dump for a list of titles or from revision IDs"""
 
     header, config = getXMLHeader(config=config, session=session)
     footer = "</mediawiki>\n"  # new line at the end
     xmlfilename = "{}-{}-{}.xml".format(
-        domain2prefix(config=config),
+        url2prefix_from_config(config=config),
         config.date,
         "current" if config.curonly else "history",
     )

@@ -8,35 +8,36 @@ from typing import Dict, List, Optional
 
 import requests
 
+from wikiteam3.dumpgenerator.api import get_JSON, handle_StatusCode
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDATES
-from wikiteam3.utils import domain2prefix
-from wikiteam3.dumpgenerator.exceptions import PageMissingError, FileSizeError
-from wikiteam3.dumpgenerator.api import getJSON
-from wikiteam3.dumpgenerator.api import handleStatusCode
-from wikiteam3.dumpgenerator.log import logerror
-from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import getXMLPage
-from wikiteam3.utils import sha1File
-from wikiteam3.utils import cleanHTML, undoHTMLEntities
 from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDATES
+from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
+from wikiteam3.dumpgenerator.exceptions import PageMissingError, FileSizeError
+from wikiteam3.dumpgenerator.log import log_error
+from wikiteam3.utils import url2prefix_from_config, sha1sum, clean_HTML, undo_HTML_entities
 
+
+NULL = "null"
+""" NULL value for image metadata"""
 
 class Image:
     @staticmethod
-    def getXMLFileDesc(config: Config=None, title="", session=None):
+    def get_XML_file_desc(config: Config=None, title="", session=None):
         """Get XML for image description page"""
         config.curonly = 1  # tricky to get only the most recent desc
         return "".join(
             [
                 x
-                for x in getXMLPage(
+                for x in get_XML_page(
                     config=config, title=title, verbose=False, session=session
                 )
             ]
         )
 
+
     @staticmethod
-    def generateImageDump(config: Config=None, other: Dict=None, images: List[List]=None, session: requests.Session=None):
+    def generate_image_dump(config: Config=None, other: Dict=None, images: List[List]=None, session: requests.Session=None):
         """Save files and descriptions using a file list\n
         Deprecated: `start` is not used anymore."""
 
@@ -67,13 +68,13 @@ class Image:
             assert not r.headers.get("cf-polished", ""), "Found cf-polished header in response, use --bypass-cdn-image-compression to bypass it"
             
 
-        for filename, url, uploader, size, sha1 in images:
+        for filename, url, uploader, size, sha1, timestamp in images:
             toContinue = 0
 
             # saving file
             filename2 = urllib.parse.unquote(filename)
             if len(filename2.encode('utf-8')) > other["filenamelimit"]:
-                logerror(
+                log_error(
                     config=config, to_stdout=True,
                     text=f"Filename is too long(>240 bytes), skipping: '{filename2}'",
                 )
@@ -81,20 +82,20 @@ class Image:
             filename3 = f"{imagepath}/{filename2}"
             
             # check if file already exists and has the same size and sha1
-            if ((size != 'False'
+            if ((size != NULL
                 and os.path.isfile(filename3)
                 and os.path.getsize(filename3) == int(size)
-                and sha1File(filename3) == sha1)
-            or (sha1 == 'False' and os.path.isfile(filename3))): 
-            # sha1 is 'False' if file not in original wiki (probably deleted,
+                and sha1sum(filename3) == sha1)
+            or (sha1 == NULL and os.path.isfile(filename3))): 
+            # sha1 is NULL if file not in original wiki (probably deleted,
             # you will get a 404 error if you try to download it)
                 c_savedImageFiles += 1
                 toContinue += 1
                 print_msg=f"    {c_savedImageFiles}|sha1 matched: {filename2}"
                 print(print_msg[0:70], end="\r")
-                if sha1 == 'False':
-                    logerror(config=config, to_stdout=True,
-                    text=f"sha1 is 'False' for {filename2}, file may not in wiki site (probably deleted). "
+                if sha1 == NULL:
+                    log_error(config=config, to_stdout=True,
+                    text=f"sha1 is {NULL} for {filename2}, file may not in wiki site (probably deleted). "
                         +"we will not try to download it...")
             else:
                 Delay(config=config, session=session)
@@ -124,26 +125,26 @@ class Image:
 
                 if r.status_code == 200:
                     try:
-                        if size == 'False' or len(r.content) == int(size):
-                            # size == 'False' means size is unknown
+                        if size == NULL or len(r.content) == int(size):
+                            # size == NULL means size is unknown
                             with open(filename3, "wb") as imagefile:
                                 imagefile.write(r.content)
                             c_savedImageFiles += 1
                         else:
                             raise FileSizeError(file=filename3, size=size)
                     except OSError:
-                        logerror(
+                        log_error(
                             config=config, to_stdout=True,
                             text=f"File '{filename3}' could not be created by OS",
                         )
                     except FileSizeError as e:
                         # TODO: add a --force-download-image or --nocheck-image-size option to download anyway
-                        logerror(
+                        log_error(
                             config=config, to_stdout=True,
                             text=f"File '{e.file}' size is not match '{e.size}', skipping",
                         )
                 else:
-                    logerror(
+                    log_error(
                         config=config, to_stdout=True,
                         text=f"Failled to donwload '{filename2}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
                     )
@@ -167,12 +168,12 @@ class Image:
                         )
                         xmlfiledesc = r.text
                     else:
-                        xmlfiledesc = Image.getXMLFileDesc(
+                        xmlfiledesc = Image.get_XML_file_desc(
                             config=config, title=title, session=session
                         )  # use Image: for backwards compatibility
                 except PageMissingError:
                     xmlfiledesc = ""
-                    logerror(
+                    log_error(
                         config=config, to_stdout=True,
                         text='The image description page "%s" was missing in the wiki (probably deleted)'
                         % (str(title)),
@@ -193,13 +194,13 @@ class Image:
                     c_savedImageDescs += 1
 
                     if xmlfiledesc == "":
-                        logerror(
+                        log_error(
                             config=config, to_stdout=True,
                             text=f"Created empty .desc file: '{imagepath}/{filename2}.desc'",
                         )
 
                 except OSError:
-                    logerror(
+                    log_error(
                         config=config, to_stdout=True,
                         text=f"File {imagepath}/{filename2}.desc could not be created by OS",
                     )
@@ -211,18 +212,19 @@ class Image:
 
         print(f"Downloaded {c_savedImageFiles} images and {c_savedImageDescs} .desc files.")
 
+
     @staticmethod
-    def getImageNames(config: Config=None, session: requests.Session=None):
+    def get_image_names(config: Config=None, session: requests.Session=None):
         """Get list of image names"""
 
         print(")Retrieving image filenames")
         images = []
         if config.api:
             print("Using API to retrieve image names...")
-            images = Image.getImageNamesAPI(config=config, session=session)
+            images = Image.get_image_names_API(config=config, session=session)
         elif config.index:
             print("Using index.php (Special:Imagelist) to retrieve image names...")
-            images = Image.getImageNamesScraper(config=config, session=session)
+            images = Image.get_image_names_scraper(config=config, session=session)
 
         # images = list(set(images)) # it is a list of lists
         print("Sorting image filenames")
@@ -231,8 +233,9 @@ class Image:
         print("%d image names loaded" % (len(images)))
         return images
 
+
     @staticmethod
-    def getImageNamesScraper(config: Config=None, session: requests.Session=None):
+    def get_image_names_scraper(config: Config=None, session: requests.Session=None):
         """Retrieve file list: filename, url, uploader"""
 
         images = []
@@ -248,7 +251,7 @@ class Image:
                 params={"title": "Special:Imagelist", "limit": limit, "offset": offset},
                 timeout=30,
             )
-            raw = str(r.text)
+            raw = r.text
             Delay(config=config, session=session)
             # delicate wiki
             if re.search(
@@ -270,7 +273,7 @@ class Image:
                     print("No more retries, exit...")
                     break
 
-            raw = cleanHTML(raw)
+            raw = clean_HTML(raw)
 
             # Select the regexp that returns more results
             best_matched = 0
@@ -286,16 +289,21 @@ class Image:
             # Iter the image results
             for i in m:
                 url = i.group("url")
-                url = Image.curateImageURL(config=config, url=url)
+                url = Image.curate_image_URL(config=config, url=url)
                 filename = re.sub("_", " ", i.group("filename"))
-                filename = undoHTMLEntities(text=filename)
+                filename = undo_HTML_entities(text=filename)
                 filename = urllib.parse.unquote(filename)
                 uploader = re.sub("_", " ", i.group("uploader"))
-                uploader = undoHTMLEntities(text=uploader)
+                uploader = undo_HTML_entities(text=uploader)
                 uploader = urllib.parse.unquote(uploader)
+                # timestamp = i.group("timestamp")
+                # print("    %s" % (timestamp))
+                size = NULL # size not accurate
+                sha1 = NULL # sha1 not available
+                timestamp = NULL # date formats are difficult to parse
                 images.append([
                     filename, url, uploader,
-                    'False', 'False' # size, sha1 not available
+                    size, sha1, timestamp,
                 ])
                 # print (filename, url)
 
@@ -319,7 +327,7 @@ class Image:
         return images
 
     @staticmethod
-    def getImageNamesAPI(config: Config=None, session: requests.Session=None):
+    def get_image_names_API(config: Config=None, session: requests.Session=None):
         """Retrieve file list: filename, url, uploader, size, sha1"""
         oldAPI = False
         # # Commented by @yzqzss:
@@ -339,15 +347,15 @@ class Image:
             params = {
                 "action": "query",
                 "list": "allimages",
-                "aiprop": "url|user|size|sha1",
+                "aiprop": "url|user|size|sha1|timestamp",
                 "aifrom": aifrom,
                 "format": "json",
                 "ailimit": config.api_chunksize,
             }
             # FIXME Handle HTTP Errors HERE
             r = session.get(url=config.api, params=params, timeout=30)
-            handleStatusCode(r)
-            jsonimages = getJSON(r)
+            handle_StatusCode(r)
+            jsonimages = get_JSON(r)
             Delay(config=config, session=session)
 
             if "query" in jsonimages:
@@ -375,8 +383,9 @@ class Image:
                 print(countImages, aifrom[0:30]+" "*(60-len(aifrom[0:30])),end="\r")
 
                 for image in jsonimages["query"]["allimages"]:
+                    image: Dict
                     url = image["url"]
-                    url = Image.curateImageURL(config=config, url=url)
+                    url = Image.curate_image_URL(config=config, url=url)
                     # encoding to ascii is needed to work around this horrible bug:
                     # http://bugs.python.org/issue8136
                     # (ascii encoding removed because of the following)
@@ -401,11 +410,12 @@ class Image:
                             + " contains unicode. Please file an issue with MediaWiki Scraper."
                         )
                     uploader = re.sub("_", " ", image.get("user", "Unknown"))
-                    size = image.get("size", "False")
+                    size = image.get("size", NULL)
                     
                     # size or sha1 is not always available (e.g. https://wiki.mozilla.org/index.php?curid=20675)
-                    sha1 = image.get("sha1", "False")
-                    images.append([filename, url, uploader, size, sha1])
+                    sha1 = image.get("sha1", NULL)
+                    timestamp = image.get("timestamp", NULL)
+                    images.append([filename, url, uploader, size, sha1, timestamp])
             else:
                 oldAPI = True
                 break
@@ -429,13 +439,13 @@ class Image:
                                     # TODO: Is it OK to set it higher, for speed?
                     "gapfrom": gapfrom,
                     "prop": "imageinfo",
-                    "iiprop": "url|user|size|sha1",
+                    "iiprop": "url|user|size|sha1|timestamp",
                     "format": "json",
                 }
                 # FIXME Handle HTTP Errors HERE
                 r = session.get(url=config.api, params=params, timeout=30)
-                handleStatusCode(r)
-                jsonimages = getJSON(r)
+                handle_StatusCode(r)
+                jsonimages = get_JSON(r)
                 Delay(config=config, session=session)
 
                 if "query" in jsonimages:
@@ -467,15 +477,16 @@ class Image:
 
                     for image, props in jsonimages["query"]["pages"].items():
                         url = props["imageinfo"][0]["url"]
-                        url = Image.curateImageURL(config=config, url=url)
+                        url = Image.curate_image_URL(config=config, url=url)
 
                         tmp_filename = ":".join(props["title"].split(":")[1:])
 
                         filename = re.sub("_", " ", tmp_filename)
                         uploader = re.sub("_", " ", props["imageinfo"][0]["user"])
-                        size = props.get("imageinfo")[0].get("size", "False")
-                        sha1 = props.get("imageinfo")[0].get("sha1", "False")
-                        images.append([filename, url, uploader, size, sha1])
+                        size = props.get("imageinfo")[0].get("size", NULL)
+                        sha1 = props.get("imageinfo")[0].get("sha1", NULL)
+                        timestamp = props.get("imageinfo")[0].get("timestamp", NULL)
+                        images.append([filename, url, uploader, size, sha1, timestamp])
                 else:
                     # if the API doesn't return query data, then we're done
                     break
@@ -487,25 +498,27 @@ class Image:
 
         return images
 
+
     @staticmethod
-    def saveImageNames(config: Config=None, images: List[List]=None, session=None):
+    def save_image_names(config: Config=None, images: List[List]=None, session=None):
         """Save image list in a file, including filename, url, uploader, size and sha1"""
 
         imagesfilename = "{}-{}-images.txt".format(
-            domain2prefix(config=config), config.date
+            url2prefix_from_config(config=config), config.date
         )
         imagesfile = open(
             "{}/{}".format(config.path, imagesfilename), "w", encoding="utf-8"
         )
         for line in images:
             while 3 <= len(line) < 5:
-                line.append("False") # At this point, make sure all lines have 5 elements
+                line.append(NULL) # At this point, make sure all lines have 5 elements
             filename, url, uploader, size, sha1 = line
             print(line,end='\r')
             imagesfile.write(
                 filename + "\t" + url + "\t" + uploader
-                + "\t" + str(size) + "\t" + str(sha1)
-                # sha1 or size may be `False` if file is missing, so convert bool to str
+                + "\t" + size if size is not False else NULL
+                + "\t" + sha1 if sha1 is not False else NULL
+                # sha1 or size may be NULL
                 + "\n"
             )
         imagesfile.write("--END--")
@@ -513,8 +526,9 @@ class Image:
 
         print("Image filenames and URLs saved at...", imagesfilename)
 
+
     @staticmethod
-    def curateImageURL(config: Config=None, url=""):
+    def curate_image_URL(config: Config=None, url=""):
         """Returns an absolute URL for an image, adding the domain if missing"""
 
         if config.index:
@@ -532,7 +546,7 @@ class Image:
             )
         else:
             print("ERROR: no index nor API")
-            sys.exit()
+            sys.exit(1)
 
         if url.startswith("//"):  # Orain wikifarm returns URLs starting with //
             url = "{}:{}".format(domainalone.split("://")[0], url)
@@ -544,7 +558,7 @@ class Image:
                 url = url[1:]
             # concat http(s) + domain + relative url
             url = f"{domainalone}/{url}"
-        url = undoHTMLEntities(text=url)
+        url = undo_HTML_entities(text=url)
         # url = urllib.parse.unquote(url) #do not use unquote with url, it break some
         # urls with odd chars
         url = re.sub(" ", "_", url)

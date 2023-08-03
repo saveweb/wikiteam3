@@ -1,13 +1,13 @@
 import json
 import re
 import sys
-from typing import *
+from typing import Tuple
 
 import requests
 
 from wikiteam3.dumpgenerator.exceptions import ExportAbortedError, PageMissingError
-from wikiteam3.dumpgenerator.log import logerror
-from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import getXMLPage
+from wikiteam3.dumpgenerator.log import log_error
+from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
 from wikiteam3.dumpgenerator.config import Config
 
 def getXMLHeader(config: Config=None, session=None) -> Tuple[str, Config]:
@@ -69,7 +69,7 @@ def getXMLHeader(config: Config=None, session=None) -> Tuple[str, Config]:
             xml = "".join(
                 [
                     x
-                    for x in getXMLPage(
+                    for x in get_XML_page(
                         config=config, title=randomtitle, verbose=False, session=session
                     )
                 ]
@@ -100,7 +100,7 @@ def getXMLHeader(config: Config=None, session=None) -> Tuple[str, Config]:
                     xml = "".join(
                         [
                             x
-                            for x in getXMLPage(
+                            for x in get_XML_page(
                                 config=config,
                                 title=randomtitle,
                                 verbose=False,
@@ -125,6 +125,6 @@ def getXMLHeader(config: Config=None, session=None) -> Tuple[str, Config]:
         else:
             print(xml)
             print("XML export on this wiki is broken, quitting.")
-            logerror(to_stdout=True, text="XML export on this wiki is broken, quitting.")
-            sys.exit()
+            log_error(to_stdout=True, text="XML export on this wiki is broken, quitting.")
+            sys.exit(1)
     return header, config

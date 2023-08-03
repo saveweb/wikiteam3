@@ -1,11 +1,11 @@
 """ Available since MediaWiki 1.27. login to a wiki using username and password (API) """
 
-from typing import *
+from typing import Optional
 
 import requests
 
 
-def fetchLoginToken(session: requests.Session, api: str) -> Optional[str]:
+def fetch_login_token(session: requests.Session, api: str) -> Optional[str]:
     """ fetch login token by API .(MediaWiki 1.27+)"""
 
     response = session.get(
@@ -25,10 +25,10 @@ def fetchLoginToken(session: requests.Session, api: str) -> Optional[str]:
         return None
 
 
-def clientLogin(api: str ,session: requests.Session, username: str, password: str) -> Optional[requests.Session]:
+def client_login(api: str ,session: requests.Session, username: str, password: str) -> Optional[requests.Session]:
     """ login to a wiki using username and password. (MediaWiki 1.27+)"""
 
-    login_token = fetchLoginToken(session=session, api=api)
+    login_token = fetch_login_token(session=session, api=api)
     if not login_token:
         return None
 
@@ -54,10 +54,10 @@ def clientLogin(api: str ,session: requests.Session, username: str, password: st
     return session
 
 
-def botLogin(api:str ,session: requests.Session, username: str, password: str) -> Optional[requests.Session]:
+def bot_login(api:str ,session: requests.Session, username: str, password: str) -> Optional[requests.Session]:
     """ login to a wiki using BOT's name and password. (MediaWiki 1.27+) """
 
-    login_token = fetchLoginToken(session=session, api=api)
+    login_token = fetch_login_token(session=session, api=api)
     if not login_token:
         return None
 

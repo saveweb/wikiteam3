@@ -7,24 +7,19 @@ import os
 import queue
 import re
 import sys
+from typing import Tuple, Dict
 
 import requests
 import urllib3
 
-from wikiteam3.dumpgenerator.api import checkRetryAPI, mwGetAPIAndIndex
-from wikiteam3.utils.login import uniLogin
-from .delay import Delay
-from wikiteam3.utils import domain2prefix
+from wikiteam3.dumpgenerator.api import check_retry_API, mediawiki_get_API_and_Index, get_WikiEngine
 from wikiteam3.dumpgenerator.api.index_check import checkIndex
-from wikiteam3.utils import getUserAgent
+from wikiteam3.dumpgenerator.cli.delay import Delay
+from wikiteam3.dumpgenerator.config import Config, new_config
 from wikiteam3.dumpgenerator.version import getVersion
-from wikiteam3.dumpgenerator.api import getWikiEngine
-from wikiteam3.dumpgenerator.config import Config, newConfig
-from wikiteam3.utils import mod_requests_text
-
-from typing import *
-
-from ...utils.user_agent import setupUserAgent
+from wikiteam3.utils import url2prefix_from_config, get_UserAgent, mod_requests_text
+from wikiteam3.utils.login import uniLogin
+from wikiteam3.utils.user_agent import setup_UserAgent
 
 
 def getArgumentParser():
@@ -36,7 +31,7 @@ def getArgumentParser():
         "--cookies", metavar="cookies.txt", help="path to a cookies.txt file"
     )
     parser.add_argument(
-        "--delay", metavar="5", default=0.5, type=float, help="adds a delay (in seconds)"
+        "--delay", metavar="0.5", default=0.5, type=float, help="adds a delay (in seconds)"
     )
     parser.add_argument(
         "--retries", metavar="5", default=5, help="Maximum number of retries for "
@@ -114,6 +109,12 @@ def getArgumentParser():
         help="Bypass CDN image compression. (CloudFlare Polish, etc.)",
     )
     groupDownload.add_argument(
+        "--noverify-image-size",
+        action="store_true",
+        help="Don't verify image sizes. (useful for wikis with server-side image resizing)"
+             "Also disables sha1sum verification for images.",
+    )
+    groupDownload.add_argument(
         "--namespaces",
         metavar="1,2,3",
         help="comma-separated value of namespaces to include (all by default)",
@@ -171,10 +172,10 @@ def checkParameters(args=argparse.Namespace()) -> bool:
         print("ERROR: --curonly requires --xml")
         passed = False
     
-    # --xmlrevisions not supported with --curonly
-    if args.xmlrevisions and args.curonly:
-        print("ERROR: --xmlrevisions not supported with --curonly")
-        passed = False
+    # # --xmlrevisions not supported with --curonly
+    # if args.xmlrevisions and args.curonly:
+    #     print("ERROR: --xmlrevisions not supported with --curonly")
+    #     passed = False
     
     # Check URLs
     for url in [args.api, args.index, args.wiki]:
@@ -185,7 +186,7 @@ def checkParameters(args=argparse.Namespace()) -> bool:
     
     return passed
 
-def getParameters(params=None) -> Tuple[Config, Dict]:
+def get_parameters(params=None) -> Tuple[Config, Dict]:
     # if not params:
     #     params = sys.argv
 
@@ -270,8 +271,8 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
     session.cookies = cj
 
     # Setup user agent
-    session.headers.update({"User-Agent": getUserAgent()})
-    setupUserAgent(session) # monkey patch
+    session.headers.update({"User-Agent": get_UserAgent()})
+    setup_UserAgent(session) # monkey patch
 
     # Set HTTP Basic Auth
     if args.http_user and args.http_password:
@@ -280,7 +281,7 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
     # Execute meta info params
     if args.wiki:
         if args.get_wiki_engine:
-            print(getWikiEngine(url=args.wiki, session=session))
+            print(get_WikiEngine(url=args.wiki, session=session))
             sys.exit(0)
 
     # Get API and index and verify
@@ -288,8 +289,8 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
     index = args.index if args.index else ""
     if api == "" or index == "":
         if args.wiki:
-            if getWikiEngine(args.wiki, session=session) == "MediaWiki":
-                api2, index2 = mwGetAPIAndIndex(args.wiki, session=session)
+            if get_WikiEngine(args.wiki, session=session) == "MediaWiki":
+                api2, index2 = mediawiki_get_API_and_Index(args.wiki, session=session)
                 if not api:
                     api = api2
                 if not index:
@@ -309,7 +310,7 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
 
     check, checkedapi = False, None
     if api:
-        check, checkedapi = checkRetryAPI(
+        check, checkedapi = check_retry_API(
             api=api,
             apiclient=args.xmlrevisions,
             session=session,
@@ -375,7 +376,7 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
             print(
                 "Invalid namespace values.\nValid format is integer(s) separated by commas"
             )
-            sys.exit()
+            sys.exit(1)
         else:
             ns = re.sub(" ", "", args.namespaces)
             if ns.lower() == "all":
@@ -399,7 +400,7 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
                 exnamespaces = [int(i) for i in ns.split(",")]
 
 
-    config = newConfig({
+    config = new_config({
         "curonly": args.curonly,
         "date": datetime.datetime.now().strftime("%Y%m%d"),
         "api": api,
@@ -428,12 +429,13 @@ def getParameters(params=None) -> Tuple[Config, Dict]:
         "session": session,
         "stdout_log_path": args.stdout_log_path,
         "bypass_cdn_image_compression": args.bypass_cdn_image_compression,
+        "noverify_image_size": args.noverify_image_size,
     }
 
     # calculating path, if not defined by user with --path=
     if not config.path:
         config.path = "./{}-{}-wikidump".format(
-            domain2prefix(config=config, session=session),
+            url2prefix_from_config(config=config),
             config.date,
         )
         print("No --path argument provided. Defaulting to:")

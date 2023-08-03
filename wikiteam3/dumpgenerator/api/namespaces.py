@@ -1,7 +1,7 @@
 import re
 
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.api import getJSON
+from wikiteam3.dumpgenerator.api import get_JSON
 from wikiteam3.dumpgenerator.config import Config
 
 def getNamespacesScraper(config: Config=None, session=None):
@@ -58,7 +58,7 @@ def getNamespacesAPI(config: Config=None, session=None):
             },
             timeout=30,
         )
-        result = getJSON(r)
+        result = get_JSON(r)
         Delay(config=config, session=session)
         try:
             nsquery = result["query"]["namespaces"]

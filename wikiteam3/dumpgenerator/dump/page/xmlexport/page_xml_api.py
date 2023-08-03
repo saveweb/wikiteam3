@@ -1,21 +1,16 @@
 import re
 import time
 import traceback
-from typing import *
+from typing import Dict, Optional
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as MD
 
 import requests
 
-from wikiteam3.dumpgenerator.api import handleStatusCode
+from wikiteam3.dumpgenerator.api import handle_StatusCode
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.dumpgenerator.exceptions import PageMissingError, ExportAbortedError
-from wikiteam3.dumpgenerator.log import logerror
-
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import xml.etree.ElementTree as ET
-
-import xml.dom.minidom as MD
+from wikiteam3.dumpgenerator.log import log_error
 
 
 def reconstructRevisions(root=None):
@@ -121,7 +116,7 @@ def getXMLPageCoreWithApi(headers: Dict=None, params: Dict=None, config: Config=
             # getXMLPageCore
             # TODO: save only the last version when failed
             print('    Saving in the errors log, and skipping...')
-            logerror(
+            log_error(
                 config=config,
                 text='Error while retrieving the last revision of "%s". Skipping.' %
                      (params['titles' if config.xmlapiexport else 'pages']).decode('utf-8'))
@@ -131,7 +126,7 @@ def getXMLPageCoreWithApi(headers: Dict=None, params: Dict=None, config: Config=
         # FIXME HANDLE HTTP Errors HERE
         try:
             r = session.get(url=config.api, params=params, headers=headers)
-            handleStatusCode(r)
+            handle_StatusCode(r)
             xml = r.text
             # print xml
         except requests.exceptions.ConnectionError as e:

@@ -1,42 +1,24 @@
-try:
-    import contextlib
-    import http.cookiejar
-    import os
-    import re
-    import sys
-    import traceback
+import contextlib
+import os
+import re
+import sys
+import traceback
+from typing import Dict
 
-    from file_read_backwards import FileReadBackwards
+from file_read_backwards import FileReadBackwards
 
-
-except ImportError:
-    print(
-        """
-        Please install poetry with:
-            $ pip install poetry.
-        Then rerun py with:
-            $ poetry run python py
-    """
-    )
-    sys.exit(1)
-
-from typing import *
-
-from wikiteam3.dumpgenerator.config import loadConfig, saveConfig
+from wikiteam3.dumpgenerator.config import load_config, save_config
 from wikiteam3.dumpgenerator.config import Config
-from wikiteam3.dumpgenerator.cli import getParameters, bye, welcome
-from wikiteam3.dumpgenerator.log import logerror
-from wikiteam3.utils import domain2prefix
-from wikiteam3.utils import undoHTMLEntities
-from wikiteam3.utils import avoidWikimediaProjects
-
+from wikiteam3.dumpgenerator.cli import get_parameters, bye, welcome
 from wikiteam3.dumpgenerator.dump.image.image import Image
-from wikiteam3.dumpgenerator.dump.misc.index_php import saveIndexPHP
-from wikiteam3.dumpgenerator.dump.misc.special_logs import saveLogs
-from wikiteam3.dumpgenerator.dump.misc.special_version import saveSpecialVersion
-from wikiteam3.dumpgenerator.dump.misc.site_info import saveSiteInfo
-from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generateXMLDump
-from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import checkXMLIntegrity
+from wikiteam3.dumpgenerator.dump.misc.index_php import save_IndexPHP
+from wikiteam3.dumpgenerator.dump.misc.special_logs import save_SpecialLog
+from wikiteam3.dumpgenerator.dump.misc.special_version import save_SpecialVersion
+from wikiteam3.dumpgenerator.dump.misc.site_info import save_siteinfo
+from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generate_XML_dump
+from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import check_XML_integrity
+from wikiteam3.dumpgenerator.log import log_error
+from wikiteam3.utils import url2prefix_from_config, undo_HTML_entities, avoid_WikiMedia_projects
 
 # From https://stackoverflow.com/a/57008707
 class Tee(object):
@@ -67,9 +49,9 @@ class DumpGenerator:
     @staticmethod
     def __init__(params=None):
         """Main function"""
-        configfilename = DumpGenerator.configfilename
-        config, other = getParameters(params=params)
-        avoidWikimediaProjects(config=config, other=other)
+        config_filename = DumpGenerator.configfilename
+        config, other = get_parameters(params=params)
+        avoid_WikiMedia_projects(config=config, other=other)
 
         with (Tee(other["stdout_log_path"]) if other["stdout_log_path"] is not None else contextlib.nullcontext()):
             print(welcome())
@@ -88,12 +70,12 @@ class DumpGenerator:
                 while reply.lower() not in ["yes", "y", "no", "n"]:
                     reply = input(
                         'There is a dump in "%s", probably incomplete.\nIf you choose resume, to avoid conflicts, the parameters you have chosen in the current session will be ignored\nand the parameters available in "%s/%s" will be loaded.\nDo you want to resume ([yes, y], [no, n])? '
-                        % (config.path, config.path, configfilename)
+                        % (config.path, config.path, config_filename)
                     )
                 if reply.lower() in ["yes", "y"]:
-                    if not os.path.isfile("{}/{}".format(config.path, configfilename)):
+                    if not os.path.isfile("{}/{}".format(config.path, config_filename)):
                         print("No config file found. I can't resume. Aborting.")
-                        sys.exit()
+                        sys.exit(1)
                     print("You have selected: YES")
                     other["resume"] = True
                     break
@@ -106,37 +88,38 @@ class DumpGenerator:
 
             if other["resume"]:
                 print("Loading config file...")
-                config = loadConfig(config=config, configfilename=configfilename)
+                config = load_config(config=config, config_filename=config_filename)
             else:
                 os.mkdir(config.path)
-                saveConfig(config=config, configfilename=configfilename)
+                save_config(config=config, config_filename=config_filename)
 
             if other["resume"]:
                 DumpGenerator.resumePreviousDump(config=config, other=other)
             else:
                 DumpGenerator.createNewDump(config=config, other=other)
 
-            saveIndexPHP(config=config, session=other["session"])
-            saveSpecialVersion(config=config, session=other["session"])
-            saveSiteInfo(config=config, session=other["session"])
+            save_IndexPHP(config=config, session=other["session"])
+            save_SpecialVersion(config=config, session=other["session"])
+            save_siteinfo(config=config, session=other["session"])
             bye()
 
     @staticmethod
-    def createNewDump(config: Config=None, other: Dict=None):
+    def createNewDump(config: Config, other: Dict):
         # we do lazy title dumping here :)
         images = []
         print("Trying generating a new dump into a new directory...")
         if config.xml:
-            generateXMLDump(config=config, session=other["session"])
-            checkXMLIntegrity(config=config, session=other["session"])
+            generate_XML_dump(config=config, session=other["session"])
+            check_XML_integrity(config=config, session=other["session"])
         if config.images:
-            images += Image.getImageNames(config=config, session=other["session"])
-            Image.saveImageNames(config=config, images=images, session=other["session"])
-            Image.generateImageDump(
+            images += Image.get_image_names(config=config, session=other["session"])
+            Image.save_image_names(config=config, images=images, session=other["session"])
+            Image.generate_image_dump(
                 config=config, other=other, images=images, session=other["session"]
             )
         if config.logs:
-            saveLogs(config=config, session=other["session"])
+            pass # TODO
+            # save_SpecialLog(config=config, session=other["session"])
 
     @staticmethod
     def resumePreviousDump(config: Config=None, other: Dict=None):
@@ -145,15 +128,15 @@ class DumpGenerator:
         if config.xml:
 
             # checking xml dump
-            xmliscomplete = False
-            lastxmltitle = None
-            lastxmlrevid = None
+            xml_is_complete = False
+            last_xml_title = None
+            last_xml_revid = None
             try:
                 with FileReadBackwards(
                     "%s/%s-%s-%s.xml"
                     % (
                         config.path,
-                        domain2prefix(config=config, session=other["session"]),
+                        url2prefix_from_config(config=config),
                         config.date,
                         "current" if config.curonly else "history",
                     ),
@@ -162,26 +145,26 @@ class DumpGenerator:
                     for l in frb:
                         if l.strip() == "</mediawiki>":
                             # xml dump is complete
-                            xmliscomplete = True
+                            xml_is_complete = True
                             break
 
                         xmlrevid = re.search(r"    <id>([^<]+)</id>", l)
                         if xmlrevid:
-                            lastxmlrevid = int(xmlrevid.group(1))
+                            last_xml_revid = int(xmlrevid.group(1))
                         xmltitle = re.search(r"<title>([^<]+)</title>", l)
                         if xmltitle:
-                            lastxmltitle = undoHTMLEntities(text=xmltitle.group(1))
+                            last_xml_title = undo_HTML_entities(text=xmltitle.group(1))
                             break
 
             except:
                 pass  # probably file does not exists
 
-            if xmliscomplete:
+            if xml_is_complete:
                 print("XML dump was completed in the previous session")
-            elif lastxmltitle:
+            elif last_xml_title:
                 # resuming...
-                print('Resuming XML dump from "%s" (revision id %s)' % (lastxmltitle, lastxmlrevid))
-                generateXMLDump(
+                print('Resuming XML dump from "%s" (revision id %s)' % (last_xml_title, last_xml_revid))
+                generate_XML_dump(
                     config=config,
                     session=other["session"],
                     resume=True,
@@ -189,12 +172,12 @@ class DumpGenerator:
             else:
                 # corrupt? only has XML header?
                 print("XML is corrupt? Regenerating...")
-                generateXMLDump(config=config, session=other["session"])
+                generate_XML_dump(config=config, session=other["session"])
 
         if config.images:
             # load images list
             lastimage = ""
-            imagesFilePath = "%s/%s-%s-images.txt" % (config.path, domain2prefix(config=config), config.date)
+            imagesFilePath = "%s/%s-%s-images.txt" % (config.path, url2prefix_from_config(config=config), config.date)
             if os.path.exists(imagesFilePath):
                 f = open(imagesFilePath)
                 lines = f.read().splitlines()
@@ -221,8 +204,8 @@ class DumpGenerator:
                 print("Image list is incomplete. Reloading...")
                 # do not resume, reload, to avoid inconsistences, deleted images or
                 # so
-                images = Image.getImageNames(config=config, session=other["session"])
-                Image.saveImageNames(config=config, images=images)
+                images = Image.get_image_names(config=config, session=other["session"])
+                Image.save_image_names(config=config, images=images)
             # checking images directory
             listdir = []
             try:
@@ -236,7 +219,7 @@ class DumpGenerator:
             for filename, url, uploader, size, sha1 in images:
                 lastfilename = filename
                 if other["filenamelimit"] < len(filename.encode('utf-8')):
-                    logerror(
+                    log_error(
                         config=config, to_stdout=True,
                         text=f"Filename too long(>240 bytes), skipping: {filename}",
                     )
@@ -258,7 +241,7 @@ class DumpGenerator:
                     +"(If images URL are unavailable, you can ignore this warning.)\n"
                     +"(In most cases, if the number of .desc files equals the number of \n"
                     + "images.txt records, you can ignore this warning, images dump was completed.)")
-                sys.exit()
+                sys.exit(9)
             else: # c_desc == c_images == len(images)
                 complete = True
             if complete:
@@ -267,7 +250,7 @@ class DumpGenerator:
             else:
                 # we resume from previous image, which may be corrupted (or missing
                 # .desc)  by the previous session ctrl-c or abort
-                Image.generateImageDump(
+                Image.generate_image_dump(
                     config=config,
                     other=other,
                     images=images,

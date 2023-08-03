@@ -1,9 +1,11 @@
 import hashlib
+from pathlib import Path
 import re
 import sys
+from typing import Union
 
 
-def cleanHTML(raw: str = "") -> str:
+def clean_HTML(raw: str = "") -> str:
     """Extract only the real wiki content and remove rubbish
     This function is ONLY used to retrieve page titles
     and file names when no API is available
@@ -29,11 +31,11 @@ def cleanHTML(raw: str = "") -> str:
     else:
         print(raw[:250])
         print("This wiki doesn't use marks to split content")
-        sys.exit()
+        sys.exit(1)
     return raw
 
 
-def undoHTMLEntities(text: str = "") -> str:
+def undo_HTML_entities(text: str = "") -> str:
     """Undo some HTML codes"""
 
     # i guess only < > & " ' need conversion
@@ -47,7 +49,7 @@ def undoHTMLEntities(text: str = "") -> str:
     return text
 
 
-def removeIP(raw: str = "") -> str:
+def remove_IP(raw: str = "") -> str:
     """Remove IP from HTML comments <!-- -->"""
 
     raw = re.sub(r"\d+\.\d+\.\d+\.\d+", "0.0.0.0", raw)
@@ -62,7 +64,7 @@ def removeIP(raw: str = "") -> str:
     return raw
 
 
-def cleanXML(xml: str = "") -> str:
+def clean_XML(xml: str = "") -> str:
     """Trim redundant info from the XML however it comes"""
     # do not touch XML codification, leave AS IS
     # EDIT 2022: we are making this explicitly Unicode
@@ -76,11 +78,16 @@ def cleanXML(xml: str = "") -> str:
         xml = xml.split("</mediawiki>")[0]
     return xml
 
-def sha1File(filename: str = "") -> str:
+def sha1sum(path: Union[str, Path]) -> str:
     """Return the SHA1 hash of a file"""
+    if isinstance(path, str):
+        path = Path(path).expanduser().resolve()
+
+    if not path.is_file():
+        raise FileNotFoundError(f"File {path} does not exist or is not a file")
 
     sha1 = hashlib.sha1()
-    with open(filename, "rb") as f:
+    with open(path, "rb") as f:
         while True:
             data = f.read(65536)
             if not data:

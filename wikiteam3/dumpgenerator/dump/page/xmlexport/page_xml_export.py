@@ -1,22 +1,25 @@
-from typing import *
 import re
 import sys
 import time
+from typing import Dict
 
 import requests
 
 from wikiteam3.dumpgenerator.exceptions import ExportAbortedError, PageMissingError
-from wikiteam3.dumpgenerator.api import handleStatusCode
-from wikiteam3.dumpgenerator.log import logerror
+from wikiteam3.dumpgenerator.api import handle_StatusCode
+from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import uprint
 from wikiteam3.dumpgenerator.config import Config
 
 
-def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, session=None) -> str:
+def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, session: requests.Session=None) -> str:
     """"""
     # returns a XML containing params['limit'] revisions (or current only), ending in </mediawiki>
     # if retrieving params['limit'] revisions fails, returns a current only version
     # if all fail, returns the empty string
+
+    # if not headers:
+    #     headers = session.headers
     xml = ""
     c = 0
     maxseconds = 100  # max seconds to wait in a single sleeping
@@ -45,7 +48,7 @@ def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, s
             )
             if config.failfast:
                 print("Exit, it will be for another time")
-                sys.exit()
+                sys.exit(1)
             # If it's not already what we tried: our last chance, preserve only the last revision...
             # config.curonly means that the whole dump is configured to save only the last,
             # params['curonly'] should mean that we've already tried this
@@ -54,17 +57,17 @@ def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, s
             if not config.curonly and "curonly" not in params:
                 print("    Trying to save only the last revision for this page...")
                 params["curonly"] = 1
-                logerror(
+                log_error(
                     config=config, to_stdout=True,
                     text='Error while retrieving the full history of "%s". Trying to save only the last revision for this page'
                     % (params["pages"]),
                 )
                 return getXMLPageCore(
-                    headers=headers, params=params, config=config, session=session
+                    params=params, config=config, session=session
                 )
             else:
                 print("    Saving in the errors log, and skipping...")
-                logerror(
+                log_error(
                     config=config, to_stdout=True,
                     text='Error while retrieving the last revision of "%s". Skipping.'
                     % (params["pages"]),
@@ -73,10 +76,10 @@ def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, s
                 return ""  # empty xml
         # FIXME HANDLE HTTP Errors HERE
         try:
-            r = session.post(
-                url=config.index, params=params, headers=headers, timeout=10
+            r = session.get(
+                url=config.index, params=params, timeout=10
             )
-            handleStatusCode(r)
+            handle_StatusCode(r)
             xml = r.text
         except requests.exceptions.ConnectionError as e:
             print("    Connection error: %s" % (str(e.args[0])))

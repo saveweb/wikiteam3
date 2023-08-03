@@ -1,9 +1,9 @@
 import dataclasses
 import json
-import sys
-from typing import *
+from typing import List
 
-def _dataclass_from_dict(klass_or_obj, d):
+
+def _dataclass_from_dict(klass_or_obj, d: dict):
     if isinstance(klass_or_obj, type): # klass
         ret = klass_or_obj()
     else:
@@ -68,31 +68,26 @@ class Config:
 
     templates: bool = False
 
-def newConfig(configDict) -> Config:
+def new_config(configDict) -> Config:
     return _dataclass_from_dict(Config, configDict)
 
-def loadConfig(config: Config=None, configfilename=""):
+def load_config(config: Config=None, config_filename=""):
     """Load config file"""
 
-    configDict = dataclasses.asdict(config)
+    config_dict = dataclasses.asdict(config)
 
     if config.path:
         try:
-            with open(
-                "{}/{}".format(config.path, configfilename), encoding="utf-8"
-            ) as infile:
-                configDict.update(json.load(infile))
-            return newConfig(configDict)
-        except:
+            with open(f"{config.path}/{config_filename}", encoding="utf-8") as infile:
+                config_dict.update(json.load(infile))
+            return new_config(config_dict)
+        except FileNotFoundError:
             pass
 
-    print("There is no config file. we can't resume. Start a new dump.")
-    sys.exit()
+    raise RuntimeError("There is no config file. we can't resume.")
 
-def saveConfig(config: Config=None, configfilename=""):
+def save_config(config: Config, config_filename: str):
     """Save config file"""
 
-    with open(
-        "{}/{}".format(config.path, configfilename), "w", encoding="utf-8"
-    ) as outfile:
+    with open(f"{config.path}/{config_filename}", "w", encoding="utf-8") as outfile:
         json.dump(dataclasses.asdict(config), outfile)
