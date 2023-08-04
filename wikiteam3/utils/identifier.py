@@ -36,11 +36,11 @@ def standardize_url(url: str, strict: bool = True):
         raise ValueError('URL contains newline')
     url = unquote(url, encoding='utf-8', errors='strict')
 
-    if not url.startswith('http://') and not url.startswith('https://') and not strict:
+    if not url.startswith('http://') and not url.startswith('https://'):
+        if strict:
+            raise ValueError(f'HTTP(s) scheme is missing: {url}') 
         print('Warning: URL scheme is missing, assuming http://')
         url = 'http://' + url
-    elif strict:
-        raise ValueError(f'HTTP(s) scheme is missing: {url}') 
 
     Url = urlparse(url)
     idna_hostname = Url.hostname.encode('idna').decode('utf-8')
@@ -66,7 +66,7 @@ def url2prefix(url: str, ascii_slugify: bool = True):
     1. standardize url (see `standardize_url()`)
     2. remove last slash if exists
     3. truncate to last slash
-    4. remove "/any.php" suffix (`r"(/[^/]+\.php)"`)
+    4. remove "/any.php" suffix
     5. remove ~ tilde
     6. sulgify the url path if `ascii_slugify` is True
     7. replace port(`:`) with underscore(`_`)
