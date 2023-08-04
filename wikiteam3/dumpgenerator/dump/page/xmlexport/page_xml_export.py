@@ -92,7 +92,7 @@ def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, s
     return xml
 
 
-def getXMLPageWithExport(config: Config=None, title="", verbose=True, session=None):
+def getXMLPageWithExport(config: Config, title: str, verbose=True, session=None):
     """Get the full history (or current only) of a page"""
 
     # if server errors occurs while retrieving the full page history, it may return [oldest OK versions] + last version, excluding middle revisions, so it would be partialy truncated
@@ -122,12 +122,7 @@ def getXMLPageWithExport(config: Config=None, title="", verbose=True, session=No
         raise ExportAbortedError(config.index)
     if "</page>" not in xml:
         raise PageMissingError(params["title"], xml)
-    else:
-        # strip these sha1s sums which keep showing up in the export and
-        # which are invalid for the XML schema (they only apply to
-        # revisions)
-        xml = re.sub(r"\n\s*<sha1>\w+</sha1>\s*\n", "\n", xml)
-        xml = re.sub(r"\n\s*<sha1/>\s*\n", "\n", xml)
+
 
     yield xml.split("</page>")[0]
 
