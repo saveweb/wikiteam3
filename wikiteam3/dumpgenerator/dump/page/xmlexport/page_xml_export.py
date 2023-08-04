@@ -12,6 +12,10 @@ from wikiteam3.utils import uprint
 from wikiteam3.dumpgenerator.config import Config
 
 
+HISTORY_MIN_CHUNKSIZE = 2
+""" To loop over all the revisions, we need to retrieve at least 2 revisions at a time. """
+
+
 def getXMLPageCore(*, headers: Dict=None, params: Dict, config: Config, session: requests.Session) -> str:
     """"""
     # returns a XML containing params['limit'] revisions (or current only), ending in </mediawiki>
@@ -32,14 +36,23 @@ def getXMLPageCore(*, headers: Dict=None, params: Dict, config: Config, session:
                 increment if increment * c < maxseconds else maxseconds
             )  # incremental until maxseconds
             print(
-                '    In attempt %d, XML for "%s" is wrong. Waiting %d seconds and reloading...'
-                % (c, params["pages"], wait)
+                f'    In attempt {c}, XML for "{params["pages"]}" is wrong. Waiting {wait} seconds and reloading...'
             )
             time.sleep(wait)
             # reducing server load requesting smallest chunks (if curonly then
             # limit = 1 from mother function)
             if params["limit"] > 1:
-                params["limit"] = params["limit"] / 2  # half
+                # NOTE: if limit is float and betwennt 0 to 1, the MW backend will force-int it to 0
+                new_limit: int = params["limit"] // 2  # half
+                if new_limit < HISTORY_MIN_CHUNKSIZE:
+                    new_limit = HISTORY_MIN_CHUNKSIZE
+                
+                # set new limit
+                if new_limit != params["limit"]:
+                    print(
+                        f'    Reducing the chunksize of revisions to retrieve from {params["limit"]} to {new_limit}'
+                    )
+                    params["limit"] = new_limit
         if c >= maxretries:
             print("    We have retried %d times" % (c))
             print(
