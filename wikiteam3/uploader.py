@@ -64,14 +64,17 @@ def read_ia_keys(path: Path) -> IAKeys:
 def upload(arg: Args):
     ia_keys = read_ia_keys(arg.keys_file)
     wikidump_dir = arg.wikidump_dir
-    wikidump_dir.name # {prefix}-20230730-wikidump
+    wikidump_dir.name # {prefix}-{wikidump_dumpdate}-wikidump (e.g. wiki.example.org-20230730-wikidump)
 
     assert wikidump_dir.name.endswith("-wikidump"), f"Expected wikidump_dir to end with -wikidump, got {wikidump_dir.name}"
 
     wikidump_dumpdate = wikidump_dir.name.split("-")[-2]
-    assert wikidump_dumpdate.isdigit() == 8
-    assert int(wikidump_dumpdate) > 20230730
-    assert datetime.strptime(wikidump_dumpdate, "%Y%m%d")
+    if (not wikidump_dumpdate.isdigit()) or (not 20230730 < int(wikidump_dumpdate) < 9999_99_99):
+        raise ValueError(f"Expected wikidump_dumpdate to be an 8-digit number, got {wikidump_dumpdate}")
+    try:
+        datetime.strptime(wikidump_dumpdate, "%Y%m%d")
+    except ValueError as e:
+        raise ValueError(f"Expected wikidump_dumpdate to be a valid date, got {wikidump_dumpdate}") from e
 
     # NOTE: Punycoded domain may contain multiple `-`
     # e.g. `xn--6qq79v.xn--rhqv96g-20230730-wikidump` (你好.世界_美丽-20230730-wikidump)
@@ -80,10 +83,7 @@ def upload(arg: Args):
     
 
 
-    try:
-        prefix = url2prefix_from_config(Config(api=wiki))
-    except KeyError:
-        raise
+    prefix = url2prefix_from_config(config)
 
     wikiname = prefix.split("-")[0]
     dumps: List[Path] = []
