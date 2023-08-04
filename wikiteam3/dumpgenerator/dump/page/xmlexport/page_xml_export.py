@@ -12,7 +12,7 @@ from wikiteam3.utils import uprint
 from wikiteam3.dumpgenerator.config import Config
 
 
-def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, session: requests.Session=None) -> str:
+def getXMLPageCore(*, headers: Dict=None, params: Dict, config: Config, session: requests.Session) -> str:
     """"""
     # returns a XML containing params['limit'] revisions (or current only), ending in </mediawiki>
     # if retrieving params['limit'] revisions fails, returns a current only version
@@ -76,7 +76,7 @@ def getXMLPageCore(headers: Dict=None, params: Dict=None, config: Config=None, s
                 return ""  # empty xml
         # FIXME HANDLE HTTP Errors HERE
         try:
-            r = session.get(
+            r = session.post(
                 url=config.index, params=params, timeout=10
             )
             handle_StatusCode(r)
