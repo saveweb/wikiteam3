@@ -90,4 +90,4 @@ def save_config(config: Config, config_filename: str):
     """Save config file"""
 
     with open(f"{config.path}/{config_filename}", "w", encoding="utf-8") as outfile:
-        json.dump(dataclasses.asdict(config), outfile)
+        json.dump(dataclasses.asdict(config), outfile, indent=4, sort_keys=True)
