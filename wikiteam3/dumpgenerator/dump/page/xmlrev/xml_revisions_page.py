@@ -86,8 +86,7 @@ def makeXmlFromPage(page: dict, arvcontinue) -> str:
                 revision.append(E.model(rev["contentmodel"]))
             if "contentformat" in rev:
                 revision.append(E.format(rev["contentformat"]))
-            # Sometimes a missing parentid is not replaced with a 0 as it should.
-            if "parentid" in rev:
+            if "parentid" in rev and int(rev["parentid"]) > 0:
                 revision.append(E.parentid(str(rev["parentid"])))
 
             if "minor" in rev:

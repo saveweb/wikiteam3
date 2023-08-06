@@ -22,9 +22,9 @@ def reconstructRevisions(root=None):
             rev_ = ET.SubElement(page,'revision')
             # id
             ET.SubElement(rev_,'id').text = rev.attrib['revid']
-            # parentid (optional, export-0.7+)
-            if 'parentid' in rev.attrib:
-                ET.SubElement(rev_,'parentid').text = rev.attrib['parentid']
+            # parentid (optional, export-0.7+, positiveInteger)
+            if 'parentid' in rev.attrib and int(rev.attrib['parentid']) > 0:
+                ET.SubElement(rev_,'parentid').text = rev.attrib['parentid'] 
             # timestamp
             ET.SubElement(rev_,'timestamp').text = rev.attrib['timestamp']
             # contributor
