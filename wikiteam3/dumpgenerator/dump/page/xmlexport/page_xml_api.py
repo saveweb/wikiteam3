@@ -13,10 +13,17 @@ from wikiteam3.dumpgenerator.exceptions import PageMissingError, ExportAbortedEr
 from wikiteam3.dumpgenerator.log import log_error
 
 
-def reconstructRevisions(root=None):
+def reconstructRevisions(root: ET.Element):
     #print ET.tostring(rev)
     page = ET.Element('stub')
     edits = 0
+
+    if root.find('query').find('pages').find('page').find('revisions') is None:
+        # case: https://wiki.archlinux.org/index.php?title=Arabic&action=history
+        # No matching revisions were found.
+        print('!!! No revisions found in page !!!')
+        return page, edits # no revisions
+
     for rev in root.find('query').find('pages').find('page').find('revisions').findall('rev'):
         try:
             rev_ = ET.SubElement(page,'revision')
@@ -154,13 +161,13 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
         params = {'titles': title_, 'action': 'query', 'format': 'xml',
                   'prop': 'revisions',
                   'rvprop': # rvprop: <https://www.mediawiki.org/wiki/API:Revisions#Parameter_history>
-                            'timestamp|user|comment|content|' # MW v????
-                            'ids|flags|size|' # MW v1.11
-                            'userid|' # MW v1.17
-                            'sha1|' # MW v1.19
-                            'contentmodel|' # MW v1.21
-                            ,
-
+                            '|'.join([
+                                'timestamp', 'user', 'comment', 'content', # MW v????
+                                'ids', 'flags', 'size', # MW v1.11
+                                'userid', # MW v1.17
+                                'sha1', # MW v1.19
+                                'contentmodel' # MW v1.21
+                             ]),
                   'rvcontinue': None,
                   'rvlimit': config.api_chunksize
                   }
@@ -173,7 +180,11 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
         numberofedits = 0
         ret = ''
         continueKey: Optional[str] = None
+
+        retries_left = config.retries
         while True:
+            if retries_left <= 0:
+                raise RuntimeError("Retries exceeded")
             # in case the last request is not right, saving last time's progress
             if not firstpartok:
                 try:
@@ -187,11 +198,17 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
                 return
             try:
                 root = ET.fromstring(xml.encode('utf-8'))
-            except:
+            except Exception as e:
+                retries_left -= 1
+                traceback.print_exc()
+                print("Retrying...")
                 continue
             try:
                 retpage = root.find('query').find('pages').find('page')
-            except:
+            except Exception as e:
+                retries_left -= 1
+                traceback.print_exc()
+                print("Retrying...")
                 continue
             if 'missing' in retpage.attrib or 'invalid' in retpage.attrib:
                 print('Page not found')
@@ -205,11 +222,15 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
                     ret += '    <id>%s</id>\n' % (retpage.attrib['pageid'])
                 except:
                     firstpartok = False
+                    retries_left -= 1
+                    traceback.print_exc()
+                    print("Retrying...")
                     continue
                 else:
                     firstpartok = True
                     yield ret
 
+            # find the continue key
             continueVal = None
             if root.find('continue') is not None:
                 # uses continue.rvcontinue
@@ -236,31 +257,37 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
                         break
             if continueVal is not None:
                 params[continueKey] = continueVal
+
+            # build the revision tags
             try:
                 ret = ''
                 edits = 0
 
                 # transform the revision
                 rev_, edits = reconstructRevisions(root=root)
+                numberofedits += edits
                 xmldom = MD.parseString(b'<stub1>' + ET.tostring(rev_) + b'</stub1>')
                 # convert it into text in case it throws MemoryError
                 # delete the first three line and last two line,which is for setting the indent
                 ret += ''.join(xmldom.toprettyxml(indent='  ').splitlines(True)[3:-2])
                 yield ret
-                numberofedits += edits
                 if config.curonly or continueVal is None:  # no continue
                     break
             except:
+                retries_left -= 1
                 traceback.print_exc()
+                print("Retrying...")
                 params['rvcontinue'] = lastcontinue
                 ret = ''
         yield '  </page>\n'
-    else:
+        if numberofedits == 0:
+            raise PageMissingError(title=title_, xml=xml)
+    else: # curonly
         xml = getXMLPageCoreWithApi(params=params, config=config, session=session)
         if xml == "":
             raise ExportAbortedError(config.index)
         if not "</page>" in xml:
-            raise PageMissingError(params['titles'], xml)
+            raise PageMissingError(title_, xml)
         else:
             # strip these sha1s sums which keep showing up in the export and
             # which are invalid for the XML schema (they only apply to

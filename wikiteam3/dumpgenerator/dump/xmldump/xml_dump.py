@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 import re
 import sys
 
@@ -45,7 +46,7 @@ def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=
     except UnicodeEncodeError as e:
         print(e)
 
-def doXMLExportDump(config: Config=None, session=None, xmlfile=None, lastPage=None):
+def doXMLExportDump(config: Config=None, session=None, xmlfile: TextIOWrapper=None, lastPage=None):
     print(
         '\nRetrieving the XML for every page\n'
     )
