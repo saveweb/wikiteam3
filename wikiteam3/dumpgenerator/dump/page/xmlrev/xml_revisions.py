@@ -1,6 +1,7 @@
 from datetime import datetime
 import sys
 import time
+from typing import Dict, List
 from urllib.parse import urlparse
 import lxml.etree
 
@@ -11,7 +12,7 @@ from wikiteam3.dumpgenerator.exceptions import PageMissingError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI
 from wikiteam3.dumpgenerator.api.page_titles import readTitles
-from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import makeXmlFromPage, makeXmlPageFromRaw
+from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import make_xml_from_page, make_xml_page_from_raw
 from wikiteam3.dumpgenerator.config import Config
 
 ALL_NAMESPACE = -1
@@ -22,40 +23,42 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
     else:
         # namespaces, namespacenames = getNamespacesAPI(config=config, session=session)
         namespaces = [ALL_NAMESPACE] # magic number refers to "all"
-    _nscontinue = nscontinue
-    _arvcontinue = arvcontinue
+    _nscontinue_input = nscontinue
+    _arvcontinue_input = arvcontinue
+    del nscontinue
+    del arvcontinue
 
     for namespace in namespaces:
         # Skip retrived namespace
         if namespace == ALL_NAMESPACE:
             assert len(namespaces) == 1, \
                 "Only one item shoule be there when 'all' namespace are specified"
-            _nscontinue = None
+            _nscontinue_input = None
         else:
-            if _nscontinue is not None:
-                if namespace != _nscontinue:
+            if _nscontinue_input is not None:
+                if namespace != _nscontinue_input:
                     print("Skipping already exported namespace: %d" % namespace)
                     continue
-                _nscontinue = None
+                _nscontinue_input = None
 
         print("Trying to export all revisions from namespace %s" % namespace)
         # arvgeneratexml exists but was deprecated in 1.26 (while arv is from 1.27?!)
-        arvparams = {
+        arv_params = {
             "action": "query",
             "list": "allrevisions",
             "arvlimit": config.api_chunksize,
             "arvdir": "newer",
         }
         if namespace != ALL_NAMESPACE:
-            arvparams['arvnamespace'] = namespace
-        if _arvcontinue is not None:
-            arvparams['arvcontinue'] = _arvcontinue
+            arv_params['arvnamespace'] = namespace
+        if _arvcontinue_input is not None:
+            arv_params['arvcontinue'] = _arvcontinue_input
 
         if not config.curonly:
             # We have to build the XML manually...
             # Skip flags, presumably needed to add <minor/> which is in the schema.
             # Also missing: parentid and contentformat.
-            arvparams[
+            arv_params[
                 "arvprop"
             ] = "ids|timestamp|user|userid|size|sha1|contentmodel|comment|content|flags"
             print(
@@ -63,8 +66,8 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
             )
             while True:
                 try:
-                    arvrequest = site.api(
-                        http_method=config.http_method, **arvparams
+                    allrevs_response = site.api(
+                        http_method=config.http_method, **arv_params
                     )
                 except requests.exceptions.HTTPError as e:
                     if (
@@ -96,23 +99,31 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                     else:
                         raise
 
-                for page in arvrequest["query"]["allrevisions"]:
-                    yield makeXmlFromPage(page, arvparams.get("arvcontinue", ""))
-                if "continue" in arvrequest:
-                    arvparams["arvcontinue"] = arvrequest["continue"]["arvcontinue"]
+                for page in allrevs_response["query"]["allrevisions"]:
+                    yield make_xml_from_page(page, arv_params.get("arvcontinue", ""))
+
+                # find the continue parameter
+                if "continue" in allrevs_response:
+                    # handle infinite loop
+                    if arv_params.get("arvcontinue", None) == allrevs_response["continue"]["arvcontinue"]:
+                        allrevs_response = handle_infinite_loop(
+                            allrevs_response=allrevs_response, arv_params=arv_params, config=config, site=site
+                        )
+                    # update continue parameter
+                    arv_params["arvcontinue"] = allrevs_response["continue"]["arvcontinue"]
                 else:
                     # End of continuation. We are done with this namespace.
                     break
 
-        else:
+        else: # curonly
             # FIXME: this is not curonly, just different strategy to do all revisions
             # Just cycle through revision IDs and use the XML as is
             print("Trying to list the revisions and to export them one by one")
             # We only need the revision ID, all the rest will come from the raw export
-            arvparams["arvprop"] = "ids"
+            arv_params["arvprop"] = "ids"
             try:
-                arvrequest = site.api(
-                    http_method=config.http_method, **arvparams
+                allrevs_response = site.api(
+                    http_method=config.http_method, **arv_params
                 )
             except requests.exceptions.HTTPError as e:
                 if (
@@ -121,21 +132,23 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                 ):
                     print("POST request to the API failed, retrying with GET")
                     config.http_method = "GET"
-                    continue
+                    raise NotImplementedError("FIXME: here we should retry the same namespace")
+                    continue # FIXME: here we should retry the same namespace
                 else:
                     raise
-            exportparams = {
+            export_params = {
                 "action": "query",
                 "export": "1",
             }
             # Skip the namespace if it's empty
-            if len(arvrequest["query"]["allrevisions"]) < 1:
+            if len(allrevs_response["query"]["allrevisions"]) < 1:
+                # TODO: log this
                 continue
             # Repeat the arvrequest with new arvparams until done
             while True:
                 # Reset revision IDs from the previous batch from arv
-                revids = []
-                for page in arvrequest["query"]["allrevisions"]:
+                revids: List[str] = []
+                for page in allrevs_response["query"]["allrevisions"]:
                     for revision in page["revisions"]:
                         revids.append(str(revision["revid"]))
                 print(
@@ -148,10 +161,10 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                 # but need to figure out the continuation and avoid that the API
                 # chooses to give us only the latest for each page
                 for revid in revids:
-                    exportparams["revids"] = revid
+                    export_params["revids"] = revid
                     try:
-                        exportrequest = site.api(
-                            http_method=config.http_method, **exportparams
+                        export_response = site.api(
+                            http_method=config.http_method, **export_params
                         )
                     except requests.exceptions.HTTPError as e:
                         if (
@@ -162,8 +175,8 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                                 "POST request to the API failed, retrying with GET"
                             )
                             config.http_method = "GET"
-                            exportrequest = site.api(
-                                http_method=config.http_method, **exportparams
+                            export_response = site.api(
+                                http_method=config.http_method, **export_params
                             )
                         else:
                             raise
@@ -172,15 +185,17 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                     # but we only need the inner <page>: we can live with
                     # duplication and non-ordering of page titles, but the
                     # repeated header is confusing and would not even be valid
-                    xml = exportrequest["query"]["export"]["*"]  # type(xml) == str
-                    yield makeXmlPageFromRaw(xml, arvparams.get("arvcontinue", ""))
+                    xml: str = export_response["query"]["export"]["*"]
+                    yield make_xml_page_from_raw(xml, arv_params.get("arvcontinue", ""))
 
-                if "continue" in arvrequest:
+                if "continue" in allrevs_response:
                     # Get the new ones
-                    arvparams["arvcontinue"] = arvrequest["continue"]["arvcontinue"]
+                    # NOTE: don't need to handle infinite loop here, because we are only getting the revids
+
+                    arv_params["arvcontinue"] = allrevs_response["continue"]["arvcontinue"]
                     try:
-                        arvrequest = site.api(
-                            http_method=config.http_method, **arvparams
+                        allrevs_response = site.api(
+                            http_method=config.http_method, **arv_params
                         )
                     except requests.exceptions.HTTPError as e:
                         if (
@@ -191,8 +206,8 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                                 "POST request to the API failed, retrying with GET"
                             )
                             config.http_method = "GET"
-                            arvrequest = site.api(
-                                http_method=config.http_method, **arvparams
+                            allrevs_response = site.api(
+                                http_method=config.http_method, **arv_params
                             )
                     except requests.exceptions.ReadTimeout as err:
                         # As above
@@ -200,7 +215,7 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                         print("Sleeping for 20 seconds")
                         time.sleep(20)
                         # But avoid rewriting the same revisions
-                        arvrequest["query"]["allrevisions"] = []
+                        allrevs_response["query"]["allrevisions"] = []
                         continue
                 else:
                     # End of continuation. We are done with this namespace.
@@ -225,7 +240,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 "export": "1",
             }
             try:
-                exportrequest = site.api(
+                export_response = site.api(
                     http_method=config.http_method, **exportparams
                 )
             except requests.exceptions.HTTPError as e:
@@ -235,18 +250,18 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 ):
                     print("POST request to the API failed, retrying with GET")
                     config.http_method = "GET"
-                    exportrequest = site.api(
+                    export_response = site.api(
                         http_method=config.http_method, **exportparams
                     )
                 else:
                     raise
 
-            xml = str(exportrequest["query"]["export"]["*"])
+            xml = str(export_response["query"]["export"]["*"])
             c += 1
             if c % 10 == 0:
                 print(f"\n->  Downloaded {c} pages\n")
             # Because we got the fancy XML from the JSON format, clean it:
-            yield makeXmlPageFromRaw(xml, None)
+            yield make_xml_page_from_raw(xml, None)
     else:
         # This is the closest to what we usually do with Special:Export:
         # take one title at a time and try to get all revisions exported.
@@ -260,7 +275,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
         # TODO: Decide a suitable number of a batched request. Careful:
         # batched responses may not return all revisions.
         for titlelist in readTitles(config, session=session, start=start, batch=False):
-            if type(titlelist) is not list:
+            if isinstance(titlelist, str):
                 titlelist = [titlelist]
             for title in titlelist:
                 print(f"    {title}")
@@ -274,7 +289,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 "rvprop": "ids|timestamp|user|userid|size|sha1|contentmodel|comment|content|flags",
             }
             try:
-                prequest = site.api(http_method=config.http_method, **pparams)
+                api_response = site.api(http_method=config.http_method, **pparams)
             except requests.exceptions.HTTPError as e:
                 if (
                         e.response.status_code == 405
@@ -282,7 +297,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 ):
                     print("POST request to the API failed, retrying with GET")
                     config.http_method = "GET"
-                    prequest = site.api(
+                    api_response = site.api(
                         http_method=config.http_method, **pparams
                     )
                 else:
@@ -301,7 +316,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 # or the new one after continuation at the bottom of this while loop.
                 # The array is called "pages" even if there's only one.
                 try:
-                    pages = prequest["query"]["pages"]
+                    pages = api_response["query"]["pages"]
                 except KeyError:
                     log_error(
                         config=config, to_stdout=True,
@@ -312,7 +327,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                 # Go through the data we got to build the XML.
                 for pageid in pages:
                     try:
-                        xml = makeXmlFromPage(pages[pageid], None)
+                        xml = make_xml_from_page(pages[pageid], None)
                         yield xml
                     except PageMissingError:
                         log_error(
@@ -323,18 +338,18 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                         continue
 
                 # Get next batch of revisions if there's more.
-                if "continue" in prequest.keys():
+                if "continue" in api_response.keys():
                     print("Getting more revisions for the page")
-                    for key, value in prequest["continue"].items():
+                    for key, value in api_response["continue"].items():
                         pparams[key] = value
-                elif "query-continue" in prequest.keys():
-                    rvstartid = prequest["query-continue"]["revisions"]["rvstartid"]
+                elif "query-continue" in api_response.keys():
+                    rvstartid = api_response["query-continue"]["revisions"]["rvstartid"]
                     pparams["rvstartid"] = rvstartid
                 else:
                     break
 
                 try:
-                    prequest = site.api(
+                    api_response = site.api(
                         http_method=config.http_method, **pparams
                     )
                 except requests.exceptions.HTTPError as e:
@@ -344,7 +359,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
                     ):
                         print("POST request to the API failed, retrying with GET")
                         config.http_method = "GET"
-                        prequest = site.api(
+                        api_response = site.api(
                             http_method=config.http_method, **pparams
                         )
 
@@ -416,3 +431,39 @@ def getXMLRevisions(config: Config=None, session=None, useAllrevision=True, last
             print(e)
             print("This mwclient version seems not to work for us. Exiting.")
             sys.exit(1)
+
+
+def handle_infinite_loop(allrevs_response: Dict, arv_params: Dict, config: Config, site: mwclient.Site) -> Dict:
+    """
+    return new allrevs_response without arvprop=content|comment if the response is truncated
+    """
+
+    assert len(allrevs_response["query"]["allrevisions"]) == 0, \
+        "We should have received no revisions if we are stuck in a infinite loop"
+    print("WARNING: API returned continue parameter that doesn't change, we might be stuck in a loop")
+    print(f"current continue parameter: {arv_params.get('arvcontinue')}")
+    print(f"API warnings: {allrevs_response.get('warnings', {})}")
+
+    if "truncated" in allrevs_response.get("warnings",{}).get("result",{}).get("*",""):
+        # workaround for [truncated API requests for "allrevisions" causes infinite loop ]
+        # (https://github.com/mediawiki-client-tools/mediawiki-scraper/issues/166)
+        print("Let's try to skip this revision and continue...")
+        _arv_params_temp = arv_params.copy()
+        # make sure response is small
+        _arv_params_temp['arvprop'] = _arv_params_temp['arvprop'].replace('|content', '').replace('|comment', '') 
+        _arv_params_temp["arvlimit"] = 1
+
+        allrevs_response_new = site.api(
+            http_method=config.http_method, **_arv_params_temp
+        )
+        assert len(allrevs_response_new["query"]["allrevisions"]) == 1, \
+            "Couldn't get a single revision to skip the infinite loop" # arvlimit=1
+        assert arv_params.get("arvcontinue", None) != allrevs_response_new.get("continue", {}).get("arvcontinue", None), \
+            "??? Infinite loop is still there ???"
+        # success, let's continue
+        log_error(config=config, to_stdout=True,
+                text=f"ERROR: API returned continue parameter '{arv_params.get('arvcontinue')}' that doesn't change, "
+                f"skipped this revision to avoid infinite loop")
+        return allrevs_response_new
+    else:
+        raise NotImplementedError("Unable to solve the infinite loop automatically")

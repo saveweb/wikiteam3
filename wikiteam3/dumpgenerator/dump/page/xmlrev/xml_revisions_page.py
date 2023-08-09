@@ -1,23 +1,35 @@
+from typing import Dict, Optional
+import xml.etree.ElementTree as ET
+
 from lxml import etree
 from lxml.builder import E
 
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
 
-def makeXmlPageFromRaw(xml, arvcontinue) -> str:
-    """Discard the metadata around a <page> element in <mediawiki> string"""
-    root = etree.XML(xml)
-    find = etree.XPath("//*[local-name() = 'page']")
-    page = find(root)[0]
+def make_xml_page_from_raw(xml: str, arvcontinue: Optional[str] = None) -> str:
+    """Discard the metadata around a <page> element in <mediawiki> string
+
+    arvcontinue: None -> disable arvcontinue (default)
+    arvcontinue: string (including empty "") -> write arvcontinue to XML (for api:allrevisions resuming)
+    """
+    tree: ET.ElementTree = ET.XML(xml)
+    page: ET.Element = tree.find(".//{*}page")
+
     if arvcontinue is not None:
         page.attrib['arvcontinue'] = arvcontinue
-    # The tag will inherit the namespace, like:
-    # <page xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    # FIXME: pretty_print doesn't seem to work, only adds a newline
-    return etree.tostring(page, pretty_print=True, encoding="unicode")
+    # remove namespace prefix
+    for elem in tree.iter():
+        elem.tag = elem.tag.split('}', 1)[-1]
+
+    return ET.tostring(page, encoding="unicode", method="xml", xml_declaration=False)
 
 
-def makeXmlFromPage(page: dict, arvcontinue) -> str:
-    """Output an XML document as a string from a page as in the API JSON"""
+def make_xml_from_page(page: Dict, arvcontinue: Optional[str] = None) -> str:
+    """Output an XML document as a string from a page as in the API JSON
+
+    arvcontinue: None -> disable arvcontinue (default)
+    arvcontinue: string (including empty "") -> write arvcontinue to XML (for api:allrevisions resuming)
+    """
     try:
         p = E.page(
             E.title(str(page["title"])),
