@@ -6,3 +6,7 @@
 *.json text=auto
 *.txt text=auto
 *.md text=auto
+
+*.html linguist-detectable=false
+
+wikiteam3/dumpgenerator/test/data/* linguist-vendored
