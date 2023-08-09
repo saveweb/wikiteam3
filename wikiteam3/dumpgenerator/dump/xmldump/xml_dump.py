@@ -8,7 +8,7 @@ from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.utils import url2prefix_from_config
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
 from wikiteam3.dumpgenerator.log import log_error
-from wikiteam3.dumpgenerator.api.page_titles import readTitles
+from wikiteam3.dumpgenerator.api.page_titles import read_titles
 from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.utils import clean_XML, undo_HTML_entities
@@ -64,7 +64,7 @@ def doXMLExportDump(config: Config=None, session=None, xmlfile: TextIOWrapper=No
         lock = False
 
     c = 1
-    for title in readTitles(config, session=session, start=start):
+    for title in read_titles(config, session=session, start=start):
         if not title:
             continue
         if title == start:  # start downloading from start, included

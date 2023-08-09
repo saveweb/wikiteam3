@@ -1,5 +1,6 @@
 import re
 import sys
+from typing import Optional, Union
 from urllib.parse import urlparse
 
 import mwclient
@@ -232,8 +233,17 @@ def checkTitleOk(config: Config=None, ):
     return True
 
 
-def readTitles(config: Config=None, session=None, start=None, batch=False):
-    """Read title list from a file, from the title "start" """
+def read_titles(config: Config=None, session=None, start: Optional[str]=None, batch: Union[bool,int]=False):
+    """Read title list from a file, from the title "start" 
+    
+    start: title to start reading from
+    batch: if False, yield one title at a time, if int, yield a list of titles of that size
+    """
+
+    assert batch is False or isinstance(batch, int), "batch must be False or int"
+    if isinstance(batch, int):
+        assert batch > 0, "batch must be positive"
+
     if not checkTitleOk(config):
         getPageTitles(config=config, session=session)
 
@@ -266,3 +276,5 @@ def readTitles(config: Config=None, session=None, start=None, batch=False):
                 else:
                     yield titlelist
                     titlelist = []
+        if batch and len(titlelist) > 0:
+            yield titlelist

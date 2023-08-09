@@ -11,7 +11,7 @@ import requests
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI
-from wikiteam3.dumpgenerator.api.page_titles import readTitles
+from wikiteam3.dumpgenerator.api.page_titles import read_titles
 from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import make_xml_from_page, make_xml_page_from_raw
 from wikiteam3.dumpgenerator.config import Config
 
@@ -228,7 +228,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
         # We could also use the allpages API as generator but let's be consistent.
         print("Getting titles to export the latest revision for each")
         c = 0
-        for title in readTitles(config, session=session, start=start):
+        for title in read_titles(config, session=session, start=start):
             # TODO: respect verbose flag, reuse output from getXMLPage
             print(f"    {title}")
             # TODO: as we're doing one page and revision at a time, we might
@@ -274,7 +274,7 @@ def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Si
         titlelist = []
         # TODO: Decide a suitable number of a batched request. Careful:
         # batched responses may not return all revisions.
-        for titlelist in readTitles(config, session=session, start=start, batch=False):
+        for titlelist in read_titles(config, session=session, start=start, batch=False):
             if isinstance(titlelist, str):
                 titlelist = [titlelist]
             for title in titlelist:
