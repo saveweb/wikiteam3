@@ -109,10 +109,9 @@ def getArgumentParser():
         help="Bypass CDN image compression. (CloudFlare Polish, etc.)",
     )
     groupDownload.add_argument(
-        "--noverify-image-size",
+        "--disable-image-verify",
         action="store_true",
-        help="Don't verify image sizes. (useful for wikis with server-side image resizing)"
-             "Also disables sha1sum verification for images.",
+        help="Don't verify image size and hash while downloading. (useful for wikis with server-side image resizing)"
     )
     groupDownload.add_argument(
         "--namespaces",
@@ -429,7 +428,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "session": session,
         "stdout_log_path": args.stdout_log_path,
         "bypass_cdn_image_compression": args.bypass_cdn_image_compression,
-        "noverify_image_size": args.noverify_image_size,
+        "disable_image_verify": args.disable_image_verify,
     }
 
     # calculating path, if not defined by user with --path=

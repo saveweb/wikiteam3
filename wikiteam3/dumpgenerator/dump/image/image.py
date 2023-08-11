@@ -1,10 +1,12 @@
+from collections.abc import Iterator
 import os
+from pathlib import Path
 import re
 import sys
 import time
 import random
 import urllib.parse
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import requests
 
@@ -42,17 +44,18 @@ class Image:
         Deprecated: `start` is not used anymore."""
 
         # fix use subdirectories md5
+        bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
+        disable_image_verify: bool = other["disable_image_verify"]
+
         print("Retrieving images...")
-        imagepath = "%s/images" % (config.path)
-        if not os.path.isdir(imagepath):
-            print('Creating "%s" directory' % (imagepath))
-            os.makedirs(imagepath)
+        images_dir = Path(config.path) / "images"
+        if not os.path.isdir(images_dir):
+            print(f'Creating "{images_dir}" directory')
+            os.makedirs(images_dir)
 
         c_savedImageFiles = 0
-        c_savedImageDescs = 0
 
 
-        bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
         def modify_params(params: Optional[Dict] = None) -> Dict:
             """ bypass Cloudflare Polish (image optimization) """
             if params is None:
@@ -68,45 +71,43 @@ class Image:
             assert not r.headers.get("cf-polished", ""), "Found cf-polished header in response, use --bypass-cdn-image-compression to bypass it"
             
 
-        for filename, url, uploader, size, sha1, timestamp in images:
-            toContinue = 0
+        for filename_raw, original_url, uploader, size, sha1, timestamp in images:
+            downloaded = False
 
             # saving file
-            filename2 = urllib.parse.unquote(filename)
-            if len(filename2.encode('utf-8')) > other["filenamelimit"]:
+            filename_unquoted = urllib.parse.unquote(filename_raw)
+            if len(filename_unquoted.encode('utf-8')) > other["filenamelimit"]:
                 log_error(
                     config=config, to_stdout=True,
-                    text=f"Filename is too long(>240 bytes), skipping: '{filename2}'",
+                    text=f"Filename is too long(>240 bytes), skipping: '{filename_unquoted}'",
                 )
+                # TODO: hash as filename instead of skipping
                 continue
-            filename3 = f"{imagepath}/{filename2}"
+            filepath = images_dir / filename_unquoted
             
             # check if file already exists and has the same size and sha1
             if ((size != NULL
-                and os.path.isfile(filename3)
-                and os.path.getsize(filename3) == int(size)
-                and sha1sum(filename3) == sha1)
-            or (sha1 == NULL and os.path.isfile(filename3))): 
+                and filepath.is_file()
+                and os.path.getsize(filepath) == int(size)
+                and sha1sum(filepath) == sha1)
+            or (sha1 == NULL and filepath.is_file())): 
             # sha1 is NULL if file not in original wiki (probably deleted,
             # you will get a 404 error if you try to download it)
                 c_savedImageFiles += 1
-                toContinue += 1
-                print_msg=f"    {c_savedImageFiles}|sha1 matched: {filename2}"
+                downloaded = True
+                print_msg=f"    {c_savedImageFiles}|sha1 matched: {filename_unquoted}"
                 print(print_msg[0:70], end="\r")
                 if sha1 == NULL:
                     log_error(config=config, to_stdout=True,
-                    text=f"sha1 is {NULL} for {filename2}, file may not in wiki site (probably deleted). "
-                        +"we will not try to download it...")
+                        text=f"sha1 is {NULL} for {filename_unquoted}, file may not in wiki site (probably deleted). "
+                    )
             else:
                 Delay(config=config, session=session)
-                original_url = url
-                r = session.head(url=url, params=modify_params(), allow_redirects=True)
+                url = original_url
+                r = session.head(url=original_url, params=modify_params(), allow_redirects=True)
                 check_response(r)
-                original_url_redirected = len(r.history) > 0
 
-                if original_url_redirected:
-                    # print 'Site is redirecting us to: ', r.url
-                    original_url = url
+                if original_url_redirected := len(r.history) > 0:
                     url = r.url
 
                 r = session.get(url=url, params=modify_params(), allow_redirects=False)
@@ -115,8 +116,8 @@ class Image:
                 # Try to fix a broken HTTP to HTTPS redirect
                 if r.status_code == 404 and original_url_redirected:
                     if (
-                        original_url.split("://")[0] == "http"
-                        and url.split("://")[0] == "https"
+                        original_url.startswith("http://")
+                        and url.startswith("https://")
                     ):
                         url = "https://" + original_url.split("://")[1]
                         # print 'Maybe a broken http to https redirect, trying ', url
@@ -125,17 +126,22 @@ class Image:
 
                 if r.status_code == 200:
                     try:
-                        if size == NULL or len(r.content) == int(size):
+                        if size == NULL or len(r.content) == int(size) or disable_image_verify:
                             # size == NULL means size is unknown
-                            with open(filename3, "wb") as imagefile:
-                                imagefile.write(r.content)
+                            try:
+                                with open(filepath, "wb") as imagefile:
+                                    imagefile.write(r.content)
+                            except KeyboardInterrupt:
+                                if filepath.is_file():
+                                    os.remove(filepath)
+                                raise
                             c_savedImageFiles += 1
                         else:
-                            raise FileSizeError(file=filename3, size=size)
+                            raise FileSizeError(file=filepath, size=size)
                     except OSError:
                         log_error(
                             config=config, to_stdout=True,
-                            text=f"File '{filename3}' could not be created by OS",
+                            text=f"File '{filepath}' could not be created by OS",
                         )
                     except FileSizeError as e:
                         # TODO: add a --force-download-image or --nocheck-image-size option to download anyway
@@ -146,71 +152,15 @@ class Image:
                 else:
                     log_error(
                         config=config, to_stdout=True,
-                        text=f"Failled to donwload '{filename2}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
+                        text=f"Failled to donwload '{filename_unquoted}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
                     )
 
-            if os.path.isfile(filename3+".desc"):
-                toContinue += 1
-            else:
-                Delay(config=config, session=session)
-                # saving description if any
-                title = "Image:%s" % (filename)
-                try:
-                    if (
-                        config.xmlrevisions
-                        and config.api
-                        and config.api.endswith("api.php")
-                    ):
-                        r = session.get(
-                            config.api
-                            + "?action=query&export&exportnowrap&titles="
-                            + urllib.parse.quote(title)
-                        )
-                        xmlfiledesc = r.text
-                    else:
-                        xmlfiledesc = Image.get_XML_file_desc(
-                            config=config, title=title, session=session
-                        )  # use Image: for backwards compatibility
-                except PageMissingError:
-                    xmlfiledesc = ""
-                    log_error(
-                        config=config, to_stdout=True,
-                        text='The image description page "%s" was missing in the wiki (probably deleted)'
-                        % (str(title)),
-                    )
-
-                try:
-                    # <text xml:space="preserve" bytes="36">Banner featuring SG1, SGA, SGU teams</text>
-                    if not re.search(r"</page>", xmlfiledesc):
-                        # failure when retrieving desc? then save it as empty .desc
-                        xmlfiledesc = ""
-
-                    # Fixup the XML
-                    if xmlfiledesc != "" and not re.search(r"</mediawiki>", xmlfiledesc):
-                        xmlfiledesc += "</mediawiki>"
-
-                    with open(f"{imagepath}/{filename2}.desc", "w", encoding="utf-8") as f:
-                        f.write(xmlfiledesc)
-                    c_savedImageDescs += 1
-
-                    if xmlfiledesc == "":
-                        log_error(
-                            config=config, to_stdout=True,
-                            text=f"Created empty .desc file: '{imagepath}/{filename2}.desc'",
-                        )
-
-                except OSError:
-                    log_error(
-                        config=config, to_stdout=True,
-                        text=f"File {imagepath}/{filename2}.desc could not be created by OS",
-                    )
-
-            if toContinue == 2: # skip printing
+            if downloaded: # skip printing
                 continue
-            print_msg = f"              | {(len(images)-c_savedImageFiles)}=>{filename2[0:50]}"
+            print_msg = f"              | {(len(images)-c_savedImageFiles)}=>{filename_unquoted[0:50]}"
             print(print_msg, " "*(73 - len(print_msg)), end="\r")
 
-        print(f"Downloaded {c_savedImageFiles} images and {c_savedImageDescs} .desc files.")
+        print(f"Downloaded {c_savedImageFiles} files")
 
 
     @staticmethod
@@ -410,10 +360,10 @@ class Image:
                             + " contains unicode. Please file an issue with MediaWiki Scraper."
                         )
                     uploader = re.sub("_", " ", image.get("user", "Unknown"))
-                    size = image.get("size", NULL)
+                    size: Union[bool,int] = image.get("size", NULL)
                     
                     # size or sha1 is not always available (e.g. https://wiki.mozilla.org/index.php?curid=20675)
-                    sha1 = image.get("sha1", NULL)
+                    sha1: Union[bool,str] = image.get("sha1", NULL)
                     timestamp = image.get("timestamp", NULL)
                     images.append([filename, url, uploader, size, sha1, timestamp])
             else:
@@ -510,15 +460,15 @@ class Image:
             "{}/{}".format(config.path, imagesfilename), "w", encoding="utf-8"
         )
         for line in images:
-            while 3 <= len(line) < 5:
+            while 3 <= len(line) < 6:
                 line.append(NULL) # At this point, make sure all lines have 5 elements
-            filename, url, uploader, size, sha1 = line
+            filename, url, uploader, size, sha1, timestamp = line
             print(line,end='\r')
             imagesfile.write(
                 filename + "\t" + url + "\t" + uploader
-                + "\t" + size if size is not False else NULL
-                + "\t" + sha1 if sha1 is not False else NULL
-                # sha1 or size may be NULL
+                + "\t" + (str(size) if size else NULL)
+                + "\t" + (str(sha1) if sha1 else NULL) # sha1 or size may be NULL
+                + "\t" + (timestamp if timestamp else NULL)
                 + "\n"
             )
         imagesfile.write("--END--")

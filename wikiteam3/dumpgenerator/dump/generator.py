@@ -208,16 +208,12 @@ class DumpGenerator:
                 Image.save_image_names(config=config, images=images)
             # checking images directory
             listdir = []
-            try:
-                listdir = os.listdir("%s/images" % (config.path))
-            except OSError:
-                pass  # probably directory does not exist
+            if os.path.exists(f"{config.path}/images"):
+                listdir = os.listdir(f"{config.path}/images")
             listdir = set(listdir)
-            c_desc = 0
-            c_images = 0
+            c_images_downloaded = 0
             c_checked = 0
-            for filename, url, uploader, size, sha1 in images:
-                lastfilename = filename
+            for filename, url, uploader, size, sha1, timestamp in images:
                 if other["filenamelimit"] < len(filename.encode('utf-8')):
                     log_error(
                         config=config, to_stdout=True,
@@ -225,31 +221,22 @@ class DumpGenerator:
                     )
                     continue
                 if filename in listdir:
-                    c_images += 1
-                if filename+".desc" in listdir:
-                    c_desc += 1
+                    c_images_downloaded += 1
                 c_checked += 1
                 if c_checked % 100000 == 0:
                     print(f"checked {c_checked}/{len(images)} records", end="\r")
-            print(f"{len(images)} records in images.txt, {c_images} images and {c_desc} .desc were saved in the previous session")
-            if c_desc < len(images):
+            print(f"{len(images)} records in images.txt, {c_images_downloaded} images were saved in the previous session")
+            if c_images_downloaded < len(images):
                 complete = False
-            elif c_images < len(images):
-                complete = False
-                print("WARNING: Some images were not saved. You may want to delete their \n"
-                    +".desc files and re-run the script to redownload the missing images.\n"
-                    +"(If images URL are unavailable, you can ignore this warning.)\n"
-                    +"(In most cases, if the number of .desc files equals the number of \n"
-                    + "images.txt records, you can ignore this warning, images dump was completed.)")
-                sys.exit(9)
-            else: # c_desc == c_images == len(images)
+                print("WARNING: Some images were not saved in the previous session")
+            else:
                 complete = True
             if complete:
                 # image dump is complete
                 print("Image dump was completed in the previous session")
             else:
-                # we resume from previous image, which may be corrupted (or missing
-                # .desc)  by the previous session ctrl-c or abort
+                # we resume from previous image, which may be corrupted 
+                # by the previous session ctrl-c or abort
                 Image.generate_image_dump(
                     config=config,
                     other=other,
