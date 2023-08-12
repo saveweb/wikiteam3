@@ -1,4 +1,4 @@
-R_NEXT = r"(?<!&amp;dir=prev)&amp;offset=(?P<offset>\d+)&amp;"
+R_NEXT = r"(?<=&amp;dir=prev)&amp;offset=(?P<offset>\d+)"
 
 REGEX_CANDIDATES = [
     # [0]

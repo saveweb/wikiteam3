@@ -189,16 +189,17 @@ class Image:
         """Retrieve file list: filename, url, uploader"""
 
         images = []
-        offset = "29990101000000"  # january 1, 2999
         limit = 5000
         retries = config.retries
-        while offset:
+        offset = None
+        while offset or len(images) == 0:
             # 5000 overload some servers, but it is needed for sites like this with
             # no next links
             # http://www.memoryarchive.org/en/index.php?title=Special:Imagelist&sort=byname&limit=50&wpIlMatch=
+            params = {"title": "Special:Imagelist", "limit": limit, "dir": "prev", "offset": offset}
             r = session.post(
                 url=config.index,
-                params={"title": "Special:Imagelist", "limit": limit, "offset": offset},
+                params=params,
                 timeout=30,
             )
             raw = r.text
@@ -209,19 +210,15 @@ class Image:
                 raw,
             ):
                 if limit > 10:
-                    print(
-                        "Error: listing %d images in a chunk is not possible, trying tiny chunks"
-                        % (limit)
-                    )
-                    limit = limit / 10
+                    print(f"Error: listing {limit} images in a chunk is not possible, trying tiny chunks")
+                    limit = limit // 10
                     continue
                 elif retries > 0:  # waste retries, then exit
                     retries -= 1
                     print("Retrying...")
                     continue
                 else:
-                    print("No more retries, exit...")
-                    break
+                    raise RuntimeError("retries exhausted")
 
             raw = clean_HTML(raw)
 
@@ -264,14 +261,18 @@ class Image:
                     offset = new_offset
                     retries += 5  # add more retries if we got a page with offset
                 else:
+                    print("Warning: offset is not changing")
                     offset = ""
             else:
+                print("INFO: no next link found, we may have reached the end")
                 offset = ""
 
-        if len(images) == 1:
-            print("    Found 1 image")
+        if len(images) == 0:
+            print("Warning: no images found")
+        elif len(images) == limit:
+            print(f"Warning: the number of images is equal to the limit parameter ({limit}), there may be more images")
         else:
-            print("    Found %d images" % (len(images)))
+            print(f"    Found {len(images)} images")
 
         images.sort()
         return images
@@ -375,7 +376,6 @@ class Image:
             gapfrom = "!"
             images = []
             while gapfrom:
-                sys.stderr.write(".")  # progress
                 # Some old APIs doesn't have allimages query
                 # In this case use allpages (in nm=6) as generator for imageinfo
                 # Example:
