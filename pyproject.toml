@@ -45,9 +45,9 @@ packages = [
 exclude = ["wikiteam3/dumpgenerator/test/*"]
 
 [tool.poetry.scripts]
-dumpgenerator = "wikiteam3.dumpgenerator:main"
-launcher = "wikiteam3.launcher:main"
-uploader = "wikiteam3.uploader:main"
+dumpgenerator = "wikiteam3.dumpgenerator:main_deprecated"
+wikiteam3dumpgenerator = "wikiteam3.dumpgenerator:main"
+wikiteam3uploader = "wikiteam3.uploader:main"
 
 [tool.poetry.dependencies]
 python = "^3.8"

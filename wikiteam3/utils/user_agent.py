@@ -314,12 +314,12 @@ def get_UserAgents():
     ]
     return useragents
 
-def get_UserAgent():
+def get_random_UserAgent():
     return random.choice(get_UserAgents())
 
-def setup_UserAgent(session: requests.Session):
+def setup_random_UserAgent(session: requests.Session):
     session._orirequest = session.request
     def newrequest(*args, **kwargs):
-        session.headers.update({"User-Agent": get_UserAgent()})
+        session.headers.update({"User-Agent": get_random_UserAgent()})
         return session._orirequest(*args, **kwargs)
     session.request = newrequest

@@ -2,7 +2,7 @@ import re
 
 import requests
 
-from wikiteam3.utils import get_UserAgent
+from wikiteam3.utils import get_random_UserAgent
 
 
 def get_WikiEngine(url="", session: requests.Session=None) -> str:
@@ -10,7 +10,7 @@ def get_WikiEngine(url="", session: requests.Session=None) -> str:
 
     if not session:
         session = requests.Session()  # Create a new session
-        session.headers.update({"User-Agent": get_UserAgent()})
+        session.headers.update({"User-Agent": get_random_UserAgent()})
     r = session.post(url=url, timeout=30)
     if r.status_code == 405 or r.text == "":
         r = session.get(url=url, timeout=120)

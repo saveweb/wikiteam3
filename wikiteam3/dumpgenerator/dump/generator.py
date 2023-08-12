@@ -69,7 +69,7 @@ class DumpGenerator:
                     reply = "yes"
                 while reply.lower() not in ["yes", "y", "no", "n"]:
                     reply = input(
-                        'There is a dump in "%s", probably incomplete.\nIf you choose resume, to avoid conflicts, the parameters you have chosen in the current session will be ignored\nand the parameters available in "%s/%s" will be loaded.\nDo you want to resume ([yes, y], [no, n])? '
+                        'There is a dump in "%s", probably incomplete.\nIf you choose resume, to avoid conflicts, some parameters you have chosen in the current session will be ignored\nand the parameters available in "%s/%s" will be loaded.\nDo you want to resume ([yes, y], [no, n])? '
                         % (config.path, config.path, config_filename)
                     )
                 if reply.lower() in ["yes", "y"]:

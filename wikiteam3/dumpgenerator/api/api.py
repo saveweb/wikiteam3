@@ -6,7 +6,7 @@ import mwclient
 import requests
 
 from wikiteam3.dumpgenerator.api.get_json import get_JSON
-from wikiteam3.utils import get_UserAgent
+from wikiteam3.utils import get_random_UserAgent
 
 
 def check_API(api: str, session: requests.Session=None):
@@ -61,7 +61,7 @@ def mediawiki_get_API_and_Index(url: str, session: requests.Session=None):
     index = ""
     if not session:
         session = requests.Session()  # Create a new session
-        session.headers.update({"User-Agent": get_UserAgent()})
+        session.headers.update({"User-Agent": get_random_UserAgent()})
     r = session.post(url=url, timeout=120)
     result = r.text
 

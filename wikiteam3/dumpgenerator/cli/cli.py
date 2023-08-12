@@ -17,9 +17,9 @@ from wikiteam3.dumpgenerator.api.index_check import checkIndex
 from wikiteam3.dumpgenerator.cli.delay import Delay
 from wikiteam3.dumpgenerator.config import Config, new_config
 from wikiteam3.dumpgenerator.version import getVersion
-from wikiteam3.utils import url2prefix_from_config, get_UserAgent, mod_requests_text
+from wikiteam3.utils import url2prefix_from_config, get_random_UserAgent, mod_requests_text
 from wikiteam3.utils.login import uniLogin
-from wikiteam3.utils.user_agent import setup_UserAgent
+from wikiteam3.utils.user_agent import setup_random_UserAgent
 
 
 def getArgumentParser():
@@ -55,6 +55,12 @@ def getArgumentParser():
     )
     parser.add_argument(
         '--insecure', action='store_true', help='Disable SSL certificate verification'
+    )
+    parser.add_argument(
+        "--user-agent",
+        type=str,
+        default="wikiteam3/" + getVersion(),
+        help="User-Agent to use for requests (default: wikiteam3/<version>)",
     )
 
     parser.add_argument(
@@ -276,8 +282,11 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
     session.cookies = cj
 
     # Setup user agent
-    session.headers.update({"User-Agent": get_UserAgent()})
-    setup_UserAgent(session) # monkey patch
+    if args.user_agent:
+        session.headers.update({"User-Agent": args.user_agent})
+    if args.user_agent == "random":
+        session.headers.update({"User-Agent": get_random_UserAgent()})
+        setup_random_UserAgent(session) # monkey patch
 
     # Set HTTP Basic Auth
     if args.http_user and args.http_password:
