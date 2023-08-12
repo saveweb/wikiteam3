@@ -4,6 +4,7 @@
 name = "atomicwrites"
 version = "1.4.1"
 description = "Atomic file writes."
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
@@ -14,6 +15,7 @@ files = [
 name = "attrs"
 version = "23.1.0"
 description = "Classes Without Boilerplate"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -32,6 +34,7 @@ tests-no-zope = ["cloudpickle", "hypothesis", "mypy (>=1.1.1)", "pympler", "pyte
 name = "certifi"
 version = "2023.7.22"
 description = "Python package for providing Mozilla's CA Bundle."
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -43,6 +46,7 @@ files = [
 name = "charset-normalizer"
 version = "3.2.0"
 description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
+category = "main"
 optional = false
 python-versions = ">=3.7.0"
 files = [
@@ -127,6 +131,7 @@ files = [
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
+category = "main"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,>=2.7"
 files = [
@@ -138,6 +143,7 @@ files = [
 name = "contextlib2"
 version = "21.6.0"
 description = "Backports and enhancements for the contextlib module"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -149,6 +155,7 @@ files = [
 name = "docopt"
 version = "0.6.2"
 description = "Pythonic argument parser, that will make you smile"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -159,6 +166,7 @@ files = [
 name = "file-read-backwards"
 version = "3.0.0"
 description = "Memory efficient way of reading files line-by-line from the end of file"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -170,6 +178,7 @@ files = [
 name = "flake8"
 version = "3.9.2"
 description = "the modular source code checker: pep8 pyflakes and co"
+category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,>=2.7"
 files = [
@@ -186,6 +195,7 @@ pyflakes = ">=2.3.0,<2.4.0"
 name = "idna"
 version = "3.4"
 description = "Internationalized Domain Names in Applications (IDNA)"
+category = "main"
 optional = false
 python-versions = ">=3.5"
 files = [
@@ -197,6 +207,7 @@ files = [
 name = "iniconfig"
 version = "2.0.0"
 description = "brain-dead simple config-ini parsing"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -208,6 +219,7 @@ files = [
 name = "internetarchive"
 version = "3.5.0"
 description = "A Python interface to archive.org."
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -233,6 +245,7 @@ types = ["tqdm-stubs (>=0.2.0)", "types-colorama", "types-docopt (>=0.6.10,<0.7.
 name = "jsonpatch"
 version = "1.33"
 description = "Apply JSON-Patches (RFC 6902)"
+category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
@@ -247,6 +260,7 @@ jsonpointer = ">=1.9"
 name = "jsonpointer"
 version = "2.4"
 description = "Identify specific nodes in a JSON document (RFC 6901)"
+category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
 files = [
@@ -258,6 +272,7 @@ files = [
 name = "lxml"
 version = "4.9.3"
 description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API."
+category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, != 3.4.*"
 files = [
@@ -365,6 +380,7 @@ source = ["Cython (>=0.29.35)"]
 name = "mccabe"
 version = "0.6.1"
 description = "McCabe checker, plugin for flake8"
+category = "dev"
 optional = false
 python-versions = "*"
 files = [
@@ -376,6 +392,7 @@ files = [
 name = "mwclient"
 version = "0.10.1"
 description = "MediaWiki API client"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -391,6 +408,7 @@ six = "*"
 name = "oauthlib"
 version = "3.2.2"
 description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -407,6 +425,7 @@ signedtoken = ["cryptography (>=3.0.0)", "pyjwt (>=2.0.0,<3)"]
 name = "packaging"
 version = "23.1"
 description = "Core utilities for Python packages"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -418,6 +437,7 @@ files = [
 name = "pluggy"
 version = "1.2.0"
 description = "plugin and hook calling mechanisms for python"
+category = "dev"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -433,6 +453,7 @@ testing = ["pytest", "pytest-benchmark"]
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 files = [
@@ -444,6 +465,7 @@ files = [
 name = "pycodestyle"
 version = "2.7.0"
 description = "Python style guide checker"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
@@ -455,6 +477,7 @@ files = [
 name = "pyflakes"
 version = "2.3.1"
 description = "passive checker of Python programs"
+category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
@@ -466,6 +489,7 @@ files = [
 name = "pytest"
 version = "6.2.5"
 description = "pytest: simple powerful testing with Python"
+category = "dev"
 optional = false
 python-versions = ">=3.6"
 files = [
@@ -508,6 +532,7 @@ unidecode = ["Unidecode (>=1.1.1)"]
 name = "requests"
 version = "2.31.0"
 description = "Python HTTP for Humans."
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
@@ -529,6 +554,7 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 name = "requests-oauthlib"
 version = "1.3.1"
 description = "OAuthlib authentication support for Requests."
+category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 files = [
@@ -547,6 +573,7 @@ rsa = ["oauthlib[signedtoken] (>=3.0.0)"]
 name = "schema"
 version = "0.7.5"
 description = "Simple data validation library"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -561,6 +588,7 @@ contextlib2 = ">=0.5.5"
 name = "six"
 version = "1.16.0"
 description = "Python 2 and 3 compatibility utilities"
+category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
@@ -584,6 +612,7 @@ files = [
 name = "toml"
 version = "0.10.2"
 description = "Python Library for Tom's Obvious, Minimal Language"
+category = "dev"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
@@ -593,20 +622,21 @@ files = [
 
 [[package]]
 name = "tqdm"
-version = "4.65.0"
+version = "4.66.1"
 description = "Fast, Extensible Progress Meter"
+category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "tqdm-4.65.0-py3-none-any.whl", hash = "sha256:c4f53a17fe37e132815abceec022631be8ffe1b9381c2e6e30aa70edc99e9671"},
-    {file = "tqdm-4.65.0.tar.gz", hash = "sha256:1871fb68a86b8fb3b59ca4cdd3dcccbc7e6d613eeed31f4c332531977b89beb5"},
+    {file = "tqdm-4.66.1-py3-none-any.whl", hash = "sha256:d302b3c5b53d47bce91fea46679d9c3c6508cf6332229aa1e7d8653723793386"},
+    {file = "tqdm-4.66.1.tar.gz", hash = "sha256:d88e651f9db8d8551a62556d3cff9e3034274ca5d66e93197cf2490e2dcb69c7"},
 ]
 
 [package.dependencies]
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [package.extras]
-dev = ["py-make (>=0.1.0)", "twine", "wheel"]
+dev = ["pytest (>=6)", "pytest-cov", "pytest-timeout", "pytest-xdist"]
 notebook = ["ipywidgets (>=6)"]
 slack = ["slack-sdk"]
 telegram = ["requests"]
@@ -632,4 +662,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "e5ca8dbb583f96a85a934f940d4ff41e04ff7a8a9d07827271cb0f30c2ace4ce"
+content-hash = "d62018cde1e95f125aa8af9c194583ac62648a24a5af9d428d5cc50611d32af1"
