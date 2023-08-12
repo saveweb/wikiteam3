@@ -14,13 +14,13 @@ from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.utils import clean_XML, undo_HTML_entities
 from wikiteam3.dumpgenerator.dump.xmldump.xml_header import getXMLHeader
 from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions import getXMLRevisions
-from wikiteam3.dumpgenerator.dump.xmldump.xml_truncate import truncateXMLDump, parseLastPageChunk
+from wikiteam3.dumpgenerator.dump.xmldump.xml_truncate import truncateXMLDump, parse_last_page_chunk
 
 
 def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=None, useAllrevisions=False):
     try:
-        r_timestamp = "<timestamp>([^<]+)</timestamp>"
-        r_arvcontinue = '<page arvcontinue="(.*?)">'
+        r_timestamp = r"<timestamp>([^<]+)</timestamp>"
+        r_arvcontinue = r'<page arvcontinue="(.*?)">'
 
         lastArvcontinue = None
         for xml in getXMLRevisions(config=config, session=session, lastPage=lastPage, useAllrevision=useAllrevisions):
@@ -117,7 +117,7 @@ def generate_XML_dump(config: Config=None, resume=False, session=None):
             resume = False
             lastPage = None
         else:
-            lastPage = parseLastPageChunk(lastPageChunk)
+            lastPage = parse_last_page_chunk(lastPageChunk)
             if lastPage is None:
                 print("Failed to parse last page chunk: \n%s" % lastPageChunk)
                 print("Cannot resume, exiting now!")

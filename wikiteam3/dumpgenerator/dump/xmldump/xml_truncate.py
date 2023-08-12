@@ -61,10 +61,11 @@ def truncateXMLDump(filename: str) -> str:
         )
     return incomplete_segment
 
-def parseLastPageChunk(chunk) -> Optional[lxml.etree._ElementTree]:
+def parse_last_page_chunk(chunk: str) -> Optional[lxml.etree._ElementTree]:
     try:
         parser = lxml.etree.XMLParser(recover=True)
         tree = lxml.etree.parse(StringIO(chunk), parser)
         return tree.getroot()
     except lxml.etree.LxmlError:
+        # TODO: log this
         return None
