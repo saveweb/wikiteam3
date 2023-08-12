@@ -43,9 +43,15 @@ class Image:
         """Save files and descriptions using a file list\n
         Deprecated: `start` is not used anymore."""
 
-        # fix use subdirectories md5
         bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
         disable_image_verify: bool = other["disable_image_verify"]
+        image_timestamp_interval: str = other["image_timestamp_interval"]
+        image_timestamp_intervals = None
+        if image_timestamp_interval: # 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
+            image_timestamp_intervals = image_timestamp_interval.split("/")
+            assert len(image_timestamp_intervals) == 2
+            import datetime
+            image_timestamp_intervals = [datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ") for x in image_timestamp_intervals]
 
         print("Retrieving images...")
         images_dir = Path(config.path) / "images"
@@ -73,6 +79,20 @@ class Image:
 
         for filename_raw, original_url, uploader, size, sha1, timestamp in images:
             downloaded = False
+
+            if image_timestamp_intervals:
+                if timestamp == NULL:
+                    print(f"    {filename_raw}|timestamp is unknown: {NULL}, downloading anyway...")
+                else:
+                    if not (
+                        image_timestamp_intervals[0]
+                        <= datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
+                        <= image_timestamp_intervals[1]
+                    ):
+                        print(f"    timestamp {timestamp} is not in interval {image_timestamp_interval}: {filename_raw}")
+                        continue
+                    else:
+                        print(f"    timestamp {timestamp} is in interval {image_timestamp_interval}: {filename_raw}")
 
             # saving file
             filename_unquoted = urllib.parse.unquote(filename_raw)

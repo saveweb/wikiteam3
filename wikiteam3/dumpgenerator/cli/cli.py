@@ -114,6 +114,12 @@ def getArgumentParser():
         help="Don't verify image size and hash while downloading. (useful for wikis with server-side image resizing)"
     )
     groupDownload.add_argument(
+        "--image-timestamp-interval",
+        metavar="2019-01-02T01:36:06Z/2023-08-12T10:36:06Z",
+        help="[BETA] Only download images uploaded in the given time interval. [format: ISO 8601 UTC interval] "
+            "(only works with api)",
+    )
+    groupDownload.add_argument(
         "--namespaces",
         metavar="1,2,3",
         help="comma-separated value of namespaces to include (all by default)",
@@ -429,6 +435,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "stdout_log_path": args.stdout_log_path,
         "bypass_cdn_image_compression": args.bypass_cdn_image_compression,
         "disable_image_verify": args.disable_image_verify,
+        "image_timestamp_interval": args.image_timestamp_interval,
     }
 
     # calculating path, if not defined by user with --path=
