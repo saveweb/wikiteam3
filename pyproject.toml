@@ -1,17 +1,19 @@
 [tool.poetry]
 name = "wikiteam3"
-version = "4.0.0"
-description = "Tools for downloading and preserving wikis. We archive wikis, from Wikipedia to tiniest wikis."
+version = "3.9.0"
+description = "Tools for downloading and preserving MediaWikis. We archive MediaWikis, from Wikipedia to tiniest wikis."
 license = "GPL-3.0-or-later"
-authors = ["WikiTeam Contributors <https://github.com/WikiTeam/wikiteam/graphs/contributors>"]
+# authors = ["WikiTeam Contributors"] # FIXME: it's not an valid author name
+authors = ["yzqzss <yzqzss@yandex.com>"]
 maintainers = [
-    "Federico Leva <https://github.com/nemobis>",
-    "Elsie Hupp <https://github.com/elsiehupp>"
+    # "saveweb wikiteam3 maintainers", #FIXME
+    # "mediawiki-scarper maintainers",
+    # "wikiteam maintainers",
+    "yzqzss <yzqzss@yandex.com>"
 ]
 readme = "README.md"
-homepage = "https://wiki.archiveteam.org/index.php/WikiTeam"
-repository = "https://github.com/WikiTeam/wikiteam"
-documentation = "https://wikiteam.readthedocs.io"
+# homepage = "https://wiki.archiveteam.org/index.php/WikiTeam"
+repository = "https://github.com/saveweb/wikiteam3"
 keywords = [
     "archiveteam",
     "mediawiki",
@@ -20,7 +22,6 @@ keywords = [
     "wikipedia"
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Education",
     "Intended Audience :: End Users/Desktop",

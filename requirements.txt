@@ -3,3 +3,4 @@ internetarchive
 lxml
 mwclient
 requests
+python-slugify
