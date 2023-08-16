@@ -1,28 +1,27 @@
 import itertools
 import threading
 import time
-import sys
 
 from wikiteam3.dumpgenerator.config import Config
+
 
 class Delay:
     done: bool = False
     lock: threading.Lock = threading.Lock()
 
     def animate(self):
-        while True:
+        progress_dots = itertools.cycle([".", "/", "-", "\\"])
+        for dot in progress_dots:
             with self.lock:
                 if self.done:
                     return
 
-                print("\r" + self.ellipses, end="")
-                self.ellipses += "."
+                print("\r" + self.ellipses, end=dot)
 
             time.sleep(0.3)
 
     def __init__(self, config: Config=None, session=None, msg=None, delay=None):
         """Add a delay if configured for that"""
-        self.ellipses: str = "."
 
         if delay is None:
             delay = config.delay
@@ -30,9 +29,9 @@ class Delay:
             return
 
         if msg:
-            self.ellipses = ("Delay %.1fs: %s " % (delay, msg)) + self.ellipses
+            self.ellipses = ("Delay %.1fs: %s " % (delay, msg))
         else:
-            self.ellipses = ("Delay %.1fs " % (delay)) + self.ellipses
+            self.ellipses = ("Delay %.1fs" % (delay))
 
         ellipses_animation = threading.Thread(target=self.animate)
         ellipses_animation.daemon = True
@@ -42,4 +41,4 @@ class Delay:
 
         with self.lock:
             self.done = True
-            print("\r" + " " * len(self.ellipses) + "\r", end="")
+            print("\r" + " " * len(self.ellipses), end=" \r")
