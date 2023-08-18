@@ -64,13 +64,11 @@ TODO: ...
 ### Requirements
 
 - unbinded port 62954
-- 4GB+ RAM (~3.5GB for commpressing, 2.0GB for uncompressing)
+- 3GB+ RAM (~2.56GB for commpressing)
 - 64-bit OS (required by 2G wlog size)
-- 7z
-- zstd 1.4.8 (minimum), v1.5.0-v1.5.4(DO NOT USE) 1.5.5+ (recommended)
 
-> We use --long=31 (2GB windowLog) for zstd, which is only available since 1.4.7 .
-> (1.4.9 x2 faster than 1.4.8)
+- 7z (`7z-full` with lzma2)
+- zstd 1.5.5+ (recommended), v1.5.0-v1.5.4(DO NOT USE), 1.4.8 (minimum)
 
 ## Checking dump integrity
 
