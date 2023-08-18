@@ -302,6 +302,7 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
             keywords
         ),  # Keywords should be separated by ; but it doesn't matter much; the alternative is to set one per field with subject[0], subject[1], ...
         "licenseurl": licenseurl,
+        "rights": rights_text,
         "originalurl": config.api or config.index,
         "upload-state": "uploading",
         "scanner": f"wikiteam3 (v{getVersion()})",
