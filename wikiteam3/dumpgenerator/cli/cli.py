@@ -198,10 +198,10 @@ def checkParameters(args=argparse.Namespace()) -> bool:
         print("ERROR: --curonly requires --xml")
         passed = False
     
-    # # --xmlrevisions not supported with --curonly
-    # if args.xmlrevisions and args.curonly:
-    #     print("ERROR: --xmlrevisions not supported with --curonly")
-    #     passed = False
+    # --xmlrevisions not supported with --curonly
+    if args.xmlrevisions and args.curonly:
+        print("ERROR: --xmlrevisions not supported with --curonly")
+        passed = False
     
     # Check URLs
     for url in [args.api, args.index, args.wiki]:
