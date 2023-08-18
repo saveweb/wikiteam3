@@ -5,9 +5,7 @@ name: dumogenerator test
 
 on:
   push:
-    branches: [ "python3" ]
   pull_request:
-    branches: [ "python3" ]
 
 jobs:
   build:
