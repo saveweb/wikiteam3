@@ -372,6 +372,13 @@ def upload(arg: Args):
             print(f"Failed to upload logo: {e}")
             print("Don't worry, it's optional.")
     
+    item = get_item(identifier)
+    print("=== Updating upload-state ===")
+    if item.metadata.get("upload-state") != "uploaded":
+        r = item.modify_metadata({"upload-state": "uploaded"}, access_key=ia_keys.access, secret_key=ia_keys.secret)
+        assert isinstance(r, requests.Response)
+        print(r.text)
+        r.raise_for_status()
     print("=== Uploading complete ===")
     mark_as_done(config, UPLOADED_MARK, msg=f"identifier: {identifier}")
 
