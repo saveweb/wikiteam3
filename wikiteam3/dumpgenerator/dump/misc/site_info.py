@@ -1,12 +1,14 @@
 import json
 import os
 
+import requests
+
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.dumpgenerator.api import get_JSON
 from wikiteam3.dumpgenerator.config import Config
 
 
-def save_siteinfo(config: Config=None, session=None):
+def save_siteinfo(config: Config, session: requests.Session):
     """Save a file with site info"""
 
     if config.api:
@@ -52,8 +54,8 @@ def save_siteinfo(config: Config=None, session=None):
                     timeout=10,
                 )
             result = get_JSON(r)
-            Delay(config=config, session=session)
+            Delay(config=config)
             with open(
                 "%s/siteinfo.json" % (config.path), "w", encoding="utf-8"
             ) as outfile:
-                outfile.write(json.dumps(result, indent=4, sort_keys=True))
+                outfile.write(json.dumps(result, indent=4, sort_keys=True, ensure_ascii=False))

@@ -19,6 +19,7 @@ from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generate_XML_dump
 from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import check_XML_integrity
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import url2prefix_from_config, undo_HTML_entities, avoid_WikiMedia_projects
+from wikiteam3.utils.util import ALL_DUMPED_MARK, mark_as_done
 
 # From https://stackoverflow.com/a/57008707
 class Tee(object):
@@ -101,6 +102,7 @@ class DumpGenerator:
             save_IndexPHP(config=config, session=other["session"])
             save_SpecialVersion(config=config, session=other["session"])
             save_siteinfo(config=config, session=other["session"])
+            mark_as_done(config=config, mark=ALL_DUMPED_MARK)
             bye()
 
     @staticmethod
@@ -113,7 +115,7 @@ class DumpGenerator:
             check_XML_integrity(config=config, session=other["session"])
         if config.images:
             images += Image.get_image_names(config=config, session=other["session"])
-            Image.save_image_names(config=config, images=images, session=other["session"])
+            Image.save_image_names(config=config, images=images)
             Image.generate_image_dump(
                 config=config, other=other, images=images, session=other["session"]
             )
@@ -122,7 +124,7 @@ class DumpGenerator:
             # save_SpecialLog(config=config, session=other["session"])
 
     @staticmethod
-    def resumePreviousDump(config: Config=None, other: Dict=None):
+    def resumePreviousDump(config: Config, other: Dict):
         images = []
         print("Resuming previous dump process...")
         if config.xml:

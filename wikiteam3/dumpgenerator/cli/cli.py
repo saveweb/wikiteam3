@@ -31,7 +31,10 @@ def getArgumentParser():
         "--cookies", metavar="cookies.txt", help="path to a cookies.txt file"
     )
     parser.add_argument(
-        "--delay", metavar="0.5", default=0.5, type=float, help="adds a delay (in seconds)"
+        "--delay", metavar="0.5", default=0.5, type=float,
+        help="adds a delay (in seconds) "
+        "[NOTE: most HTTP servers have a 5s HTTP/1.1 keep-alive timeout, you should consider it "
+        "if you wanna reuse the connection]"
     )
     parser.add_argument(
         "--retries", metavar="5", default=5, help="Maximum number of retries for "
@@ -62,7 +65,9 @@ def getArgumentParser():
         default="wikiteam3/" + getVersion(),
         help="User-Agent to use for requests (default: wikiteam3/<version>)",
     )
-
+    parser.add_argument(
+        "--verbose", action="store_true", help=""
+    )
     parser.add_argument(
         "--stdout-log-file", dest="stdout_log_path", default=None, help="Path to copy stdout to",
     )
@@ -126,6 +131,16 @@ def getArgumentParser():
             "(only works with api)",
     )
     groupDownload.add_argument(
+        "--ia-wbm-booster",
+        type=int,
+        default=0,
+        choices=[0, 1, 2, 3],
+        required=False,
+        help="Use Internet Archive Wayback Machine to speed up image downloads."
+            "[0: disabled (default), 1: use earliest snapshot, 2: use latest snapshot, "
+            "3: the closest snapshot to the image's upload time]", 
+    )
+    groupDownload.add_argument(
         "--namespaces",
         metavar="1,2,3",
         help="comma-separated value of namespaces to include (all by default)",
@@ -149,7 +164,7 @@ def getArgumentParser():
     groupMeta.add_argument(
         "--failfast",
         action="store_true",
-        help="Avoid resuming, discard failing wikis quickly. Useful only for mass downloads.",
+        help="[lack maintenance] Avoid resuming, discard failing wikis quickly. Useful only for mass downloads.",
     )
     return parser
 
@@ -212,13 +227,22 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
     ########################################
 
     # Create session
-    mod_requests_text(requests) # monkey patch
+    mod_requests_text(requests) # monkey patch # type: ignore
     session = requests.Session()
+    def print_request(r: requests.Response, *args, **kwargs):
+        # TODO: use logging
+        # print("H:", r.request.headers)
+        print(f"Resp: {r.request.method} {r.status_code} {r.reason} {r.url}")
+        if r.raw._connection.sock:
+            print(f"Conn: {r.raw._connection.sock.getsockname()} -> {r.raw._connection.sock.getpeername()[0]}")
+
+    if args.verbose:
+        session.hooks['response'].append(print_request)
 
     # Disable SSL verification
     if args.insecure:
         session.verify = False
-        requests.packages.urllib3.disable_warnings()
+        requests.packages.urllib3.disable_warnings() # type: ignore
         print("WARNING: SSL certificate verification disabled")
 
     # Custom session retry
@@ -445,6 +469,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "bypass_cdn_image_compression": args.bypass_cdn_image_compression,
         "disable_image_verify": args.disable_image_verify,
         "image_timestamp_interval": args.image_timestamp_interval,
+        "ia_wbm_booster": args.ia_wbm_booster,
     }
 
     # calculating path, if not defined by user with --path=

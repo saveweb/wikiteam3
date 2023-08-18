@@ -3,6 +3,7 @@ import re
 import sys
 
 import lxml.etree
+import requests
 
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.utils import url2prefix_from_config
@@ -29,7 +30,7 @@ def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=
             if arvcontinueRe:
                 curArvcontinue = arvcontinueRe[0]
                 if lastArvcontinue != curArvcontinue:
-                    Delay(config=config, session=session)
+                    Delay(config=config)
                     lastArvcontinue = curArvcontinue
             # Due to how generators work, it's expected this may be less
             xml = clean_XML(xml=xml)
@@ -38,7 +39,7 @@ def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=
             xmltitle = re.search(r"<title>([^<]+)</title>", xml)
             title = undo_HTML_entities(text=xmltitle.group(1))
             print(f'{title}, {numrevs} edits (--xmlrevisions)')
-            # Delay(config=config, session=session)
+            # Delay(config=config)
     except AttributeError as e:
         print(e)
         print("This API library version is not working")
@@ -46,7 +47,7 @@ def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=
     except UnicodeEncodeError as e:
         print(e)
 
-def doXMLExportDump(config: Config=None, session=None, xmlfile: TextIOWrapper=None, lastPage=None):
+def doXMLExportDump(config: Config, session: requests.Session, xmlfile: TextIOWrapper, lastPage=None):
     print(
         '\nRetrieving the XML for every page\n'
     )
@@ -71,7 +72,7 @@ def doXMLExportDump(config: Config=None, session=None, xmlfile: TextIOWrapper=No
             lock = False
         if lock:
             continue
-        Delay(config=config, session=session)
+        Delay(config=config)
         if c % 10 == 0:
             print(f"\n->  Downloaded {c} pages\n")
         try:
@@ -111,7 +112,7 @@ def generate_XML_dump(config: Config=None, resume=False, session=None):
             "Removing the last chunk of past XML dump: it is probably incomplete."
         )
         # truncate XML dump if it already exists
-        lastPageChunk = truncateXMLDump("{}/{}".format(config.path, xmlfilename))
+        lastPageChunk = truncateXMLDump(f"{config.path}/{xmlfilename}")
         if not lastPageChunk.strip():
             print("Last page chunk is NULL, we'll directly start a new dump!")
             resume = False

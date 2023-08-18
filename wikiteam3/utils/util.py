@@ -1,8 +1,14 @@
+import datetime
 import hashlib
 from pathlib import Path
 import re
 import sys
-from typing import Union
+from typing import Optional, Union
+
+from wikiteam3.dumpgenerator.config import Config
+
+ALL_DUMPED_MARK = "all_dumped.mark"
+UPLOADED_MARK = 'uploaded_to_IA.mark'
 
 
 def clean_HTML(raw: str = "") -> str:
@@ -94,3 +100,16 @@ def sha1sum(path: Union[str, Path]) -> str:
                 break
             sha1.update(data)
     return sha1.hexdigest()
+
+def mark_as_done(config: Config, mark: str, msg: Optional[str] = None):
+    done_path = f"{config.path}/{mark}"
+    if Path(done_path).exists():
+        return
+    with open(done_path, "w") as f:
+        today = datetime.datetime.isoformat(datetime.datetime.now())
+        f.write(f"{today}: {msg or ''}\n")
+
+    return True
+
+def is_markfile_exists(config: Config, mark: str) -> bool:
+    return (Path(config.path)/ mark).exists()

@@ -20,4 +20,4 @@ def save_SpecialLog(config: Config=None, session=None):
     </select>
 """
     raise NotImplementedError() # TODO
-    Delay(config=config, session=session)
+    Delay(config=config)

@@ -222,7 +222,7 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                     break
 
 
-def getXMLRevisionsByTitles(config: Config=None, session=None, site: mwclient.Site=None, start=None):
+def getXMLRevisionsByTitles(config: Config, session: requests.Session, site: mwclient.Site, start=None):
     if config.curonly:
         # The raw XML export in the API gets a title and gives the latest revision.
         # We could also use the allpages API as generator but let's be consistent.

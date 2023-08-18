@@ -1,6 +1,7 @@
 import itertools
 import threading
 import time
+from typing import Optional
 
 from wikiteam3.dumpgenerator.config import Config
 
@@ -20,10 +21,14 @@ class Delay:
 
             time.sleep(0.3)
 
-    def __init__(self, config: Config=None, session=None, msg=None, delay=None):
-        """Add a delay if configured for that"""
+    def __init__(self, config: Optional[Config]=None, msg: Optional[str]=None, delay: Optional[float]=None):
+        """Add a delay if configured for that
+        
+        if delay is None, use config.delay
+        """
 
         if delay is None:
+            assert isinstance(config, Config)
             delay = config.delay
         if delay <= 0:
             return

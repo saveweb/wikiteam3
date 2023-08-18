@@ -13,7 +13,7 @@ def save_IndexPHP(config: Config=None, session=None):
         print("Downloading index.php (Main Page) as index.html")
         r = session.post(url=config.index, params=None, timeout=10)
         raw = str(r.text)
-        Delay(config=config, session=session)
+        Delay(config=config)
         raw = remove_IP(raw=raw)
         with open("%s/index.html" % (config.path), "w", encoding="utf-8") as outfile:
             outfile.write(raw)

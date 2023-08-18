@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+import datetime
 import os
 from pathlib import Path
 import re
@@ -7,26 +7,34 @@ import time
 import random
 import urllib.parse
 from typing import Dict, List, Optional, Union
+import warnings
 
 import requests
 
 from wikiteam3.dumpgenerator.api import get_JSON, handle_StatusCode
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.dumpgenerator.config import Config, load_config
 from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDATES
 from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
 from wikiteam3.dumpgenerator.exceptions import PageMissingError, FileSizeError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import url2prefix_from_config, sha1sum, clean_HTML, undo_HTML_entities
+from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
 
 
 NULL = "null"
 """ NULL value for image metadata"""
 
+
+WBM_EARLIEST = 1
+WBN_LATEST = 2
+WBM_BEST = 3
+
 class Image:
     @staticmethod
-    def get_XML_file_desc(config: Config=None, title="", session=None):
+    def get_XML_file_desc(config: Config, title="", session=None):
         """Get XML for image description page"""
+        warnings.warn("")
         config.curonly = 1  # tricky to get only the most recent desc
         return "".join(
             [
@@ -39,18 +47,19 @@ class Image:
 
 
     @staticmethod
-    def generate_image_dump(config: Config=None, other: Dict=None, images: List[List]=None, session: requests.Session=None):
+    def generate_image_dump(config: Config, other: Dict, images: List[List], session: requests.Session):
         """Save files and descriptions using a file list\n
         Deprecated: `start` is not used anymore."""
 
         bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
         disable_image_verify: bool = other["disable_image_verify"]
         image_timestamp_interval: str = other["image_timestamp_interval"]
+        ia_wbm_booster: int = other["ia_wbm_booster"]
+
         image_timestamp_intervals = None
         if image_timestamp_interval: # 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
             image_timestamp_intervals = image_timestamp_interval.split("/")
             assert len(image_timestamp_intervals) == 2
-            import datetime
             image_timestamp_intervals = [datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ") for x in image_timestamp_intervals]
 
         print("Retrieving images...")
@@ -60,6 +69,7 @@ class Image:
             os.makedirs(images_dir)
 
         c_savedImageFiles = 0
+        c_wbm_speedup_files = 0
 
 
         def modify_params(params: Optional[Dict] = None) -> Dict:
@@ -77,7 +87,17 @@ class Image:
             assert not r.headers.get("cf-polished", ""), "Found cf-polished header in response, use --bypass-cdn-image-compression to bypass it"
             
 
+        patch_sess = SessionMonkeyPatch(session=session, config=config, hard_retries=3)
+        patch_sess.hijack()
+
+        skip_to_filename = '' # TODO: use this
         for filename_raw, original_url, uploader, size, sha1, timestamp in images:
+            if skip_to_filename and skip_to_filename != filename_raw:
+                print(f"    {filename_raw}", end="\r")
+                continue
+            else:
+                skip_to_filename = ''
+
             downloaded = False
 
             if image_timestamp_intervals:
@@ -95,11 +115,13 @@ class Image:
                         print(f"    timestamp {timestamp} is in interval {image_timestamp_interval}: {filename_raw}")
 
             # saving file
-            filename_unquoted = urllib.parse.unquote(filename_raw)
+            filename_unquoted = filename_raw # filename_raw is already unquoted
+            if filename_unquoted != urllib.parse.unquote(filename_raw):
+                print(f"WARNING:    {filename_raw}|filename may not be unquoted: {filename_unquoted}")
             if len(filename_unquoted.encode('utf-8')) > other["filenamelimit"]:
                 log_error(
                     config=config, to_stdout=True,
-                    text=f"Filename is too long(>240 bytes), skipping: '{filename_unquoted}'",
+                    text=f"Filename is too long(>{other['filenamelimit']} bytes), skipping: '{filename_unquoted}'",
                 )
                 # TODO: hash as filename instead of skipping
                 continue
@@ -122,27 +144,75 @@ class Image:
                         text=f"sha1 is {NULL} for {filename_unquoted}, file may not in wiki site (probably deleted). "
                     )
             else:
-                Delay(config=config, session=session)
+                # Delay(config=config, delay=config.delay + random.uniform(0, 1))
                 url = original_url
-                r = session.head(url=original_url, params=modify_params(), allow_redirects=True)
-                check_response(r)
 
-                if original_url_redirected := len(r.history) > 0:
-                    url = r.url
+                r: Optional[requests.Response] = None
+                if ia_wbm_booster:
+                    if ia_wbm_booster == WBM_EARLIEST:
+                        ia_timestamp = WBM_EARLIEST
+                    elif ia_wbm_booster == WBN_LATEST:
+                        ia_timestamp = WBN_LATEST
+                    elif ia_wbm_booster == WBM_BEST:
+                        if timestamp != NULL:
+                            ia_timestamp = [x for x in timestamp if x.isdigit()][0:8]
+                            ia_timestamp = "".join(ia_timestamp)
+                        else:
+                            print(f"ia_wbm_booster:    timestamp is {NULL}, use latest timestamp")
+                            ia_timestamp = 2
+                    else:
+                        raise ValueError(f"ia_wbm_booster is {ia_wbm_booster}, but it should be 0, 1, 2 or 3")
 
-                r = session.get(url=url, params=modify_params(), allow_redirects=False)
-                check_response(r)
+                    available_api = "http://archive.org/wayback/available"
+                    snap_url = f"https://web.archive.org/web/{ia_timestamp}id_/{url}"
 
-                # Try to fix a broken HTTP to HTTPS redirect
-                if r.status_code == 404 and original_url_redirected:
-                    if (
-                        original_url.startswith("http://")
-                        and url.startswith("https://")
-                    ):
-                        url = "https://" + original_url.split("://")[1]
-                        # print 'Maybe a broken http to https redirect, trying ', url
-                        r = session.get(url=url, params=modify_params(), allow_redirects=False)
-                        check_response(r)
+                    try:
+                        _r = session.get(available_api, params={"url": url}, headers={"User-Agent": "wikiteam3"},
+                                         timeout=10)
+                        _r.raise_for_status()
+                        api_result = _r.json()
+                        if api_result["archived_snapshots"]:
+                            r = session.get(url=snap_url, allow_redirects=True)
+                            # r.raise_for_status()
+                        else:
+                            r = None
+                    except Exception as e:
+                        print("ia_wbm_booster:",e)
+                        r = None
+
+                    # verify response
+                    if r is not None and r.status_code != 200:
+                        r = None
+                    elif r is not None and len(r.content) != int(size): # and r.status_code == 200:
+                        # FileSizeError
+                        # print(f"WARNING:    {filename_unquoted} size should be {size}, but got {len(r.content)} from WBM, use original url...")
+                        r = None
+
+                    if r is not None:
+                        c_wbm_speedup_files += 1
+
+
+                if r is None:
+                    try:
+                        config_dynamic = load_config(config=config, config_filename="config.json")
+                    except Exception as e:
+                        print(e)
+                        config_dynamic = config
+                    Delay(config=config, delay=config_dynamic.delay)
+                    r = session.get(url=url, params=modify_params(), allow_redirects=True, timeout=15)
+                    check_response(r)
+
+                    # Try to fix a broken HTTP to HTTPS redirect
+                    original_url_redirected = url != r.url
+                    if r.status_code == 404 and original_url_redirected:
+                        if (
+                            original_url.startswith("http://")
+                            and url.startswith("https://")
+                        ):
+                            url = "https://" + original_url.split("://")[1]
+                            # print 'Maybe a broken http to https redirect, trying ', url
+                            r = session.get(url=url, params=modify_params(), allow_redirects=True)
+                            check_response(r)
 
                 if r.status_code == 200:
                     try:
@@ -180,11 +250,14 @@ class Image:
             print_msg = f"              | {(len(images)-c_savedImageFiles)}=>{filename_unquoted[0:50]}"
             print(print_msg, " "*(73 - len(print_msg)), end="\r")
 
+        patch_sess.release()
         print(f"Downloaded {c_savedImageFiles} files")
+        if ia_wbm_booster and c_wbm_speedup_files:
+            print(f"(WBM speedup: {c_wbm_speedup_files} files)")
 
 
     @staticmethod
-    def get_image_names(config: Config=None, session: requests.Session=None):
+    def get_image_names(config: Config, session: requests.Session):
         """Get list of image names"""
 
         print(")Retrieving image filenames")
@@ -205,7 +278,7 @@ class Image:
 
 
     @staticmethod
-    def get_image_names_scraper(config: Config=None, session: requests.Session=None):
+    def get_image_names_scraper(config: Config, session: requests.Session):
         """Retrieve file list: filename, url, uploader"""
 
         images = []
@@ -223,7 +296,7 @@ class Image:
                 timeout=30,
             )
             raw = r.text
-            Delay(config=config, session=session)
+            Delay(config=config)
             # delicate wiki
             if re.search(
                 r"(?i)(allowed memory size of \d+ bytes exhausted|Call to a member function getURL)",
@@ -298,7 +371,7 @@ class Image:
         return images
 
     @staticmethod
-    def get_image_names_API(config: Config=None, session: requests.Session=None):
+    def get_image_names_API(config: Config, session: requests.Session):
         """Retrieve file list: filename, url, uploader, size, sha1"""
         oldAPI = False
         # # Commented by @yzqzss:
@@ -327,7 +400,7 @@ class Image:
             r = session.get(url=config.api, params=params, timeout=30)
             handle_StatusCode(r)
             jsonimages = get_JSON(r)
-            Delay(config=config, session=session)
+            Delay(config=config)
 
             if "query" in jsonimages:
                 countImages += len(jsonimages["query"]["allimages"])
@@ -416,7 +489,7 @@ class Image:
                 r = session.get(url=config.api, params=params, timeout=30)
                 handle_StatusCode(r)
                 jsonimages = get_JSON(r)
-                Delay(config=config, session=session)
+                Delay(config=config)
 
                 if "query" in jsonimages:
                     countImages += len(jsonimages["query"]["pages"])
@@ -470,35 +543,35 @@ class Image:
 
 
     @staticmethod
-    def save_image_names(config: Config=None, images: List[List]=None, session=None):
+    def save_image_names(config: Config, images: List[List]):
         """Save image list in a file, including filename, url, uploader, size and sha1"""
 
-        imagesfilename = "{}-{}-images.txt".format(
+        images_filename = "{}-{}-images.txt".format(
             url2prefix_from_config(config=config), config.date
         )
-        imagesfile = open(
-            "{}/{}".format(config.path, imagesfilename), "w", encoding="utf-8"
+        images_file = open(
+            "{}/{}".format(config.path, images_filename), "w", encoding="utf-8"
         )
         for line in images:
             while 3 <= len(line) < 6:
                 line.append(NULL) # At this point, make sure all lines have 5 elements
             filename, url, uploader, size, sha1, timestamp = line
             print(line,end='\r')
-            imagesfile.write(
+            images_file.write(
                 filename + "\t" + url + "\t" + uploader
                 + "\t" + (str(size) if size else NULL)
                 + "\t" + (str(sha1) if sha1 else NULL) # sha1 or size may be NULL
                 + "\t" + (timestamp if timestamp else NULL)
                 + "\n"
             )
-        imagesfile.write("--END--")
-        imagesfile.close()
+        images_file.write("--END--")
+        images_file.close()
 
-        print("Image filenames and URLs saved at...", imagesfilename)
+        print("Image filenames and URLs saved at...", images_filename)
 
 
     @staticmethod
-    def curate_image_URL(config: Config=None, url=""):
+    def curate_image_URL(config: Config, url: str):
         """Returns an absolute URL for an image, adding the domain if missing"""
 
         if config.index:

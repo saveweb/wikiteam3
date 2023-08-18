@@ -1,10 +1,12 @@
 import re
 
+import requests
+
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.dumpgenerator.api import get_JSON
 from wikiteam3.dumpgenerator.config import Config
 
-def getNamespacesScraper(config: Config=None, session=None):
+def getNamespacesScraper(config: Config, session: requests.Session):
     """Hackishly gets the list of namespaces names and ids from the dropdown in the HTML of Special:AllPages"""
     """Function called if no API is available"""
     namespaces = config.namespaces
@@ -14,7 +16,7 @@ def getNamespacesScraper(config: Config=None, session=None):
             url=config.index, params={"title": "Special:Allpages"}, timeout=30
         )
         raw = r.text
-        Delay(config=config, session=session)
+        Delay(config=config)
 
         # [^>]*? to include selected="selected"
         m = re.compile(
@@ -43,10 +45,10 @@ def getNamespacesScraper(config: Config=None, session=None):
     return namespaces, namespacenames
 
 
-def getNamespacesAPI(config: Config=None, session=None):
+def getNamespacesAPI(config: Config, session: requests.Session):
     """Uses the API to get the list of namespaces names and ids"""
     namespaces = config.namespaces
-    namespacenames = {0: ""}  # main is 0, no prefix
+    namespace_names = {0: ""}  # main is 0, no prefix
     if namespaces:
         r = session.get(
             url=config.api,
@@ -59,7 +61,7 @@ def getNamespacesAPI(config: Config=None, session=None):
             timeout=30,
         )
         result = get_JSON(r)
-        Delay(config=config, session=session)
+        Delay(config=config)
         try:
             nsquery = result["query"]["namespaces"]
         except KeyError:
@@ -74,7 +76,7 @@ def getNamespacesAPI(config: Config=None, session=None):
                 if int(i) < 0:  # -1: Special, -2: Media, excluding
                     continue
                 namespaces.append(int(i))
-                namespacenames[int(i)] = nsquery[i]["*"]
+                namespace_names[int(i)] = nsquery[i]["*"]
         else:
             # check if those namespaces really exist in this wiki
             namespaces2 = []
@@ -85,11 +87,11 @@ def getNamespacesAPI(config: Config=None, session=None):
                     continue
                 if i in namespaces:
                     namespaces2.append(i)
-                    namespacenames[i] = nsquery[bi]["*"]
+                    namespace_names[i] = nsquery[bi]["*"]
             namespaces = namespaces2
     else:
         namespaces = [0]
 
     namespaces = list(set(namespaces))  # uniques
     print("%d namespaces found" % (len(namespaces)))
-    return namespaces, namespacenames
+    return namespaces, namespace_names

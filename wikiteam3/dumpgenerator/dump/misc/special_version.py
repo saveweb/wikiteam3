@@ -16,7 +16,7 @@ def save_SpecialVersion(config: Config=None, session=None):
             url=config.index, params={"title": "Special:Version"}, timeout=10
         )
         raw = str(r.text)
-        Delay(config=config, session=session)
+        Delay(config=config)
         raw = str(remove_IP(raw=raw))
         with open(
             "%s/SpecialVersion.html" % (config.path), "w", encoding="utf-8"

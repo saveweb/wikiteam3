@@ -1,25 +1,30 @@
 import re
 import sys
-from typing import Optional, Union
+from typing import Generator, List, Optional, Union, overload
 from urllib.parse import urlparse
 
 import mwclient
 from file_read_backwards import FileReadBackwards
+import requests
 
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI, getNamespacesScraper
 from wikiteam3.utils import url2prefix_from_config, clean_HTML, undo_HTML_entities
 from wikiteam3.dumpgenerator.config import Config
-from wikiteam3.utils.monkey_patch import DelaySession
+from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
 
 
-def getPageTitlesAPI(config: Config=None, session=None):
+def getPageTitlesAPI(config: Config, session: requests.Session):
     """Uses the API to get the list of page titles"""
     titles = []
     namespaces, namespacenames = getNamespacesAPI(config=config, session=session)
 
     # apply delay to the session for mwclient.Site.allpages()
-    delay_session = DelaySession(session=session, msg="Session delay: "+__name__, config=config)
+    delay_session = SessionMonkeyPatch(
+            session=session, config=config,
+            add_delay=True, delay_msg="Session delay: "+__name__,
+            hard_retries=3
+        )
     delay_session.hijack()
     for namespace in namespaces:
         if namespace in config.exnamespaces:
@@ -45,7 +50,7 @@ def getPageTitlesAPI(config: Config=None, session=None):
     delay_session.release()
 
 
-def getPageTitlesScraper(config: Config=None, session=None):
+def getPageTitlesScraper(config: Config, session: requests.Session):
     """Scrape the list of page titles from Special:Allpages"""
     titles = []
     namespaces, namespacenames = getNamespacesScraper(config=config, session=session)
@@ -124,7 +129,7 @@ def getPageTitlesScraper(config: Config=None, session=None):
                 if name not in checked_suballpages:
                     # to avoid reload dupe subpages links
                     checked_suballpages.append(name)
-                    Delay(config=config, session=session)
+                    Delay(config=config)
                     # print ('Fetching URL: ', url)
                     r = session.get(url=url, timeout=10)
                     raw = str(r.text)
@@ -141,7 +146,7 @@ def getPageTitlesScraper(config: Config=None, session=None):
                         "pages",
                     )
 
-                Delay(config=config, session=session)
+                Delay(config=config)
             
             assert currfr is not None, "re.search found the pattern, but re.finditer fails, why?"
             oldfr = currfr
@@ -159,7 +164,7 @@ def getPageTitlesScraper(config: Config=None, session=None):
     return titles
 
 
-def getPageTitles(config: Config=None, session=None):
+def getPageTitles(config: Config, session: requests.Session):
     """Get list of page titles"""
     # http://en.wikipedia.org/wiki/Special:AllPages
     # http://wiki.archiveteam.org/index.php?title=Special:AllPages
@@ -211,7 +216,7 @@ def getPageTitles(config: Config=None, session=None):
     print("%d page titles loaded" % (c))
     return titlesfilename
 
-def checkTitleOk(config: Config=None, ):
+def checkTitleOk(config: Config):
     try:
         with FileReadBackwards(
                 "%s/%s-%s-titles.txt"
@@ -233,7 +238,15 @@ def checkTitleOk(config: Config=None, ):
     return True
 
 
-def read_titles(config: Config=None, session=None, start: Optional[str]=None, batch: Union[bool,int]=False):
+# @overload
+# def read_titles(config: Config, session: requests.Session, start: Optional[str]=None, batch: bool = False) -> Generator[str, None, None]:
+#     pass
+
+# @overload
+# def read_titles(config: Config, session: requests.Session, start: Optional[str]=None, batch: int = 1) -> Generator[List[str], None, None]:
+#     pass
+
+def read_titles(config: Config, session: requests.Session, start: Optional[str]=None, batch: Union[bool,int]=False) -> Generator[Union[str,List[str]], None, None]:
     """Read title list from a file, from the title "start" 
     
     start: title to start reading from
