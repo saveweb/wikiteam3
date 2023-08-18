@@ -31,7 +31,7 @@ class ZstdCompressor:
         return tuple(ret_versions)
 
     @staticmethod
-    def compress_file(path: Union[str, Path], level: int = 1, zstd_bin: str = "zstd"):
+    def compress_file(path: Union[str, Path], level: int = 5, zstd_bin: str = "zstd"):
         ''' Compress path into path.zst and return the absolute path to the compressed file.
 
         we set -T0 to use all cores, --long=31 to use 2^31 (2GB) window size

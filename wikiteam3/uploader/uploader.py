@@ -125,7 +125,7 @@ def prepare_xml_zst_file(wikidump_dir: Path, config: Config) -> Path:
     if xml_file_path.exists():
         assert xmldump_is_complete(xml_file_path)
         with SocketLockServer(): # ensure only one process is compressing, to avoid OOM
-            r = ZstdCompressor.compress_file(xml_file_path, level=18)
+            r = ZstdCompressor.compress_file(xml_file_path, level=17)
             assert r == xml_zstd_file_path.resolve()
             assert xml_zstd_file_path.exists()
             assert ZstdCompressor.test_integrity(r)
