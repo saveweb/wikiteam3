@@ -1,6 +1,11 @@
 # `wikiteam3`
 
+<!-- !["MediaWikiArchive.png"](./MediaWikiArchive.png) -->
+<div align=center><img width = '150' height ='150' src ="./MediaWikiArchive.png"/></div>
+
 > Countless MediaWikis are still waiting to be archived.
+>
+> _Image by [@gledos](https://github.com/gledos/)_
 
 `wikiteam3` is a fork of `mediawiki-scraper`.
 
@@ -12,10 +17,6 @@ So, we decided to break that suggestion, fork and named it back to wikiteam3, pu
 
 Everything still under GPLv3 license.
 
-## wikiteam3 Toolset
-
-wikiteam3 is a set of tools for archiving wikis. The main general-purpose module of wikiteam3 is dumpgenerator, which can download XML dumps of MediaWiki sites that can then be parsed or redeployed elsewhere.
-
 ## Installation
 
 ```shell
@@ -24,12 +25,10 @@ pip install wikiteam3
 
 ## Usage
 
-TODO: move usage to a separate doc
-
 ### Downloading a wiki with complete XML history and images
 
 ```bash
-dumpgenerator http://wiki.domain.org --xml --images
+wikiteam3dumpgenerator http://wiki.domain.org --xml --images
 ```
 
 ### Manually specifying `api.php` and/or `index.php`
@@ -37,11 +36,11 @@ dumpgenerator http://wiki.domain.org --xml --images
 If the script can't find itself the `api.php` and/or `index.php` paths, then you can provide them:
 
 ```bash
-dumpgenerator --api http://wiki.domain.org/w/api.php --xml --images
+wikiteam3dumpgenerator --api http://wiki.domain.org/w/api.php --xml --images
 ```
 
 ```bash
-dumpgenerator --api http://wiki.domain.org/w/api.php --index http://wiki.domain.org/w/index.php \
+wikiteam3dumpgenerator --api http://wiki.domain.org/w/api.php --index http://wiki.domain.org/w/index.php \
     --xml --images
 ```
 
@@ -50,21 +49,32 @@ If you only want the XML histories, just use `--xml`. For only the images, just 
 ### Resuming an incomplete dump
 
 ```bash
-dumpgenerator \
+wikiteam3dumpgenerator \
     --api http://wiki.domain.org/w/api.php --xml --images --resume --path /path/to/incomplete-dump
 ```
 
 In the above example, `--path` is only necessary if the download path is not the default.
 
-`dumpgenerator` will also ask you if you want to resume if it finds an incomplete dump in the path where it is downloading.
+`wikiteam3dumpgenerator` will also ask you if you want to resume if it finds an incomplete dump in the path where it is downloading.
 
-## Using `uploader`
+## Using `wikiteam3uploader`
 
 TODO: ...
 
+### Requirements
+
+- unbinded port 62954
+- 4GB+ RAM (~3.5GB for commpressing, 2.0GB for uncompressing)
+- 64-bit OS (required by 2G wlog size)
+- 7z
+- zstd 1.4.8 (minimum), v1.5.0-v1.5.4(DO NOT USE) 1.5.5+ (recommended)
+
+> We use --long=31 (2GB windowLog) for zstd, which is only available since 1.4.7 .
+> (1.4.9 x2 faster than 1.4.8)
+
 ## Checking dump integrity
 
-TODO: move to a separate doc
+TODO: xml2titles.py
 
 If you want to check the XML dump integrity, type this into your command line to count title, page and revision XML tags:
 
@@ -84,10 +94,6 @@ You should see something similar to this (not the actual numbers) - the first th
 ```
 
 If your first three numbers or your last two numbers are different, then, your XML dump is corrupt (it contains one or more unfinished ```</page>``` or ```</revision>```). This is not common in small wikis, but large or very large wikis may fail at this due to truncated XML pages while exporting and merging. The solution is to remove the XML dump and re-download, a bit boring, and it can fail again.
-
-## Publishing the dump
-
-Please consider publishing your wiki dump(s). You can do it yourself as explained at WikiTeam's [Publishing the dump](https://github.com/WikiTeam/wikiteam/wiki/Tutorial#Publishing_the_dump) tutorial.
 
 ## Contributors
 
