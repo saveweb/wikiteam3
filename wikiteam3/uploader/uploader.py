@@ -6,6 +6,7 @@ import re
 import shutil
 from dataclasses import dataclass
 import time
+import traceback
 from typing import Dict, List, Optional, Tuple, Union
 import urllib.parse
 from io import BytesIO
@@ -320,6 +321,7 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
     }
     print("=== Item metadata: ===")
     print(json.dumps(metadata, indent=4, sort_keys=True, ensure_ascii=False))
+    print(f"logo_url: {logo_url}")
 
     return metadata, logo_url
 
@@ -385,6 +387,7 @@ def upload(arg: Args):
             logo_url = urllib.parse.urljoin(config.api or config.index, logo_url)
             upload_logo(item, logo_url, ia_keys)
         except Exception as e:
+            traceback.print_exc()
             print(f"Failed to upload logo: {e}")
             print("Don't worry, it's optional.")
     
@@ -412,8 +415,18 @@ def upload_logo(item: Item, logo_url: str, ia_keys: IAKeys):
         if file_["name"] == logo_name:
             print(f"Logo {logo_name} already exists, skip")
             return
+    logo_io = None
+    for tries_left in range(4, 0, -1):
+        try:
+            logo_io = BytesIO(requests.get(logo_url, timeout=20).content)
+            break
+        except:
+            if tries_left == 1:
+                raise
+            print(f"Failed to download logo, retrying ({tries_left} tries left)")
+            time.sleep(3)
 
-    logo_io = BytesIO(requests.get(logo_url, timeout=20).content)
+    assert logo_io
 
     r_co = item.upload(
         {logo_name: logo_io},
