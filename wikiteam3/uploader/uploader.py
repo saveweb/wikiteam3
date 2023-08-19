@@ -292,7 +292,7 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
         keywords.append("unknowncopyright")
 
     licenseurl: Optional[str] = urllib.parse.urljoin(config.api or config.index, rights_url) if rights_url else None
-    description =  f'<a href="{urllib.parse.quote(base_url)}">{sitename or wiki_prefix}</a> dumped with <a href="https://github.com/saveweb/wikiteam3/" rel="nofollow">wikiteam3</a> tools.'
+    description =  f'<a href="{base_url}">{sitename or wiki_prefix}</a> dumped with <a href="https://github.com/saveweb/wikiteam3/" rel="nofollow">wikiteam3</a> tools.'
 
     metadata = {
         "mediatype": "web",
