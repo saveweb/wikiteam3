@@ -183,9 +183,13 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item) -> D
         if not config.xmlrevisions:
             #  -titles.txt
             titles_txt_path = wikidump_dir / f"{config2basename(config)}-titles.txt"
+            titles_txt_zstd_path = wikidump_dir / f"{config2basename(config)}-titles.txt.zst"
             assert titles_txt_path.exists()
             assert checkTitleOk(config)
-            filedict[f"{config2basename(config)}-dumpMeta/{titles_txt_path.name}"] = str(titles_txt_path)
+            r = ZstdCompressor.compress_file(titles_txt_path, level=17)
+            assert r == titles_txt_zstd_path.resolve()
+            assert ZstdCompressor.test_integrity(r)
+            filedict[f"{config2basename(config)}-dumpMeta/{titles_txt_zstd_path.name}"] = str(titles_txt_zstd_path)
         xml_zstd_path = prepare_xml_zst_file(wikidump_dir, config)
         filedict[f"{xml_zstd_path.name}"] = str(xml_zstd_path)
 
@@ -193,8 +197,12 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item) -> D
     if config.images:
         # images.txt
         images_txt_path = wikidump_dir / f"{config2basename(config)}-images.txt"
+        images_txt_zstd_path = wikidump_dir / f"{config2basename(config)}-images.txt.zst"
         assert images_list_is_complete(images_txt_path)
-        filedict[f"{config2basename(config)}-dumpMeta/{images_txt_path.name}"] = str(images_txt_path)
+        r = ZstdCompressor.compress_file(images_txt_path, level=17)
+        assert r == images_txt_zstd_path.resolve()
+        assert ZstdCompressor.test_integrity(r)
+        filedict[f"{config2basename(config)}-dumpMeta/{images_txt_zstd_path.name}"] = str(images_txt_zstd_path)
 
         # images.7z
         images_7z_archive_path = prepare_images_7z_archive(wikidump_dir, config)
