@@ -283,8 +283,10 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
         "wikiteam",
         "wikiteam3",
         "MediaWiki",
-        sitename or wiki_prefix,
+        wiki_prefix,
     ]
+    if sitename:
+        keywords.append(sitename)
     if not rights_url and not rights_text:
         keywords.append("unknowncopyright")
 
