@@ -400,6 +400,8 @@ def upload(arg: Args):
         print(r.text)
         r.raise_for_status()
     print("=== Uploading complete ===")
+    print(f"identifier: {identifier}")
+    print(f"URL: https://archive.org/details/{identifier}")
     mark_as_done(config, UPLOADED_MARK, msg=f"identifier: {identifier}")
 
 def upload_logo(item: Item, logo_url: str, ia_keys: IAKeys):
