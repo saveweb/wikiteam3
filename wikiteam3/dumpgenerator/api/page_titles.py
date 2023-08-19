@@ -254,8 +254,8 @@ def read_titles(config: Config, session: requests.Session, start: Optional[str]=
     """
 
     assert batch is False or isinstance(batch, int), "batch must be False or int"
-    if isinstance(batch, int):
-        assert batch > 0, "batch must be positive"
+    if type(batch) is int:
+        assert batch > 0, f"batch must be positive"
 
     if not checkTitleOk(config):
         getPageTitles(config=config, session=session)
