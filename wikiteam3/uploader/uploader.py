@@ -43,6 +43,7 @@ class IAKeys:
 class Args:
     keys_file: Path
     collection: str
+    dry_run: bool
     update: bool
     wikidump_dir: Path
 
@@ -363,6 +364,10 @@ def upload(arg: Args):
     print("=== Preparing metadata ===")
     metadata, logo_url = prepare_item_metadata(wikidump_dir, config, arg)
 
+    if arg.dry_run:
+        print("=== Dry run, exiting ===")
+        return
+
     print("=== Uploading ===")
     upload_main_resouces(item, filedict, metadata, ia_keys)
 
@@ -454,6 +459,8 @@ def main():
     parser.add_argument("-kf", "--keys_file", default="~/.wikiteam3_ia_keys.txt", dest="keys_file",
                         help="Path to the IA S3 keys file. (first line: access key, second line: secret key)"
                              " [default: ~/.wikiteam3_ia_keys.txt]")
+    parser.add_argument("-c", "--collection", default=DEFAULT_COLLECTION, choices=[DEFAULT_COLLECTION, TEST_COLLECTION, WIKITEAM_COLLECTION])
+    parser.add_argument("--dry-run", action="store_true", help="Dry run, do not upload anything.")
     parser.add_argument("-u", "--update", action="store_true",
                         help="Update existing item. [!! not implemented yet !!]")
     parser.add_argument("--bin-zstd", default="zstd", dest="bin_zstd",
@@ -464,7 +471,6 @@ def main():
                         help="Path to 7z binary. [default: 7z] "
                         "[!! not implemented yet !!]"
                         )
-    parser.add_argument("-c", "--collection", default=DEFAULT_COLLECTION, choices=[DEFAULT_COLLECTION, TEST_COLLECTION, WIKITEAM_COLLECTION])
     parser.add_argument("wikidump_dir")
     
     arg = Args(**vars(parser.parse_args()))
