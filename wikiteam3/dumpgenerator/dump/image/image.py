@@ -18,6 +18,7 @@ from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDA
 from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
 from wikiteam3.dumpgenerator.exceptions import PageMissingError, FileSizeError
 from wikiteam3.dumpgenerator.log import log_error
+from wikiteam3.dumpgenerator.version import getVersion
 from wikiteam3.utils import url2prefix_from_config, sha1sum, clean_HTML, undo_HTML_entities
 from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
 
@@ -89,6 +90,9 @@ class Image:
 
         patch_sess = SessionMonkeyPatch(session=session, config=config, hard_retries=3)
         patch_sess.hijack()
+
+        ia_session = requests.Session()
+        ia_session.headers.update({"User-Agent": f"wikiteam3/{getVersion()}"})
 
         skip_to_filename = '' # TODO: use this
         for filename_raw, original_url, uploader, size, sha1, timestamp in images:
@@ -167,12 +171,14 @@ class Image:
                     snap_url = f"https://web.archive.org/web/{ia_timestamp}id_/{url}"
 
                     try:
-                        _r = session.get(available_api, params={"url": url}, headers={"User-Agent": "wikiteam3"},
+                        _r = ia_session.get(available_api, params={"url": url}, headers={"User-Agent": "wikiteam3"},
                                          timeout=10)
+                        if _r.status_code == 429:
+                            raise Exception("IA API rate limit exceeded")
                         _r.raise_for_status()
                         api_result = _r.json()
                         if api_result["archived_snapshots"]:
-                            r = session.get(url=snap_url, allow_redirects=True)
+                            r = ia_session.get(url=snap_url, allow_redirects=True)
                             # r.raise_for_status()
                         else:
                             r = None

@@ -45,6 +45,11 @@ def getArgumentParser():
         action="store_true",
         help="resumes previous incomplete dump (requires --path)",
     )
+    parser.add_argument('--upload', action='store_true', 
+                        help='Upload wikidump to Internet Archive after successfully dumped'
+    )
+    parser.add_argument("-g", "--uploader-arg", dest="uploader_args", action='append', default=[],
+                        help="Arguments for uploader.")
     parser.add_argument("--force", action="store_true", help="")
     parser.add_argument("--user", help="Username if MedaiWiki authentication is required.")
     parser.add_argument(
@@ -136,7 +141,7 @@ def getArgumentParser():
         default=0,
         choices=[0, 1, 2, 3],
         required=False,
-        help="Use Internet Archive Wayback Machine to speed up image downloads."
+        help="Download images from Internet Archive Wayback Machine if possible, reduce the bandwidth usage of the wiki. "
             "[0: disabled (default), 1: use earliest snapshot, 2: use latest snapshot, "
             "3: the closest snapshot to the image's upload time]", 
     )
@@ -470,6 +475,8 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "disable_image_verify": args.disable_image_verify,
         "image_timestamp_interval": args.image_timestamp_interval,
         "ia_wbm_booster": args.ia_wbm_booster,
+        "upload": args.upload,
+        "uploader_args": args.uploader_args,
     }
 
     # calculating path, if not defined by user with --path=

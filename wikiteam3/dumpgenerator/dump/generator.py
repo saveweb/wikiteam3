@@ -1,6 +1,7 @@
 import contextlib
 import os
 import re
+import subprocess
 import sys
 import traceback
 from typing import Dict
@@ -249,3 +250,13 @@ class DumpGenerator:
         if config.logs:
             # fix
             pass
+
+        if other["upload"]:
+            print('Calling uploader... (--upload)')
+            retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other["uploader_args"],
+                shell=False)
+            if retcode:
+                print(f'--upload: Failed: {retcode}')
+                sys.exit(retcode)
+            
+            print('--upload: Done')
