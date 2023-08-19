@@ -285,7 +285,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
                     msg = 'req retry (%s)' % response.status
                 else:
                     msg = None
-                Delay(config=None, session=session, msg=msg, delay=backoff)
+                Delay(config=None, msg=msg, delay=backoff)
 
         __retries__ = CustomRetry(
             total=int(args.retries), backoff_factor=0.3,
