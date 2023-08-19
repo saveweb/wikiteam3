@@ -381,6 +381,7 @@ def upload(arg: Args):
     print("=== Uploading ===")
     upload_main_resouces(item, filedict, metadata, ia_keys)
 
+    item = get_item(identifier)
     if logo_url:
         print("=== Uploading logo (optional) ===")
         try:
@@ -403,7 +404,6 @@ def upload(arg: Args):
 
 def upload_logo(item: Item, logo_url: str, ia_keys: IAKeys):
     assert logo_url
-    assert item.exists
     assert item.identifier
 
     parsed_url = urllib.parse.urlparse(logo_url)
