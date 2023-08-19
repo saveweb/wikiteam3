@@ -20,7 +20,7 @@ Everything still under GPLv3 license.
 ## Installation
 
 ```shell
-pip install wikiteam3
+pip install wikiteam3 --upgrade
 ```
 
 ## Usage
