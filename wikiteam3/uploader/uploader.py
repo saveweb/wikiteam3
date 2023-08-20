@@ -167,6 +167,9 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item) -> D
     assert config_json_path.exists()
     filedict[f"{config2basename(config)}-dumpMeta/config.json"] = str(config_json_path)
 
+    # errors.log optional
+    if (wikidump_dir / "errors.log").exists():
+        filedict[f"{config2basename(config)}-dumpMeta/errors.log"] = str(wikidump_dir / "errors.log")
     # SpecialVersion.html optional
     if (wikidump_dir / "SpecialVersion.html").exists():
         filedict[f"{config2basename(config)}-dumpMeta/SpecialVersion.html"] = str(wikidump_dir / "SpecialVersion.html")
