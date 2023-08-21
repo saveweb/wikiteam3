@@ -19,7 +19,7 @@ from file_read_backwards import FileReadBackwards
 from wikiteam3.dumpgenerator.api.page_titles import checkTitleOk
 from wikiteam3.dumpgenerator.config import Config, load_config
 from wikiteam3.dumpgenerator.version import getVersion
-from wikiteam3.uploader.socketLock import SocketLockServer
+from wikiteam3.uploader.socketLock import NoLock, SocketLockServer
 from wikiteam3.utils import url2prefix_from_config, sha1sum
 from wikiteam3.uploader.compresser import ZstdCompressor, SevenZipCompressor
 from wikiteam3.utils.util import ALL_DUMPED_MARK, UPLOADED_MARK, mark_as_done, is_markfile_exists
@@ -50,6 +50,7 @@ class Args:
 
     bin_zstd: str
     bin_7z: str
+    parallel: bool
 
     def __post_init__(self):
         self.keys_file = Path(self.keys_file).expanduser().resolve()
@@ -115,7 +116,7 @@ def get_xml_filename(config: Config) -> str:
     return xml_filename
 
 
-def prepare_xml_zst_file(wikidump_dir: Path, config: Config) -> Path:
+def prepare_xml_zst_file(wikidump_dir: Path, config: Config, parallel: bool) -> Path:
     """ Compress xml file to .zst file."""
     xml_filename = get_xml_filename(config)
 
@@ -126,7 +127,8 @@ def prepare_xml_zst_file(wikidump_dir: Path, config: Config) -> Path:
 
     if xml_file_path.exists():
         assert xmldump_is_complete(xml_file_path)
-        with SocketLockServer(): # ensure only one process is compressing, to avoid OOM
+        with NoLock() if parallel else SocketLockServer():
+            # ensure only one process is compressing, to avoid OOM
             r = ZstdCompressor.compress_file(xml_file_path, level=17)
             assert r == xml_zstd_file_path.resolve()
             assert xml_zstd_file_path.exists()
@@ -141,14 +143,14 @@ def prepare_xml_zst_file(wikidump_dir: Path, config: Config) -> Path:
     return xml_zstd_file_path.resolve()
 
 
-def prepare_images_7z_archive(wikidump_dir: Path, config: Config) -> Path:
+def prepare_images_7z_archive(wikidump_dir: Path, config: Config, parallel: bool) -> Path:
 
     images_dir = wikidump_dir / "images"
     assert images_dir.exists() and images_dir.is_dir()
 
     images_7z_archive_path = wikidump_dir / f"{config2basename(config)}-images.7z"
     if not images_7z_archive_path.exists() or not images_7z_archive_path.is_file():
-        with SocketLockServer():
+        with NoLock() if parallel else SocketLockServer():
             r = SevenZipCompressor.compress_dir(images_dir)
             shutil.move(r, images_7z_archive_path)
 
@@ -158,7 +160,7 @@ def prepare_images_7z_archive(wikidump_dir: Path, config: Config) -> Path:
     return images_7z_archive_path.resolve()
 
 
-def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item) -> Dict[str, str]:
+def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, parallel: bool) -> Dict[str, str]:
     """ return: filedict ("remote filename": "local filename") """
     filedict = {} # "remote filename": "local filename"
 
@@ -194,7 +196,7 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item) -> D
             assert r == titles_txt_zstd_path.resolve()
             assert ZstdCompressor.test_integrity(r)
             filedict[f"{config2basename(config)}-dumpMeta/{titles_txt_zstd_path.name}"] = str(titles_txt_zstd_path)
-        xml_zstd_path = prepare_xml_zst_file(wikidump_dir, config)
+        xml_zstd_path = prepare_xml_zst_file(wikidump_dir, config, parallel)
         filedict[f"{xml_zstd_path.name}"] = str(xml_zstd_path)
 
     # images
@@ -209,7 +211,7 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item) -> D
         filedict[f"{config2basename(config)}-dumpMeta/{images_txt_zstd_path.name}"] = str(images_txt_zstd_path)
 
         # images.7z
-        images_7z_archive_path = prepare_images_7z_archive(wikidump_dir, config)
+        images_7z_archive_path = prepare_images_7z_archive(wikidump_dir, config, parallel)
         filedict[f"{images_7z_archive_path.name}"] = str(images_7z_archive_path)
 
     print("=== Files already uploaded: ===")
@@ -372,7 +374,7 @@ def upload(arg: Args):
     item = get_item(identifier)
 
     print(f"=== Preparing files to upload ===")
-    filedict = prepare_files_to_upload(wikidump_dir, config, item)
+    filedict = prepare_files_to_upload(wikidump_dir, config, item, arg.parallel)
 
     print("=== Preparing metadata ===")
     metadata, logo_url = prepare_item_metadata(wikidump_dir, config, arg)
@@ -497,6 +499,7 @@ def main():
                         help="Path to 7z binary. [default: 7z] "
                         "[!! not implemented yet !!]"
                         )
+    parser.add_argument("--parallel", action="store_true", help="Parallelize compression tasks")
     parser.add_argument("wikidump_dir")
     
     arg = Args(**vars(parser.parse_args()))

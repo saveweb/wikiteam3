@@ -15,7 +15,7 @@ def welcome():
     message += welcome_string
     message += "\n"
     message += (
-        "# More info at: https://github.com/elsiehupp/wikiteam3                  #"
+        "# More info at: https://github.com/saveweb/wikiteam3                  #"
     )
     message += "\n"
     message += (
