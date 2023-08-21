@@ -9,7 +9,7 @@ from wikiteam3.dumpgenerator.api.get_json import get_JSON
 from wikiteam3.utils import get_random_UserAgent
 
 
-def check_API(api: str, session: requests.Session=None):
+def check_API(api: str, session: requests.Session):
     """Checking API availability"""
     global cj
     # handle redirects
@@ -54,7 +54,7 @@ def check_API(api: str, session: requests.Session=None):
     return None
 
 
-def mediawiki_get_API_and_Index(url: str, session: requests.Session=None):
+def mediawiki_get_API_and_Index(url: str, session: requests.Session):
     """Returns the MediaWiki API and Index.php"""
 
     api = ""
@@ -67,12 +67,12 @@ def mediawiki_get_API_and_Index(url: str, session: requests.Session=None):
 
     # API
     m = re.findall(
-        r'(?im)<\s*link\s*rel="EditURI"\s*type="application/rsd\+xml"\s*href="([^>]+?)\?action=rsd"\s*/\s*>',
+        r'(?im)<\s*link\s*rel="EditURI"\s*type="application/rsd\+xml"\s*href="([^>]+?)\?action=rsd"[^>]*?>',
         result,
     )
     if m:
         api = m[0]
-        if api.startswith("//"):  # gentoo wiki
+        if api.startswith("//"):  # relative-protocol URL: https://wiki.gentoo.org/, https://www.mediawiki.org/
             api = url.split("//")[0] + api
     else:
         pass  # build API using index and check it
