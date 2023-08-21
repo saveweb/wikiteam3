@@ -20,6 +20,7 @@ from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generate_XML_dump
 from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import check_XML_integrity
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import url2prefix_from_config, undo_HTML_entities, avoid_WikiMedia_projects
+from wikiteam3.utils.ia_checker import any_recent_ia_item_exists
 from wikiteam3.utils.util import ALL_DUMPED_MARK, mark_as_done
 
 # From https://stackoverflow.com/a/57008707
@@ -92,6 +93,10 @@ class DumpGenerator:
                 print("Loading config file...")
                 config = load_config(config=config, config_filename=config_filename)
             else:
+                if not other['force'] and any_recent_ia_item_exists(config, days=365):
+                    print("A dump of this wiki was uploaded to IA in the last 365 days. Aborting.")
+                    sys.exit(88)
+
                 os.mkdir(config.path)
                 save_config(config=config, config_filename=config_filename)
 
