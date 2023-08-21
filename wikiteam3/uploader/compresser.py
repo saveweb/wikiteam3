@@ -8,6 +8,7 @@ import warnings
 
 
 class ZstdCompressor:
+    DEFAULT_LEVEL = 17
     MIN_VERSION = (1, 4, 8)
     def __init__(self, zstd_bin: str = "zstd"):
         """ versionCheck: check if zstd version is >= 1.4.8 """
@@ -31,7 +32,7 @@ class ZstdCompressor:
         return tuple(ret_versions)
 
     @staticmethod
-    def compress_file(path: Union[str, Path], level: int = 5, zstd_bin: str = "zstd"):
+    def compress_file(path: Union[str, Path], *, level: int = DEFAULT_LEVEL, zstd_bin: str = "zstd"):
         ''' Compress path into path.zst and return the absolute path to the compressed file.
 
         we set -T0 to use all cores, --long=31 to use 2^31 (2GB) window size
@@ -40,8 +41,8 @@ class ZstdCompressor:
             - 1 -> fast
             - ...
             - 19 -> high
-            - ... (not available)
-            - 22 -> ultra (not available)
+            - ... (ultra mode)
+            - 22 -> best
         '''
         if isinstance(path, str):
             path = Path(path)
@@ -57,9 +58,12 @@ class ZstdCompressor:
             print(f"File {compressed_path} already exists. Skip compressing.")
             return compressed_path
 
-        subprocess.run(
-            [zstd_bin, "-T0","-v", "--compress", "--force", f"-{level}", str(path), "-o", str(compressing_temp_path)]
-        )
+        cmd =  [zstd_bin, "-T0","-v", "--compress", "--force", "--long=31"]
+        if level >= 20:
+            cmd.append("--ultra")
+        cmd.extend([f"-{level}", str(path), "-o", str(compressing_temp_path)])
+
+        subprocess.run(cmd)
         assert compressing_temp_path.exists()
         # move tmp file to final file
         os.rename(compressing_temp_path, compressed_path)

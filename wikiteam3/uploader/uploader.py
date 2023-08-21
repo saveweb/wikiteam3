@@ -49,6 +49,7 @@ class Args:
     wikidump_dir: Path
 
     bin_zstd: str
+    zstd_level: int
     bin_7z: str
     parallel: bool
 
@@ -116,7 +117,7 @@ def get_xml_filename(config: Config) -> str:
     return xml_filename
 
 
-def prepare_xml_zst_file(wikidump_dir: Path, config: Config, parallel: bool) -> Path:
+def prepare_xml_zst_file(wikidump_dir: Path, config: Config, *, parallel: bool, zstd_level: int) -> Path:
     """ Compress xml file to .zst file."""
     xml_filename = get_xml_filename(config)
 
@@ -129,7 +130,7 @@ def prepare_xml_zst_file(wikidump_dir: Path, config: Config, parallel: bool) -> 
         assert xmldump_is_complete(xml_file_path)
         with NoLock() if parallel else SocketLockServer():
             # ensure only one process is compressing, to avoid OOM
-            r = ZstdCompressor.compress_file(xml_file_path, level=17)
+            r = ZstdCompressor.compress_file(xml_file_path, level=zstd_level)
             assert r == xml_zstd_file_path.resolve()
             assert xml_zstd_file_path.exists()
             assert ZstdCompressor.test_integrity(r)
@@ -160,7 +161,7 @@ def prepare_images_7z_archive(wikidump_dir: Path, config: Config, parallel: bool
     return images_7z_archive_path.resolve()
 
 
-def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, parallel: bool) -> Dict[str, str]:
+def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, *, parallel: bool, zstd_level: int) -> Dict[str, str]:
     """ return: filedict ("remote filename": "local filename") """
     filedict = {} # "remote filename": "local filename"
 
@@ -192,11 +193,11 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, para
             titles_txt_zstd_path = wikidump_dir / f"{config2basename(config)}-titles.txt.zst"
             assert titles_txt_path.exists()
             assert checkTitleOk(config)
-            r = ZstdCompressor.compress_file(titles_txt_path, level=17)
+            r = ZstdCompressor.compress_file(titles_txt_path,level=zstd_level)
             assert r == titles_txt_zstd_path.resolve()
             assert ZstdCompressor.test_integrity(r)
             filedict[f"{config2basename(config)}-dumpMeta/{titles_txt_zstd_path.name}"] = str(titles_txt_zstd_path)
-        xml_zstd_path = prepare_xml_zst_file(wikidump_dir, config, parallel)
+        xml_zstd_path = prepare_xml_zst_file(wikidump_dir, config, parallel=parallel, zstd_level=zstd_level)
         filedict[f"{xml_zstd_path.name}"] = str(xml_zstd_path)
 
     # images
@@ -205,7 +206,7 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, para
         images_txt_path = wikidump_dir / f"{config2basename(config)}-images.txt"
         images_txt_zstd_path = wikidump_dir / f"{config2basename(config)}-images.txt.zst"
         assert images_list_is_complete(images_txt_path)
-        r = ZstdCompressor.compress_file(images_txt_path, level=17)
+        r = ZstdCompressor.compress_file(images_txt_path, level=zstd_level)
         assert r == images_txt_zstd_path.resolve()
         assert ZstdCompressor.test_integrity(r)
         filedict[f"{config2basename(config)}-dumpMeta/{images_txt_zstd_path.name}"] = str(images_txt_zstd_path)
@@ -374,7 +375,7 @@ def upload(arg: Args):
     item = get_item(identifier)
 
     print(f"=== Preparing files to upload ===")
-    filedict = prepare_files_to_upload(wikidump_dir, config, item, arg.parallel)
+    filedict = prepare_files_to_upload(wikidump_dir, config, item, parallel=arg.parallel, zstd_level=arg.zstd_level)
 
     print("=== Preparing metadata ===")
     metadata, logo_url = prepare_item_metadata(wikidump_dir, config, arg)
@@ -494,6 +495,10 @@ def main():
     parser.add_argument("--bin-zstd", default="zstd", dest="bin_zstd",
                         help="Path to zstd binary. [default: zstd] "
                         "[!! not implemented yet !!]"
+                        )
+    parser.add_argument("--zstd-level", default=ZstdCompressor.DEFAULT_LEVEL, type=int, choices=range(17, 23),
+                        help=f"Zstd compression level. [default: {ZstdCompressor.DEFAULT_LEVEL}] "
+                        f"If you have a lot of RAM, recommend to use max level (22)."
                         )
     parser.add_argument("--bin-7z", default="7z", dest="bin_7z",
                         help="Path to 7z binary. [default: 7z] "
