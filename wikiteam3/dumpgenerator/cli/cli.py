@@ -317,6 +317,9 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         session.headers.update({"User-Agent": get_random_UserAgent()})
         setup_random_UserAgent(session) # monkey patch
 
+    # Set accept header
+    session.headers.update({"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"})
+
     # Set HTTP Basic Auth
     if args.http_user and args.http_password:
         session.auth = (args.user, args.password)
