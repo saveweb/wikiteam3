@@ -110,6 +110,15 @@ class DumpGenerator:
             save_siteinfo(config=config, session=other["session"])
             mark_as_done(config=config, mark=ALL_DUMPED_MARK)
             bye()
+            if other["upload"]:
+                print('Calling uploader... (--upload)')
+                retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other["uploader_args"],
+                    shell=False)
+                if retcode:
+                    print(f'--upload: Failed: {retcode}')
+                    sys.exit(retcode)
+                
+                print('--upload: Done')
 
     @staticmethod
     def createNewDump(config: Config, other: Dict):
@@ -255,13 +264,3 @@ class DumpGenerator:
         if config.logs:
             # fix
             pass
-
-        if other["upload"]:
-            print('Calling uploader... (--upload)')
-            retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other["uploader_args"],
-                shell=False)
-            if retcode:
-                print(f'--upload: Failed: {retcode}')
-                sys.exit(retcode)
-            
-            print('--upload: Done')
