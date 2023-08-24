@@ -19,7 +19,7 @@ class Delay:
 
                 print("\r" + self.ellipses, end=dot)
 
-            time.sleep(0.3)
+            time.sleep(4)
 
     def __init__(self, config: Optional[Config]=None, msg: Optional[str]=None, delay: Optional[float]=None):
         """Add a delay if configured for that

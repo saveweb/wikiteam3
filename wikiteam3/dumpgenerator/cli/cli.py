@@ -31,7 +31,7 @@ def getArgumentParser():
         "--cookies", metavar="cookies.txt", help="path to a cookies.txt file"
     )
     parser.add_argument(
-        "--delay", metavar="0.5", default=0.5, type=float,
+        "--delay", metavar="1.5", default=1.5, type=float,
         help="adds a delay (in seconds) "
         "[NOTE: most HTTP servers have a 5s HTTP/1.1 keep-alive timeout, you should consider it "
         "if you wanna reuse the connection]"
@@ -290,10 +290,10 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
                     msg = 'req retry (%s)' % response.status
                 else:
                     msg = None
-                Delay(config=None, msg=msg, delay=backoff)
+                Delay(config=None, msg=msg, delay=backoff+5)
 
         __retries__ = CustomRetry(
-            total=int(args.retries), backoff_factor=0.3,
+            total=int(args.retries), backoff_factor=1,
             status_forcelist=[500, 502, 503, 504, 429],
             allowed_methods=['DELETE', 'PUT', 'GET', 'OPTIONS', 'TRACE', 'HEAD', 'POST']
         )
@@ -493,10 +493,10 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         print("Which expands to:")
         print("  " + config.path)
 
-    if config.delay == 0.5:
-        print("--delay is the default value of 0.5")
+    if config.delay == 1.5:
+        print(f"--delay is the default value of {config.delay}")
         print(
-            "There will be a 0.5 second delay between HTTP calls in order to keep the server from timing you out."
+            f"There will be a {config.delay} second delay between HTTP calls in order to keep the server from timing you out."
         )
         print(
             "If you know that this is unnecessary, you can manually specify '--delay 0.0'."
