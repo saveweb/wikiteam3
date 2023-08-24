@@ -205,11 +205,17 @@ class Image:
                         print(e)
                         config_dynamic = config
                     Delay(config=config, delay=config_dynamic.delay)
-                    r = session.get(url=url, params=modify_params(), allow_redirects=True, timeout=15)
+
+                    # a trick to get original file (fandom)
+                    sess_url = url
+                    if "fandom.com" in config.api and "static.wikia.nocookie.net" in url and "?" in url:
+                        sess_url = url + "&format=original"
+
+                    r = session.get(url=sess_url, params=modify_params(), allow_redirects=True, timeout=15)
                     check_response(r)
 
                     # Try to fix a broken HTTP to HTTPS redirect
-                    original_url_redirected = url != r.url
+                    original_url_redirected = sess_url != r.url
                     if r.status_code == 404 and original_url_redirected:
                         if (
                             original_url.startswith("http://")
