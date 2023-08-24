@@ -67,8 +67,8 @@ def getArgumentParser():
     parser.add_argument(
         "--user-agent",
         type=str,
-        default="wikiteam3/" + getVersion(),
-        help="User-Agent to use for requests (default: wikiteam3/<version>)",
+        default=f"wikiteam3/{getVersion()} (WikiTeam; ArchiveTeam) wikiteam3dumpgenerator (+github.com/saveweb/wikiteam3; +wiki.archiveteam.org/index.php/wikiTeam) We respect HTTP Retry-After header",
+        help="User-Agent to use for requests (default: wikiteam3/<version> ...)",
     )
     parser.add_argument(
         "--verbose", action="store_true", help=""
