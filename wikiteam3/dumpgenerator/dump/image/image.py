@@ -453,12 +453,15 @@ class Image:
                         filename = urllib.parse.unquote(
                             re.sub("_", " ", url.split("/")[-1])
                         )
-                    if "%u" in filename:
-                        raise NotImplementedError(
-                            "Filename "
-                            + filename
-                            + " contains unicode. Please file an issue with MediaWiki Scraper."
-                        )
+
+                    # # temporary comment out this check, 20230824
+                    # if "%u" in filename:
+                    #     raise NotImplementedError(
+                    #         "Filename "
+                    #         + filename
+                    #         + " contains unicode. Please file an issue with MediaWiki Scraper."
+                    #     )
+
                     uploader = re.sub("_", " ", image.get("user", "Unknown"))
                     size: Union[bool,int] = image.get("size", NULL)
                     
