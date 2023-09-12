@@ -71,7 +71,7 @@ class Config:
 def new_config(configDict) -> Config:
     return _dataclass_from_dict(Config, configDict)
 
-def load_config(config: Config=None, config_filename=""):
+def load_config(config: Config, config_filename: str):
     """Load config file"""
 
     config_dict = dataclasses.asdict(config)

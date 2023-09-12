@@ -5,7 +5,7 @@ import requests
 from wikiteam3.utils import get_random_UserAgent
 
 
-def get_WikiEngine(url="", session: requests.Session=None) -> str:
+def get_WikiEngine(url: str, session: requests.Session) -> str:
     """Returns the wiki engine of a URL, if known"""
 
     if not session:

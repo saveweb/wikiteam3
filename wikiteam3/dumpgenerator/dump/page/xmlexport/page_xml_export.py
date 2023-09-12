@@ -1,7 +1,7 @@
 import re
 import sys
 import time
-from typing import Dict
+from typing import Any, Dict, Generator
 
 import requests
 
@@ -16,7 +16,7 @@ HISTORY_MIN_CHUNKSIZE = 2
 """ To loop over all the revisions, we need to retrieve at least 2 revisions at a time. """
 
 
-def getXMLPageCore(*, headers: Dict=None, params: Dict, config: Config, session: requests.Session) -> str:
+def getXMLPageCore(params: Dict, config: Config, session: requests.Session) -> str:
     """"""
     # returns a XML containing params['limit'] revisions (or current only), ending in </mediawiki>
     # if retrieving params['limit'] revisions fails, returns a current only version
@@ -105,17 +105,22 @@ def getXMLPageCore(*, headers: Dict=None, params: Dict, config: Config, session:
     return xml
 
 
-def getXMLPageWithExport(config: Config, title: str, verbose=True, session=None):
+def getXMLPageWithExport(config: Config, title: str,
+                         *, verbose=True, session: requests.Session
+                         ) -> Generator[str, None, None]:
     """Get the full history (or current only) of a page"""
 
-    # if server errors occurs while retrieving the full page history, it may return [oldest OK versions] + last version, excluding middle revisions, so it would be partialy truncated
+    # if server errors occurs while retrieving the full page history,
+    # it may return [oldest OK versions] + last version, excluding middle revisions,
+    # so it would be partialy truncated
     # http://www.mediawiki.org/wiki/Manual_talk:Parameters_to_Special:Export#Parameters_no_longer_in_use.3F
 
     limit = 1000
     truncated = False
-    title_ = title
-    title_ = re.sub(" ", "_", title_)
+    title_ = title.replace(" ", "_")
     # do not convert & into %26, title_ = re.sub('&', '%26', title_)
+
+    params: Dict[str, Any]
     if config.export:
         params = {"title": config.export, "pages": title_, "action": "submit"}
     else:

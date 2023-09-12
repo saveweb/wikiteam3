@@ -6,18 +6,20 @@ from urllib.parse import urlparse
 import lxml.etree
 
 import mwclient
+import mwclient.errors
 import requests
 
 from wikiteam3.dumpgenerator.exceptions import PageMissingError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI
 from wikiteam3.dumpgenerator.api.page_titles import read_titles
-from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import make_xml_from_page, make_xml_page_from_raw
+from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import \
+    make_xml_from_page, make_xml_page_from_raw
 from wikiteam3.dumpgenerator.config import Config
 
 ALL_NAMESPACE = -1
 
-def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwclient.Site=None, nscontinue=None, arvcontinue=None):
+def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, site: mwclient.Site, nscontinue=None, arvcontinue=None):
     if "all" not in config.namespaces:
         namespaces = config.namespaces
     else:
@@ -90,7 +92,7 @@ def getXMLRevisionsByAllRevisions(config: Config=None, session=None, site: mwcli
                     continue
                 except mwclient.errors.InvalidResponse as e:
                     if (
-                        e.response_text.startswith("<!DOCTYPE html>")
+                        e.response_text.startswith("<!DOCTYPE html>") # type: ignore
                         and config.http_method == "POST"
                     ):
                         print("POST request to the API failed (got HTML), retrying with GET")
@@ -274,7 +276,7 @@ def getXMLRevisionsByTitles(config: Config, session: requests.Session, site: mwc
         titlelist = []
         # TODO: Decide a suitable number of a batched request. Careful:
         # batched responses may not return all revisions.
-        for titlelist in read_titles(config, session=session, start=start, batch=False):
+        for titlelist in read_titles(config, session=session, start=start):
             if isinstance(titlelist, str):
                 titlelist = [titlelist]
             for title in titlelist:
@@ -371,7 +373,7 @@ def getXMLRevisionsByTitles(config: Config, session: requests.Session, site: mwc
                 print(f"\n->  Downloaded {c} pages\n")
 
 
-def getXMLRevisions(config: Config=None, session=None, useAllrevision=True, lastPage=None):
+def getXMLRevisions(config: Config, session: requests.Session, lastPage=None, useAllrevision=True):
     # FIXME: actually figure out the various strategies for each MediaWiki version
     apiurl = urlparse(config.api)
     # FIXME: force the protocol we asked for! Or don't verify SSL if we asked HTTP?

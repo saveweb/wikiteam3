@@ -1,6 +1,7 @@
 from io import TextIOWrapper
 import re
 import sys
+from typing import NoReturn
 
 import lxml.etree
 import requests
@@ -18,7 +19,8 @@ from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions import getXMLRevisio
 from wikiteam3.dumpgenerator.dump.xmldump.xml_truncate import truncateXMLDump, parse_last_page_chunk
 
 
-def doXMLRevisionDump(config: Config=None, session=None, xmlfile=None, lastPage=None, useAllrevisions=False):
+def doXMLRevisionDump(config: Config, session: requests.Session, xmlfile: TextIOWrapper,
+                      lastPage=None, useAllrevisions: bool=False):
     try:
         r_timestamp = r"<timestamp>([^<]+)</timestamp>"
         r_arvcontinue = r'<page arvcontinue="(.*?)">'
@@ -92,7 +94,7 @@ def doXMLExportDump(config: Config, session: requests.Session, xmlfile: TextIOWr
         c += 1
 
 
-def generate_XML_dump(config: Config=None, resume=False, session=None):
+def generate_XML_dump(config: Config, resume=False, *, session: requests.Session):
     """Generates a XML dump for a list of titles or from revision IDs"""
 
     header, config = getXMLHeader(config=config, session=session)
@@ -124,7 +126,7 @@ def generate_XML_dump(config: Config=None, resume=False, session=None):
                 print("Cannot resume, exiting now!")
                 sys.exit(1)
 
-        print(f"WARNING: will try to start the download...")
+        print("WARNING: will try to start the download...")
         xmlfile = open(
             "{}/{}".format(config.path, xmlfilename), "a", encoding="utf-8"
         )
@@ -144,3 +146,4 @@ def generate_XML_dump(config: Config=None, resume=False, session=None):
     xmlfile.write(footer)
     xmlfile.close()
     print("XML dump saved at...", xmlfilename)
+    return xmlfilename

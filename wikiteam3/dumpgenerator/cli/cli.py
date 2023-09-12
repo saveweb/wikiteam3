@@ -7,17 +7,25 @@ import os
 import queue
 import re
 import sys
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 import requests
 import urllib3
 
-from wikiteam3.dumpgenerator.api import check_retry_API, mediawiki_get_API_and_Index, get_WikiEngine
-from wikiteam3.dumpgenerator.api.index_check import checkIndex
+from wikiteam3.dumpgenerator.api import (
+    check_retry_API,
+    get_WikiEngine,
+    mediawiki_get_API_and_Index,
+)
+from wikiteam3.dumpgenerator.api.index_check import check_index
 from wikiteam3.dumpgenerator.cli.delay import Delay
 from wikiteam3.dumpgenerator.config import Config, new_config
 from wikiteam3.dumpgenerator.version import getVersion
-from wikiteam3.utils import url2prefix_from_config, get_random_UserAgent, mod_requests_text
+from wikiteam3.utils import (
+    get_random_UserAgent,
+    mod_requests_text,
+    url2prefix_from_config,
+)
 from wikiteam3.utils.login import uniLogin
 from wikiteam3.utils.user_agent import setup_random_UserAgent
 
@@ -264,7 +272,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
                         try:
                             # drain conn in advance so that it won't be put back into conn.pool
                             kwargs['response'].drain_conn()
-                        except:
+                        except Exception:
                             pass
                     # Useless, retry happens inside urllib3
                     # for adapters in session.adapters.values():
@@ -277,7 +285,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
                         try:
                             # Don't directly use this, This closes connection pool by making conn.pool = None
                             conn.close()
-                        except:
+                        except Exception:
                             pass
                         conn.pool = pool
                 return super(CustomRetry, self).increment(method=method, url=url, *args, **kwargs)
@@ -299,7 +307,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         )
         session.mount("https://", HTTPAdapter(max_retries=__retries__))
         session.mount("http://", HTTPAdapter(max_retries=__retries__))
-    except:
+    except Exception:
         # Our urllib3/requests is too old
         pass
 
@@ -386,20 +394,20 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
             print("-- Login failed --")
 
     # check index
-    if index and checkIndex(index=index, cookies=args.cookies, session=session):
+    if index and check_index(index=index, logged_in=bool(args.cookies), session=session):
         print("index.php is OK")
     else:
         index = index2
         if index and index.startswith("//"):
             index = args.wiki.split("//")[0] + index
-        if index and checkIndex(index=index, cookies=args.cookies, session=session):
+        if index and check_index(index=index, logged_in=bool(args.cookies), session=session):
             print("index.php is OK")
         else:
             try:
                 index = "/".join(index.split("/")[:-1])
             except AttributeError:
                 index = None
-            if index and checkIndex(index=index, cookies=args.cookies, session=session):
+            if index and check_index(index=index, logged_in=bool(args.cookies), session=session):
                 print("index.php is OK")
             else:
                 print("Error in index.php.")

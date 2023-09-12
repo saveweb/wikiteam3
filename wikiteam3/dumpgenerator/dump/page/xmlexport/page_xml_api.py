@@ -18,13 +18,13 @@ def reconstructRevisions(root: ET.Element):
     page = ET.Element('stub')
     edits = 0
 
-    if root.find('query').find('pages').find('page').find('revisions') is None:
+    if root.find('query').find('pages').find('page').find('revisions') is None: # type: ignore
         # case: https://wiki.archlinux.org/index.php?title=Arabic&action=history
         # No matching revisions were found.
         print('!!! No revisions found in page !!!')
         return page, edits # no revisions
 
-    for rev in root.find('query').find('pages').find('page').find('revisions').findall('rev'):
+    for rev in root.find('query').find('pages').find('page').find('revisions').findall('rev'): # type: ignore
         try:
             rev_ = ET.SubElement(page,'revision')
             # id
@@ -91,7 +91,7 @@ def reconstructRevisions(root: ET.Element):
             raise e
     return page,edits
 
-def getXMLPageCoreWithApi(headers: Dict=None, params: Dict=None, config: Config=None, session=None):
+def getXMLPageCoreWithApi(config: Config, session: requests.Session, params: Dict, headers: Optional[Dict]=None):
     """  """
     # just send the API request
     # if it fails, it will reduce params['rvlimit']
@@ -146,7 +146,7 @@ def getXMLPageCoreWithApi(headers: Dict=None, params: Dict=None, config: Config=
     return xml
 
 
-def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None):
+def getXMLPageWithApi(config: Config, title="", verbose=True, *, session: requests.Session):
     """ Get the full history (or current only) of a page using API:Query
         if params['curonly'] is set, then using export&exportwrap to export
     """
@@ -204,12 +204,15 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
                 print("Retrying...")
                 continue
             try:
-                retpage = root.find('query').find('pages').find('page')
-            except Exception as e:
+                retpage = root.find('query').find('pages').find('page') # type: ignore
+            except Exception:
                 retries_left -= 1
                 traceback.print_exc()
                 print("Retrying...")
                 continue
+
+            assert retpage is not None, "Should have a page"
+
             if 'missing' in retpage.attrib or 'invalid' in retpage.attrib:
                 print('Page not found')
                 raise PageMissingError(params['titles'], xml)
@@ -220,7 +223,7 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
                     ret += '    <title>%s</title>\n' % (retpage.attrib['title'])
                     ret += '    <ns>%s</ns>\n' % (retpage.attrib['ns'])
                     ret += '    <id>%s</id>\n' % (retpage.attrib['pageid'])
-                except:
+                except Exception:
                     firstpartok = False
                     retries_left -= 1
                     traceback.print_exc()
@@ -236,9 +239,9 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
                 # uses continue.rvcontinue
                 # MW 1.26+
                 continueKey = 'rvcontinue'
-                continueVal = root.find('continue').attrib['rvcontinue']
+                continueVal = root.find('continue').attrib['rvcontinue'] # type: ignore
             elif root.find('query-continue') is not None:
-                revContinue = root.find('query-continue').find('revisions')
+                revContinue = root.find('query-continue').find('revisions') # type: ignore
                 assert revContinue is not None, "Should only have revisions continue"
                 if 'rvcontinue' in revContinue.attrib:
                     # MW 1.21 ~ 1.25
@@ -273,7 +276,7 @@ def getXMLPageWithApi(config: Config=None, title="", verbose=True, session=None)
                 yield ret
                 if config.curonly or continueVal is None:  # no continue
                     break
-            except:
+            except Exception:
                 retries_left -= 1
                 traceback.print_exc()
                 print("Retrying...")

@@ -10,7 +10,7 @@ from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
 from wikiteam3.dumpgenerator.config import Config
 
-def getXMLHeader(config: Config=None, session=None) -> Tuple[str, Config]:
+def getXMLHeader(config: Config, session: requests.Session) -> Tuple[str, Config]:
     """Retrieve a random page to extract XML headers (namespace info, etc)"""
     # get the header of a random page, to attach it in the complete XML backup
     # similar to: <mediawiki xmlns="http://www.mediawiki.org/xml/export-0.3/"
@@ -48,7 +48,7 @@ def getXMLHeader(config: Config=None, session=None) -> Tuple[str, Config]:
                     + randomtitle,
                     timeout=10,
                 )
-                xml = str(r.text)
+                xml = r.text
             # Again try without exportnowrap
             if not re.match(r"\s*<mediawiki", xml):
                 r = session.get(

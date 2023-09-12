@@ -1,5 +1,6 @@
 """ Provide login functions """
 
+from typing import Optional
 import requests
 import time
 
@@ -7,7 +8,7 @@ from wikiteam3.utils.login.api import bot_login, client_login, fetch_login_token
 from wikiteam3.utils.login.index import index_login
 
 
-def uniLogin(api: str = '', index: str = '' ,session: requests.Session = requests.Session(), username: str = '', password: str = ''):
+def uniLogin(api: Optional[str] = '', index: Optional[str] = '' ,session: requests.Session = requests.Session(), username: str = '', password: str = ''):
     """ Try to login to a wiki using various methods.\n
     Return `session` if success, else return `None`.\n
     Try: `cilent login (api) => bot login (api) => index login (index)` """

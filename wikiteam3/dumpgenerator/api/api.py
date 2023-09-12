@@ -32,6 +32,7 @@ def check_API(api: str, session: requests.Session):
                 "MediaWiki API URL not found or giving error: HTTP %d" % r.status_code
             )
             return None
+    assert r is not None
     if "MediaWiki API is not enabled for this site." in r.text:
         return None
     try:
@@ -113,7 +114,7 @@ def mediawiki_get_API_and_Index(url: str, session: requests.Session):
     return api, index
 
 
-def check_retry_API(api: str, apiclient=False, session: requests.Session=None):
+def check_retry_API(api: str, apiclient=False, *, session: requests.Session):
     """Call check_API and mwclient if necessary"""
     check = None
     try:
@@ -124,7 +125,7 @@ def check_retry_API(api: str, apiclient=False, session: requests.Session=None):
     if check and apiclient:
         apiurl = urlparse(api)
         try:
-            site = mwclient.Site(
+            mwclient.Site(
                 apiurl.netloc, apiurl.path.replace("api.php", ""), scheme=apiurl.scheme, pool=session
             )
         except KeyError:
@@ -142,7 +143,7 @@ def check_retry_API(api: str, apiclient=False, session: requests.Session=None):
             )
 
             try:
-                site = mwclient.Site(
+                mwclient.Site(
                     apiurl.netloc, apiurl.path.replace("api.php", ""), scheme=newscheme, pool=session
                 )
             except KeyError:

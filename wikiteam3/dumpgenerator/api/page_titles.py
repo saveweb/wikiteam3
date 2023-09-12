@@ -1,16 +1,20 @@
 import re
-import sys
-from typing import Generator, List, Optional, Union, overload
+import traceback
+from typing import Generator, Optional
 from urllib.parse import urlparse
 
 import mwclient
-from file_read_backwards import FileReadBackwards
+import mwclient.page
 import requests
+from file_read_backwards import FileReadBackwards
 
+from wikiteam3.dumpgenerator.api.namespaces import (
+    getNamespacesAPI,
+    getNamespacesScraper,
+)
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI, getNamespacesScraper
-from wikiteam3.utils import url2prefix_from_config, clean_HTML, undo_HTML_entities
 from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.utils import clean_HTML, undo_HTML_entities, url2prefix_from_config
 from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
 
 
@@ -35,9 +39,13 @@ def getPageTitlesAPI(config: Config, session: requests.Session):
         print("    Retrieving titles in the namespace %d" % (namespace))
         apiurl = urlparse(config.api)
         site = mwclient.Site(
-            apiurl.netloc, apiurl.path.replace("api.php", ""), scheme=apiurl.scheme, pool=session
+            host=apiurl.netloc,
+            path=apiurl.path.replace("api.php", ""),
+            scheme=apiurl.scheme,
+            pool=session
         )
         for page in site.allpages(namespace=namespace):
+            assert isinstance(page, mwclient.page.Page)
             title = page.name
             titles.append(title)
             c += 1
@@ -190,7 +198,8 @@ def getPageTitles(config: Config, session: requests.Session):
     if config.api:
         try:
             titles = getPageTitlesAPI(config=config, session=session)
-        except:
+        except Exception:
+            traceback.print_exc()
             print("Error: could not get page titles from the API")
             titles = getPageTitlesScraper(config=config, session=session)
     elif config.index:
@@ -230,7 +239,7 @@ def checkTitleOk(config: Config):
             lasttitle = frb.readline().strip()
             if lasttitle == "":
                 lasttitle = frb.readline().strip()
-    except:
+    except FileNotFoundError:
         lasttitle = ""  # probably file does not exists
 
     if lasttitle != "--END--":
