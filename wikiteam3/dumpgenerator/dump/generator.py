@@ -21,7 +21,7 @@ from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import check_XML_integri
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import url2prefix_from_config, undo_HTML_entities, avoid_WikiMedia_projects
 from wikiteam3.utils.ia_checker import any_recent_ia_item_exists
-from wikiteam3.utils.util import ALL_DUMPED_MARK, mark_as_done
+from wikiteam3.utils.util import ALL_DUMPED_MARK, mark_as_done, underscore
 
 # From https://stackoverflow.com/a/57008707
 class Tee(object):
@@ -173,7 +173,7 @@ class DumpGenerator:
                             last_xml_title = undo_HTML_entities(text=xmltitle.group(1))
                             break
 
-            except:
+            except Exception:
                 pass  # probably file does not exists
 
             if xml_is_complete:
@@ -214,7 +214,7 @@ class DumpGenerator:
                     "Warning: Detected old images list (images.txt) format.\n"+
                     "You can delete 'images.txt' manually and restart the script."
                 )
-                sys.exit(1)
+                sys.exit(9)
             if lastimage == "--END--":
                 print("Image list was completed in the previous session")
             else:
@@ -224,10 +224,23 @@ class DumpGenerator:
                 images = Image.get_image_names(config=config, session=other["session"])
                 Image.save_image_names(config=config, images=images)
             # checking images directory
-            listdir = []
+            files = set()
             if os.path.exists(f"{config.path}/images"):
-                listdir = os.listdir(f"{config.path}/images")
-            listdir = set(listdir)
+                c_loaded = 0
+                for file in os.scandir(f"{config.path}/images"):
+                    if not file.is_file():
+                        print(f"Warning: {file.name} is not a file")
+                        continue
+                    if underscore(file.name) != file.name: # " " in filename
+                        os.rename(f"{config.path}/images/{file.name}",
+                                    f"{config.path}/images/{underscore(file.name)}")
+                        print(f"Renamed {file.name} to {underscore(file.name)}")
+                    files.add(underscore(file.name))
+                    
+                    c_loaded += 1
+                    if c_loaded % 12000 == 0:
+                        print(f"loaded {c_loaded} files", end="\r")
+
             c_images_downloaded = 0
             c_checked = 0
             for filename, url, uploader, size, sha1, timestamp in images:
@@ -237,7 +250,7 @@ class DumpGenerator:
                         text=f"Filename too long(>240 bytes), skipping: {filename}",
                     )
                     continue
-                if filename in listdir:
+                if filename in files:
                     c_images_downloaded += 1
                 c_checked += 1
                 if c_checked % 100000 == 0:
