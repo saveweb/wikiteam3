@@ -23,7 +23,7 @@ Everything still under GPLv3 license.
 pip install wikiteam3 --upgrade
 ```
 
-## Usage
+## Dumpgenerator usage
 
 ### Downloading a wiki with complete XML history and images
 
@@ -59,8 +59,6 @@ In the above example, `--path` is only necessary if the download path is not the
 
 ## Using `wikiteam3uploader`
 
-TODO: ...
-
 ### Requirements
 
 - unbinded port 62954
@@ -69,6 +67,12 @@ TODO: ...
 
 - 7z (`7z-full` with lzma2)
 - zstd 1.5.5+ (recommended), v1.5.0-v1.5.4(DO NOT USE), 1.4.8 (minimum)
+
+### Uploader usage
+
+```bash
+wikiteam3uploader {YOUR_WIKI_DUMP_PATH}
+```
 
 ## Checking dump integrity
 
