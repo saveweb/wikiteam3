@@ -85,7 +85,7 @@ class SevenZipCompressor:
             raise FileNotFoundError(f"7z binary not found at {bin7z}")
 
     @staticmethod
-    def compress_dir(dir_path: Union[str, Path], bin7z: str = "7z", level: int = 1):
+    def compress_dir(dir_path: Union[str, Path], bin7z: str = "7z", level: int = 0):
         ''' Compress dir_path into dump_dir.7z and return the resolved path to the compressed file. 
         
         level:
@@ -108,11 +108,16 @@ class SevenZipCompressor:
             print(f"File {archive_path} already exists. Skip compressing.")
             return archive_path
 
-        r = subprocess.run(
-            [bin7z, "a", "-t7z", "-m0=lzma2", f"-mx={level}", "-scsUTF-8",
-                "-md=64m", "-ms=off", str(archive_temp_path), dir_path],
-                check=True
-        )
+        if level:
+            cmds = [bin7z, "a", "-t7z", "-m0=lzma2", f"-mx={level}", "-scsUTF-8",
+                "-md=64m", "-ms=off"]
+        else: # level == 0
+            assert level == 0
+            cmds = [bin7z, "a", "-t7z", f"-mx={level}", "-scsUTF-8", "-ms=off"]
+        cmds.extend([str(archive_temp_path), str(dir_path)])
+
+        r = subprocess.run(cmds, check=True)
+
         assert archive_temp_path.exists()
         # move tmp file to final file
         os.rename(archive_temp_path, archive_path)
