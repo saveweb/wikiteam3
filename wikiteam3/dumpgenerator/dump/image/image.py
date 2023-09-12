@@ -1,27 +1,27 @@
 import datetime
 import os
-from pathlib import Path
+import random
 import re
+import shutil
 import sys
 import time
-import random
 import urllib.parse
-from typing import Dict, List, Optional, Union
 import warnings
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
 import requests
 
 from wikiteam3.dumpgenerator.api import get_JSON, handle_StatusCode
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.config import Config, load_config
+from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDATES
-from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
-from wikiteam3.dumpgenerator.exceptions import PageMissingError, FileSizeError
+from wikiteam3.dumpgenerator.exceptions import FileSizeError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.version import getVersion
-from wikiteam3.utils import url2prefix_from_config, sha1sum, clean_HTML, undo_HTML_entities
+from wikiteam3.utils.identifier import url2prefix_from_config
 from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
-
+from wikiteam3.utils.util import clean_HTML, sha1sum, space, underscore, undo_HTML_entities
 
 NULL = "null"
 """ NULL value for image metadata"""
@@ -31,26 +31,17 @@ WBM_EARLIEST = 1
 WBN_LATEST = 2
 WBM_BEST = 3
 
+
+def check_response(r: requests.Response) -> None:
+    if r.headers.get("cf-polished", ""):
+        raise RuntimeError("Found cf-polished header in response, use --bypass-cdn-image-compression to bypass it")
+
 class Image:
-    @staticmethod
-    def get_XML_file_desc(config: Config, title="", session=None):
-        """Get XML for image description page"""
-        warnings.warn("")
-        config.curonly = 1  # tricky to get only the most recent desc
-        return "".join(
-            [
-                x
-                for x in get_XML_page(
-                    config=config, title=title, verbose=False, session=session
-                )
-            ]
-        )
-
 
     @staticmethod
-    def generate_image_dump(config: Config, other: Dict, images: List[List], session: requests.Session):
-        """Save files and descriptions using a file list\n
-        Deprecated: `start` is not used anymore."""
+    def generate_image_dump(config: Config, other: Dict, images: List[List],
+                            session: requests.Session):
+        """ Save files and descriptions using a file list """
 
         bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
         disable_image_verify: bool = other["disable_image_verify"]
@@ -61,7 +52,9 @@ class Image:
         if image_timestamp_interval: # 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
             image_timestamp_intervals = image_timestamp_interval.split("/")
             assert len(image_timestamp_intervals) == 2
-            image_timestamp_intervals = [datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ") for x in image_timestamp_intervals]
+            image_timestamp_intervals = [
+                datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ")
+                for x in image_timestamp_intervals]
 
         print("Retrieving images...")
         images_dir = Path(config.path) / "images"
@@ -84,8 +77,6 @@ class Image:
                 params[f"_wiki_{random.randint(10,99)}_"] = "random"
 
             return params
-        def check_response(r: requests.Response) -> None:
-            assert not r.headers.get("cf-polished", ""), "Found cf-polished header in response, use --bypass-cdn-image-compression to bypass it"
             
 
         patch_sess = SessionMonkeyPatch(session=session, config=config, hard_retries=3)
@@ -94,10 +85,16 @@ class Image:
         ia_session = requests.Session()
         ia_session.headers.update({"User-Agent": f"wikiteam3/{getVersion()}"})
 
-        skip_to_filename = '' # TODO: use this
-        for filename_raw, original_url, uploader, size, sha1, timestamp in images:
-            if skip_to_filename and skip_to_filename != filename_raw:
-                print(f"    {filename_raw}", end="\r")
+        skip_to_filename = underscore('') # TODO: use this
+
+        while images:
+            filename_raw, url_raw, uploader_raw, size, sha1, timestamp \
+                = images.pop(0) # reduce memory usage by poping
+            filename_underscore = underscore(filename_raw)
+            # uploader_underscore = space(uploader_raw)
+
+            if skip_to_filename and skip_to_filename != filename_underscore:
+                print(f"    {filename_underscore}", end="\r")
                 continue
             else:
                 skip_to_filename = ''
@@ -106,90 +103,100 @@ class Image:
 
             if image_timestamp_intervals:
                 if timestamp == NULL:
-                    print(f"    {filename_raw}|timestamp is unknown: {NULL}, downloading anyway...")
+                    print(f"    {filename_underscore}|timestamp is unknown: {NULL}, downloading anyway...")
                 else:
                     if not (
                         image_timestamp_intervals[0]
                         <= datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
                         <= image_timestamp_intervals[1]
                     ):
-                        print(f"    timestamp {timestamp} is not in interval {image_timestamp_interval}: {filename_raw}")
+                        print(f"    timestamp {timestamp} is not in interval {image_timestamp_interval}: {filename_underscore}")
                         continue
                     else:
-                        print(f"    timestamp {timestamp} is in interval {image_timestamp_interval}: {filename_raw}")
+                        print(f"    timestamp {timestamp} is in interval {image_timestamp_interval}: {filename_underscore}")
 
             # saving file
-            filename_unquoted = filename_raw # filename_raw is already unquoted
-            if filename_unquoted != urllib.parse.unquote(filename_raw):
-                print(f"WARNING:    {filename_raw}|filename may not be unquoted: {filename_unquoted}")
-            if len(filename_unquoted.encode('utf-8')) > other["filenamelimit"]:
+            if filename_underscore != urllib.parse.unquote(filename_underscore):
+                print(f"WARNING:    {filename_underscore}|filename may not be unquoted: {filename_underscore}")
+            if len(filename_underscore.encode('utf-8')) > other["filenamelimit"]:
                 log_error(
                     config=config, to_stdout=True,
-                    text=f"Filename is too long(>{other['filenamelimit']} bytes), skipping: '{filename_unquoted}'",
+                    text=f"Filename is too long(>{other['filenamelimit']} bytes), skipping: '{filename_underscore}'",
                 )
                 # TODO: hash as filename instead of skipping
                 continue
-            filepath = images_dir / filename_unquoted
+
+            filepath_space = images_dir / space(filename_underscore)
+            filepath_underscore = images_dir / filename_underscore
+
+            if filepath_space.is_file():
+                # rename file to underscore
+                shutil.move(filepath_space, filepath_underscore)
             
             # check if file already exists and has the same size and sha1
             if ((size != NULL
-                and filepath.is_file()
-                and os.path.getsize(filepath) == int(size)
-                and sha1sum(filepath) == sha1)
-            or (sha1 == NULL and filepath.is_file())): 
+                and filepath_underscore.is_file()
+                and os.path.getsize(filepath_underscore) == int(size)
+                and sha1sum(filepath_underscore) == sha1)
+            or (sha1 == NULL and filepath_underscore.is_file())): 
             # sha1 is NULL if file not in original wiki (probably deleted,
             # you will get a 404 error if you try to download it)
                 c_savedImageFiles += 1
                 downloaded = True
-                print_msg=f"    {c_savedImageFiles}|sha1 matched: {filename_unquoted}"
+                print_msg=f"    {c_savedImageFiles}|sha1 matched: {filename_underscore}"
                 print(print_msg[0:70], end="\r")
                 if sha1 == NULL:
                     log_error(config=config, to_stdout=True,
-                        text=f"sha1 is {NULL} for {filename_unquoted}, file may not in wiki site (probably deleted). "
+                        text=f"sha1 is {NULL} for {filename_underscore}, file may not in wiki site (probably deleted). "
                     )
             else:
                 # Delay(config=config, delay=config.delay + random.uniform(0, 1))
-                url = original_url
+                url = url_raw
 
                 r: Optional[requests.Response] = None
                 if ia_wbm_booster:
-                    if ia_wbm_booster == WBM_EARLIEST:
-                        ia_timestamp = WBM_EARLIEST
-                    elif ia_wbm_booster == WBN_LATEST:
-                        ia_timestamp = WBN_LATEST
-                    elif ia_wbm_booster == WBM_BEST:
-                        if timestamp != NULL:
-                            ia_timestamp = [x for x in timestamp if x.isdigit()][0:8]
-                            ia_timestamp = "".join(ia_timestamp)
+                    def get_ia_wbm_response() -> Optional[requests.Response]:
+                        """ Get response from Internet Archive Wayback Machine
+                        return None if not found / failed """
+                        if ia_wbm_booster in (WBM_EARLIEST, WBN_LATEST):
+                            ia_timestamp = ia_wbm_booster
+                        elif ia_wbm_booster == WBM_BEST:
+                            if timestamp != NULL:
+                                ia_timestamp = [x for x in timestamp if x.isdigit()][0:8]
+                                ia_timestamp = "".join(ia_timestamp)
+                            else:
+                                print(f"ia_wbm_booster:    timestamp is {NULL}, use latest timestamp")
+                                ia_timestamp = 2
                         else:
-                            print(f"ia_wbm_booster:    timestamp is {NULL}, use latest timestamp")
-                            ia_timestamp = 2
-                    else:
-                        raise ValueError(f"ia_wbm_booster is {ia_wbm_booster}, but it should be 0, 1, 2 or 3")
+                            raise ValueError(f"ia_wbm_booster is {ia_wbm_booster}, but it should be 0, 1, 2 or 3")
 
-                    available_api = "http://archive.org/wayback/available"
-                    snap_url = f"https://web.archive.org/web/{ia_timestamp}id_/{url}"
+                        available_api = "http://archive.org/wayback/available"
+                        # TODO: cdx_api = "http://web.archive.org/cdx/search/cdx"
+                        snap_url = f"https://web.archive.org/web/{ia_timestamp}id_/{url}"
 
-                    try:
-                        _r = ia_session.get(available_api, params={"url": url}, headers={"User-Agent": "wikiteam3"},
-                                         timeout=10)
-                        if _r.status_code == 429:
-                            raise Exception("IA API rate limit exceeded")
-                        _r.raise_for_status()
-                        api_result = _r.json()
-                        if api_result["archived_snapshots"]:
-                            r = ia_session.get(url=snap_url, allow_redirects=True)
-                            # r.raise_for_status()
-                        else:
+                        try:
+                            _r = ia_session.get(available_api, params={"url": url}, headers={"User-Agent": "wikiteam3"},
+                                            timeout=10)
+                            if _r.status_code == 429:
+                                raise Warning("IA API rate limit exceeded (HTTP 429)")
+                            _r.raise_for_status()
+                            api_result = _r.json()
+                            if api_result["archived_snapshots"]:
+                                r = ia_session.get(url=snap_url, allow_redirects=True)
+                                # r.raise_for_status()
+                            else:
+                                r = None
+                        except Exception as e:
+                            print("ia_wbm_booster:",e)
                             r = None
-                    except Exception as e:
-                        print("ia_wbm_booster:",e)
-                        r = None
+
+                        return r
+                    r = get_ia_wbm_response()
 
                     # verify response
-                    if r is not None and r.status_code != 200:
+                    if r and r.status_code != 200:
                         r = None
-                    elif r is not None and len(r.content) != int(size): # and r.status_code == 200:
+                    elif r and len(r.content) != int(size): # and r.status_code == 200:
                         # FileSizeError
                         # print(f"WARNING:    {filename_unquoted} size should be {size}, but got {len(r.content)} from WBM, use original url...")
                         r = None
@@ -199,29 +206,30 @@ class Image:
 
 
                 if r is None:
-                    try:
-                        config_dynamic = load_config(config=config, config_filename="config.json")
-                    except Exception as e:
-                        print(e)
-                        config_dynamic = config
-                    Delay(config=config, delay=config_dynamic.delay)
-
-                    # a trick to get original file (fandom)
-                    sess_url = url
-                    if "fandom.com" in config.api and "static.wikia.nocookie.net" in url and "?" in url:
-                        sess_url = url + "&format=original"
-
-                    r = session.get(url=sess_url, params=modify_params(), allow_redirects=True, timeout=15)
+                    Delay(config=config)
+                    r = session.get(url=url, params=modify_params(), allow_redirects=True)
                     check_response(r)
 
+                    # a trick to get original file (fandom)
+                    ori_url = url
+                    if "fandom.com" in config.api \
+                        and "static.wikia.nocookie.net" in url \
+                        and "?" in url \
+                        and len(r.content) != int(size):
+                        ori_url = url + "&format=original"
+                        Delay(config=config)
+                        r = session.get(url=ori_url, params=modify_params(), allow_redirects=True)
+                        check_response(r)
+
                     # Try to fix a broken HTTP to HTTPS redirect
-                    original_url_redirected = sess_url != r.url
+                    original_url_redirected: bool = r.url in (url, ori_url)
                     if r.status_code == 404 and original_url_redirected:
+                        print(f"WARNING: {url} broken (404), trying to fix it...")
                         if (
-                            original_url.startswith("http://")
+                            url_raw.startswith("http://")
                             and url.startswith("https://")
                         ):
-                            url = "https://" + original_url.split("://")[1]
+                            url = "https://" + url_raw.split("://")[1]
                             # print 'Maybe a broken http to https redirect, trying ', url
                             r = session.get(url=url, params=modify_params(), allow_redirects=True)
                             check_response(r)
@@ -231,19 +239,19 @@ class Image:
                         if size == NULL or len(r.content) == int(size) or disable_image_verify:
                             # size == NULL means size is unknown
                             try:
-                                with open(filepath, "wb") as imagefile:
+                                with open(filepath_underscore, "wb") as imagefile:
                                     imagefile.write(r.content)
                             except KeyboardInterrupt:
-                                if filepath.is_file():
-                                    os.remove(filepath)
+                                if filepath_underscore.is_file():
+                                    os.remove(filepath_underscore)
                                 raise
                             c_savedImageFiles += 1
                         else:
-                            raise FileSizeError(file=filepath, size=size)
+                            raise FileSizeError(file=filepath_underscore, size=size)
                     except OSError:
                         log_error(
                             config=config, to_stdout=True,
-                            text=f"File '{filepath}' could not be created by OS",
+                            text=f"File '{filepath_underscore}' could not be created by OS",
                         )
                     except FileSizeError as e:
                         # TODO: add a --force-download-image or --nocheck-image-size option to download anyway
@@ -254,13 +262,15 @@ class Image:
                 else:
                     log_error(
                         config=config, to_stdout=True,
-                        text=f"Failled to donwload '{filename_unquoted}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
+                        text=f"Failled to donwload '{filename_underscore}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
                     )
 
             if downloaded: # skip printing
                 continue
-            print_msg = f"              | {(len(images)-c_savedImageFiles)}=>{filename_unquoted[0:50]}"
+            print_msg = f"              | {(len(images)-c_savedImageFiles)}=>{filename_underscore[0:50]}"
             print(print_msg, " "*(73 - len(print_msg)), end="\r")
+
+        # NOTE: len(images) == 0 here
 
         patch_sess.release()
         print(f"Downloaded {c_savedImageFiles} files")
@@ -342,19 +352,23 @@ class Image:
             for i in m:
                 url = i.group("url")
                 url = Image.curate_image_URL(config=config, url=url)
-                filename = re.sub("_", " ", i.group("filename"))
+
+                filename = i.group("filename")
                 filename = undo_HTML_entities(text=filename)
                 filename = urllib.parse.unquote(filename)
-                uploader = re.sub("_", " ", i.group("uploader"))
+
+                uploader = i.group("uploader")
                 uploader = undo_HTML_entities(text=uploader)
                 uploader = urllib.parse.unquote(uploader)
+
                 # timestamp = i.group("timestamp")
                 # print("    %s" % (timestamp))
+
                 size = NULL # size not accurate
                 sha1 = NULL # sha1 not available
                 timestamp = NULL # date formats are difficult to parse
                 images.append([
-                    filename, url, uploader,
+                    underscore(filename), url, space(uploader),
                     size, sha1, timestamp,
                 ])
                 # print (filename, url)
@@ -385,14 +399,10 @@ class Image:
     @staticmethod
     def get_image_names_API(config: Config, session: requests.Session):
         """Retrieve file list: filename, url, uploader, size, sha1"""
-        oldAPI = False
+        use_oldAPI = False
         # # Commented by @yzqzss:
         # https://www.mediawiki.org/wiki/API:Allpages
-        # API:Allpages requires MW >= 1.8 
-        # (Note: The documentation says that it requires MediaWiki >= 1.18, but that's not true.)
-        # (Read the revision history of [[API:Allpages]] and the source code of MediaWiki, you will
-        # know that it's existed since MW 1.8) (2023-05-09)
-        # https://www.mediawiki.org/wiki/API:Allimages
+        # API:Allpages requires MW >= 1.8
         # API:Allimages requires MW >= 1.13
 
         aifrom = "!"
@@ -440,46 +450,42 @@ class Image:
 
                 for image in jsonimages["query"]["allimages"]:
                     image: Dict
+
                     url = image["url"]
                     url = Image.curate_image_URL(config=config, url=url)
-                    # encoding to ascii is needed to work around this horrible bug:
-                    # http://bugs.python.org/issue8136
-                    # (ascii encoding removed because of the following)
-                    #
-                    # unquote() no longer supports bytes-like strings
-                    # so unicode may require the following workaround:
-                    # https://izziswift.com/how-to-unquote-a-urlencoded-unicode-string-in-python/
-                    if  (
-                        ".wikia." in config.api or ".fandom.com" in config.api
-                    ):
-                        filename = urllib.parse.unquote(
-                            re.sub("_", " ", url.split("/")[-3])
-                        )
-                    else:
-                        filename = urllib.parse.unquote(
-                            re.sub("_", " ", url.split("/")[-1])
+
+                    filename = image.get("name", None)
+                    if filename is None:
+                        if  (
+                            ".wikia." in config.api or ".fandom.com" in config.api
+                        ):
+                            filename = urllib.parse.unquote(
+                                url.split("/")[-3]
+                            )
+                        else:
+                            filename = urllib.parse.unquote(
+                                url.split("/")[-1]
+                            )
+                    assert " " not in filename, f'Filename "{filename}" contains space, please report this to the developer(s)'
+
+                    if "%u" in filename:
+                        warnings.warn(
+                            f"Filename {filename} may contains unquoted URL characters, please review it manually. FILENAME: {filename} URL:{url}",
+                            UnicodeWarning,
                         )
 
-                    # # temporary comment out this check, 20230824
-                    # if "%u" in filename:
-                    #     raise NotImplementedError(
-                    #         "Filename "
-                    #         + filename
-                    #         + " contains unicode. Please file an issue with MediaWiki Scraper."
-                    #     )
-
-                    uploader = re.sub("_", " ", image.get("user", "Unknown"))
+                    uploader = image.get("user", "Unknown")
                     size: Union[bool,int] = image.get("size", NULL)
                     
                     # size or sha1 is not always available (e.g. https://wiki.mozilla.org/index.php?curid=20675)
                     sha1: Union[bool,str] = image.get("sha1", NULL)
                     timestamp = image.get("timestamp", NULL)
-                    images.append([filename, url, uploader, size, sha1, timestamp])
+                    images.append([underscore(filename), url, space(uploader), size, sha1, timestamp])
             else:
-                oldAPI = True
+                use_oldAPI = True
                 break
 
-        if oldAPI:
+        if use_oldAPI:
             print("    API:Allimages not available. Using API:Allpages generator instead.")
             gapfrom = "!"
             images = []
@@ -537,14 +543,13 @@ class Image:
                         url = props["imageinfo"][0]["url"]
                         url = Image.curate_image_URL(config=config, url=url)
 
-                        tmp_filename = ":".join(props["title"].split(":")[1:])
+                        filename = ":".join(props["title"].split(":")[1:])
 
-                        filename = re.sub("_", " ", tmp_filename)
-                        uploader = re.sub("_", " ", props["imageinfo"][0]["user"])
+                        uploader = props["imageinfo"][0]["user"]
                         size = props.get("imageinfo")[0].get("size", NULL)
                         sha1 = props.get("imageinfo")[0].get("sha1", NULL)
                         timestamp = props.get("imageinfo")[0].get("timestamp", NULL)
-                        images.append([filename, url, uploader, size, sha1, timestamp])
+                        images.append([underscore(filename), url, space(uploader), size, sha1, timestamp])
                 else:
                     # if the API doesn't return query data, then we're done
                     break
@@ -571,6 +576,10 @@ class Image:
             while 3 <= len(line) < 6:
                 line.append(NULL) # At this point, make sure all lines have 5 elements
             filename, url, uploader, size, sha1, timestamp = line
+
+            assert " " not in filename, "Filename contains space, it should be underscored"
+            assert "_" not in uploader, "Uploader contains underscore, it should be spaced"
+
             print(line,end='\r')
             images_file.write(
                 filename + "\t" + url + "\t" + uploader
@@ -605,6 +614,7 @@ class Image:
         else:
             print("ERROR: no index nor API")
             sys.exit(1)
+            return # useless but linting is happy
 
         if url.startswith("//"):  # Orain wikifarm returns URLs starting with //
             url = "{}:{}".format(domainalone.split("://")[0], url)
@@ -619,6 +629,5 @@ class Image:
         url = undo_HTML_entities(text=url)
         # url = urllib.parse.unquote(url) #do not use unquote with url, it break some
         # urls with odd chars
-        url = re.sub(" ", "_", url)
 
-        return url
+        return underscore(url)
