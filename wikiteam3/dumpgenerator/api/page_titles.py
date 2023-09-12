@@ -255,48 +255,29 @@ def checkTitleOk(config: Config):
 # def read_titles(config: Config, session: requests.Session, start: Optional[str]=None, batch: int = 1) -> Generator[List[str], None, None]:
 #     pass
 
-def read_titles(config: Config, session: requests.Session, start: Optional[str]=None, batch: Union[bool,int]=False) -> Generator[Union[str,List[str]], None, None]:
+def read_titles(config: Config, session: requests.Session, start: Optional[str]=None
+                    ) -> Generator[str, None, None]:
     """Read title list from a file, from the title "start" 
     
-    start: title to start reading from
-    batch: if False, yield one title at a time, if int, yield a list of titles of that size
+    start: title to start reading from, if `None`, start from the beginning
     """
-
-    assert batch is False or isinstance(batch, int), "batch must be False or int"
-    if type(batch) is int:
-        assert batch > 0, f"batch must be positive"
 
     if not checkTitleOk(config):
         getPageTitles(config=config, session=session)
 
-    titlesfilename = "{}-{}-titles.txt".format(
+    titles_filename = "{}-{}-titles.txt".format(
         url2prefix_from_config(config=config), config.date
     )
-    titlesfile = open("{}/{}".format(config.path, titlesfilename), encoding="utf-8")
 
-    titlelist = []
-    seeking = False
-    if start is not None:
-        seeking = True
-
-    with titlesfile as f:
+    seeking = start is not None
+    with open(f"{config.path}/{titles_filename}", encoding="utf-8") as f:
         for line in f:
             title = line.strip()
             if title == "--END--":
                 break
             elif seeking and title != start:
                 continue
-            elif seeking and title == start:
+            else:
                 seeking = False
 
-            if not batch:
-                yield title
-            else:
-                titlelist.append(title)
-                if len(titlelist) < batch:
-                    continue
-                else:
-                    yield titlelist
-                    titlelist = []
-        if batch and len(titlelist) > 0:
-            yield titlelist
+            yield title
