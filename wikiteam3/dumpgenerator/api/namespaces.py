@@ -68,7 +68,7 @@ def getNamespacesAPI(config: Config, session: requests.Session):
             print("Error: could not get namespaces from the API request.")
             print("HTTP %d" % r.status_code)
             print(r.text)
-            return None
+            raise
 
         if "all" in namespaces:
             namespaces = []
