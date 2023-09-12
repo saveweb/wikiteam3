@@ -259,6 +259,16 @@ class Image:
                             config=config, to_stdout=True,
                             text=f"File '{e.file}' size is not match '{e.size}', skipping",
                         )
+                    if timestamp != NULL:
+                        # try to set file timestamp (mtime)
+                        try:
+                            mtime = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").timestamp()
+                            atime = os.stat(filepath_underscore).st_atime
+                            # atime is not modified
+                            os.utime(filepath_underscore, times=(atime, mtime))
+                            # print(atime, mtime)
+                        except Exception as e:
+                            print("WARNING:    ", e)
                 else:
                     log_error(
                         config=config, to_stdout=True,
