@@ -11,6 +11,15 @@ ALL_DUMPED_MARK = "all_dumped.mark"
 UPLOADED_MARK = 'uploaded_to_IA.mark'
 
 
+def underscore(text: str) -> str:
+    """ replace(" ", "_") """
+    return text.replace(" ", "_")
+
+def space(text: str) -> str:
+    """ replace("_", " ") """
+    return text.replace("_", " ")
+
+
 def clean_HTML(raw: str = "") -> str:
     """Extract only the real wiki content and remove rubbish
     This function is ONLY used to retrieve page titles
