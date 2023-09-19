@@ -132,7 +132,7 @@ class Image:
             if filepath_space.is_file():
                 # rename file to underscore
                 shutil.move(filepath_space, filepath_underscore)
-            
+
             # check if file already exists and has the same size and sha1
             if ((size != NULL
                 and filepath_underscore.is_file()
@@ -277,7 +277,7 @@ class Image:
 
             if downloaded: # skip printing
                 continue
-            print_msg = f"              | {(len(images)-c_savedImageFiles)}=>{filename_underscore[0:50]}"
+            print_msg = f"              | {len(images)}=>{filename_underscore[0:50]}"
             print(print_msg, " "*(73 - len(print_msg)), end="\r")
 
         # NOTE: len(images) == 0 here
