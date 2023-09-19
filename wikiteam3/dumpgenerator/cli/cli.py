@@ -96,6 +96,10 @@ def getArgumentParser():
     groupWikiOrAPIOrIndex.add_argument(
         "--index", help="URL to index.php (e.g. http://wiki.domain.org/w/index.php), (not supported with --images on newer(?) MediaWiki without --api)"
     )
+    groupWikiOrAPIOrIndex.add_argument(
+        "--index-check-threshold", metavar="0.80", default=0.80, type=float,
+        help="pass index.php check if result is greater than (>) this value (default: 0.80)"
+    )
 
     # Download params
     groupDownload = parser.add_argument_group(
@@ -394,28 +398,30 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
             print("-- Login failed --")
 
     # check index
-    if index and check_index(index=index, logged_in=bool(args.cookies), session=session):
+    threshold: float = args.index_check_threshold
+
+    if index and check_index(index=index, logged_in=bool(args.cookies), session=session) > threshold:
         print("index.php is OK")
     else:
         index = index2
         if index and index.startswith("//"):
             index = args.wiki.split("//")[0] + index
-        if index and check_index(index=index, logged_in=bool(args.cookies), session=session):
+        if index and check_index(index=index, logged_in=bool(args.cookies), session=session) > threshold:
             print("index.php is OK")
         else:
             try:
                 index = "/".join(index.split("/")[:-1])
             except AttributeError:
                 index = None
-            if index and check_index(index=index, logged_in=bool(args.cookies), session=session):
+            if index and check_index(index=index, logged_in=bool(args.cookies), session=session) > threshold:
                 print("index.php is OK")
             else:
                 print("Error in index.php.")
-                if not args.xmlrevisions:
+                if not (args.xmlrevisions or args.xmlapiexport):
                     print(
-                        "Please, provide a correct path to index.php or use --xmlrevisions. Terminating."
+                        "Please, provide a correct path to index.php or use --xmlrevisions or --xmlapiexport. Terminating."
                     )
-                    sys.exit(1)
+                    sys.exit(11)
 
 
     namespaces = ["all"]
