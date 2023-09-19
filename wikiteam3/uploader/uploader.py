@@ -374,7 +374,7 @@ def upload(arg: Args):
 
     item = get_item(identifier)
 
-    print(f"=== Preparing files to upload ===")
+    print("=== Preparing files to upload ===")
     filedict = prepare_files_to_upload(wikidump_dir, config, item, parallel=arg.parallel, zstd_level=arg.zstd_level)
 
     print("=== Preparing metadata ===")
@@ -428,7 +428,7 @@ def upload_logo(item: Item, logo_url: str, ia_keys: IAKeys):
         try:
             logo_io = BytesIO(requests.get(logo_url, timeout=20).content)
             break
-        except:
+        except Exception:
             if tries_left == 1:
                 raise
             print(f"Failed to download logo, retrying ({tries_left} tries left)")

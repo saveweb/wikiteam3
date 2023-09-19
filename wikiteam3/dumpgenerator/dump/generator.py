@@ -109,7 +109,7 @@ class DumpGenerator:
             save_SpecialVersion(config=config, session=other["session"])
             save_siteinfo(config=config, session=other["session"])
             mark_as_done(config=config, mark=ALL_DUMPED_MARK)
-            bye()
+            bye(config.path)
             if other["upload"]:
                 print('Calling uploader... (--upload)')
                 retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other["uploader_args"],

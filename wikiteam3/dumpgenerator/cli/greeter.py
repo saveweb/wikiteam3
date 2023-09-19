@@ -27,14 +27,16 @@ def welcome():
     return message
 
 
-def bye():
+def bye(wikidump_dir = None):
     """Closing message"""
-    print("")
-    print("---> Done <---")
-    print("")
-    print("If this is a public wiki, please, consider publishing this dump.")
-    print("Do it yourself as explained in:")
-    print("  https://github.com/WikiTeam/wikiteam/wiki/Tutorial#Publishing_the_dump")
-    print("")
-    print("Good luck! Bye!")
-    print("")
+    print(
+f"""
+---> Done <---
+
+If this is a public wiki, please, consider publishing this dump to the Internet Archive:
+
+`wikiteam3uploader {wikidump_dir if wikidump_dir else ''}`
+
+Good luck! Bye!
+"""
+)
