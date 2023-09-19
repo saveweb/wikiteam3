@@ -16,18 +16,18 @@ class ExportAbortedError(Exception):
 
 
 class FileSizeError(Exception):
-    def __init__(self, file, size):
+    def __init__(self, file, excpected_size):
         self.file = file
-        self.size = size
+        self.excpected_size = excpected_size
 
     def __str__(self):
-        return "File '%s' size is not match '%s'." % (self.file, self.size)
+        return "File '%s' size is not match '%s'." % (self.file, self.excpected_size)
 
 
 class FileSha1Error(Exception):
-    def __init__(self, file, sha1):
+    def __init__(self, file, excpected_sha1):
         self.file = file
-        self.sha1 = sha1
+        self.excpected_sha1 = excpected_sha1
 
     def __str__(self):
-        return "File '%s' sha1 is not match '%s'." % (self.file, self.sha1)
+        return "File '%s' sha1 is not match '%s'." % (self.file, self.excpected_sha1)

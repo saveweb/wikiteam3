@@ -16,12 +16,12 @@ from wikiteam3.dumpgenerator.api import get_JSON, handle_StatusCode
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDATES
-from wikiteam3.dumpgenerator.exceptions import FileSizeError
+from wikiteam3.dumpgenerator.exceptions import FileSha1Error, FileSizeError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.version import getVersion
 from wikiteam3.utils.identifier import url2prefix_from_config
 from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
-from wikiteam3.utils.util import clean_HTML, sha1sum, space, underscore, undo_HTML_entities
+from wikiteam3.utils.util import clean_HTML, sha1bytes, sha1sum, space, underscore, undo_HTML_entities
 
 NULL = "null"
 """ NULL value for image metadata"""
@@ -236,8 +236,12 @@ class Image:
 
                 if r.status_code == 200:
                     try:
-                        if size == NULL or len(r.content) == int(size) or disable_image_verify:
-                            # size == NULL means size is unknown
+                        if disable_image_verify \
+                            or (sha1 == NULL and size == NULL) \
+                            or (
+                                    (sha1 == NULL or sha1bytes(r.content) == sha1)
+                                and (size == NULL or len(r.content) == int(size) )
+                            ):
                             try:
                                 with open(filepath_underscore, "wb") as imagefile:
                                     imagefile.write(r.content)
@@ -247,18 +251,31 @@ class Image:
                                 raise
                             c_savedImageFiles += 1
                         else:
-                            raise FileSizeError(file=filepath_underscore, size=size)
+                            if len(r.content) != int(size):
+                                raise FileSizeError(file=filepath_underscore, excpected_size=size)
+                            elif sha1bytes(r.content) != sha1:
+                                raise FileSha1Error(file=filepath_underscore, excpected_sha1=sha1)
+                            else:
+                                raise RuntimeError("Unknown error")
                     except OSError:
                         log_error(
                             config=config, to_stdout=True,
                             text=f"File '{filepath_underscore}' could not be created by OS",
                         )
+                        continue
                     except FileSizeError as e:
-                        # TODO: add a --force-download-image or --nocheck-image-size option to download anyway
                         log_error(
                             config=config, to_stdout=True,
-                            text=f"File '{e.file}' size is not match '{e.size}', skipping",
+                            text=f"File '{e.file}' size is not match '{e.excpected_size}', skipping",
                         )
+                        continue
+                    except FileSha1Error as e:
+                        log_error(
+                            config=config, to_stdout=True,
+                            text=f"File '{e.file}' sha1 is not match '{e.excpected_sha1}', skipping",
+                        )
+                        continue
+
                     if timestamp != NULL:
                         # try to set file timestamp (mtime)
                         try:
@@ -268,7 +285,7 @@ class Image:
                             os.utime(filepath_underscore, times=(atime, mtime))
                             # print(atime, mtime)
                         except Exception as e:
-                            print("WARNING:    ", e)
+                            print("Error setting file timestamp:", e)
                 else:
                     log_error(
                         config=config, to_stdout=True,
@@ -301,11 +318,10 @@ class Image:
             print("Using index.php (Special:Imagelist) to retrieve image names...")
             images = Image.get_image_names_scraper(config=config, session=session)
 
-        # images = list(set(images)) # it is a list of lists
-        print("Sorting image filenames")
+        print(f"Sorting image filenames ({len(images)} images)...")
         images.sort()
+        print("Done")
 
-        print("%d image names loaded" % (len(images)))
         return images
 
 
@@ -574,7 +590,7 @@ class Image:
 
     @staticmethod
     def save_image_names(config: Config, images: List[List]):
-        """Save image list in a file, including filename, url, uploader, size and sha1"""
+        """Save image list in a file, including filename, url, uploader and other metadata"""
 
         images_filename = "{}-{}-images.txt".format(
             url2prefix_from_config(config=config), config.date
@@ -590,7 +606,8 @@ class Image:
             assert " " not in filename, "Filename contains space, it should be underscored"
             assert "_" not in uploader, "Uploader contains underscore, it should be spaced"
 
-            print(line,end='\r')
+            # print(line,end='\r')
+
             images_file.write(
                 filename + "\t" + url + "\t" + uploader
                 + "\t" + (str(size) if size else NULL)
@@ -601,7 +618,7 @@ class Image:
         images_file.write("--END--")
         images_file.close()
 
-        print("Image filenames and URLs saved at...", images_filename)
+        print("Image metadata saved at...", images_filename)
 
 
     @staticmethod
