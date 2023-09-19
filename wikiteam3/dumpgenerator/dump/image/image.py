@@ -272,7 +272,7 @@ class Image:
                 else:
                     log_error(
                         config=config, to_stdout=True,
-                        text=f"Failled to donwload '{filename_underscore}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
+                        text=f"Failed to download '{filename_underscore}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
                     )
 
             if downloaded: # skip printing

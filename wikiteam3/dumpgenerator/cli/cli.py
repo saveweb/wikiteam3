@@ -59,7 +59,7 @@ def getArgumentParser():
     parser.add_argument("-g", "--uploader-arg", dest="uploader_args", action='append', default=[],
                         help="Arguments for uploader.")
     parser.add_argument("--force", action="store_true", help="")
-    parser.add_argument("--user", help="Username if MedaiWiki authentication is required.")
+    parser.add_argument("--user", help="Username if MediaWiki authentication is required.")
     parser.add_argument(
         "--pass", dest="password", help="Password if MediaWiki authentication is required."
     )
