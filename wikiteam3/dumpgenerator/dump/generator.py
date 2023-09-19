@@ -4,7 +4,7 @@ import re
 import subprocess
 import sys
 import traceback
-from typing import Dict
+from typing import Dict, Union
 
 from file_read_backwards import FileReadBackwards
 
@@ -225,6 +225,7 @@ class DumpGenerator:
                 Image.save_image_names(config=config, images=images)
             # checking images directory
             files = set()
+            du_dir: int = 0 # du -s {config.path}/images
             if os.path.exists(f"{config.path}/images"):
                 c_loaded = 0
                 for file in os.scandir(f"{config.path}/images"):
@@ -236,13 +237,29 @@ class DumpGenerator:
                                     f"{config.path}/images/{underscore(file.name)}")
                         print(f"Renamed {file.name} to {underscore(file.name)}")
                     files.add(underscore(file.name))
+                    du_dir += file.stat().st_size
                     
                     c_loaded += 1
                     if c_loaded % 12000 == 0:
-                        print(f"loaded {c_loaded} files", end="\r")
+                        print(f"[progress] {c_loaded} files loaded...", end="\r")
+                print(f"{c_loaded} files in $wikidump/images/ dir, du -s: {du_dir} bytes ({du_dir/1024/1024/1024:.2f} GiB)")
 
+            def int_or_zero(size: Union[int, str]) -> int:
+                return int(size) if (
+                            size
+                            and (
+                                (isinstance(size, str) and size.isdigit())
+                                or
+                                (isinstance(size, int))
+                            )
+                        ) else 0
+
+
+            c_images_size = 0
             c_images_downloaded = 0
+            c_images_downloaded_size = 0
             c_checked = 0
+
             for filename, url, uploader, size, sha1, timestamp in images:
                 if other["filenamelimit"] < len(filename.encode('utf-8')):
                     log_error(
@@ -252,10 +269,13 @@ class DumpGenerator:
                     continue
                 if filename in files:
                     c_images_downloaded += 1
+                    c_images_downloaded_size += int_or_zero(size)
                 c_checked += 1
+                c_images_size += int_or_zero(size)
                 if c_checked % 100000 == 0:
                     print(f"checked {c_checked}/{len(images)} records", end="\r")
-            print(f"{len(images)} records in images.txt, {c_images_downloaded} images were saved in the previous session")
+            print(f"{len(images)} records in images.txt, {c_images_downloaded} files were saved in the previous session")
+            print(f"Estimated size of all images (images.txt): {c_images_size} bytes ({c_images_size/1024/1024/1024:.2f} GiB)")
             if c_images_downloaded < len(images):
                 complete = False
                 print("WARNING: Some images were not saved in the previous session")
