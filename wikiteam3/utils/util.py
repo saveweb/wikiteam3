@@ -93,8 +93,14 @@ def clean_XML(xml: str = "") -> str:
         xml = xml.split("</mediawiki>")[0]
     return xml
 
+
+def sha1bytes(data: bytes) -> str:
+    """ return `hashlib.sha1(data).hexdigest()` """
+    return hashlib.sha1(data).hexdigest()
+
+
 def sha1sum(path: Union[str, Path]) -> str:
-    """Return the SHA1 hash of a file"""
+    """ Return the SHA1 hash of a file """
     if isinstance(path, str):
         path = Path(path).expanduser().resolve()
 
