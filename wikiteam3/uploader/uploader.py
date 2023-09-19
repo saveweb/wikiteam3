@@ -2,9 +2,11 @@ import argparse
 from datetime import datetime
 import json
 import os
+import random
 import re
 import shutil
 from dataclasses import dataclass
+import sys
 import time
 import traceback
 from typing import Dict, List, Optional, Tuple, Union
@@ -22,6 +24,7 @@ from wikiteam3.dumpgenerator.version import getVersion
 from wikiteam3.uploader.socketLock import NoLock, SocketLockServer
 from wikiteam3.utils import url2prefix_from_config, sha1sum
 from wikiteam3.uploader.compresser import ZstdCompressor, SevenZipCompressor
+from wikiteam3.utils.ia_checker import ia_s3_tasks_load_avg
 from wikiteam3.utils.util import ALL_DUMPED_MARK, UPLOADED_MARK, mark_as_done, is_markfile_exists
 
 DEFAULT_COLLECTION = 'opensource'
@@ -379,6 +382,26 @@ def upload(arg: Args):
 
     print("=== Preparing metadata ===")
     metadata, logo_url = prepare_item_metadata(wikidump_dir, config, arg)
+
+    print("=== Checking IA S3 load average (optional) ===")
+
+    try:
+        avg_load = ia_s3_tasks_load_avg(session=item.session) # check IA load
+        print(f"IA S3 load: {avg_load * 100:.4f}%")
+        if avg_load > 0.99:
+            print("WARNING: IA S3 is heavily overloaded, upload may fail")
+            print("Deciding whether to continue even if IA S3 is heavily overloaded... (20% chance to continue, random)")
+            if random.random() < 0.8:
+                print("To prevent IA S3 from being overloaded further, please try uploading later, exiting...")
+                sys.exit(99)
+            print("Continuing anyway...")
+        elif avg_load > 0.9:
+            print("WARNING: IA S3 is overloaded, upload may fail") 
+    except Exception as e:
+        traceback.print_exc()
+        print(f"Failed to get IA S3 load average: {e}")
+        print("Don't worry, it's optional.")
+
 
     if arg.dry_run:
         print("=== Dry run, exiting ===")

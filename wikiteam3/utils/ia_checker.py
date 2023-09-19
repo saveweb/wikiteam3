@@ -9,6 +9,18 @@ from wikiteam3.dumpgenerator.config import Config
 IA_MAX_RETRY = 5
 logger = logging.getLogger(__name__)
 
+
+def ia_s3_tasks_load_avg(session: ArchiveSession) -> float:
+    api = "https://s3.us.archive.org/?check_limit=1"
+    r = session.get(api, timeout=16)
+    r.raise_for_status()
+    r_json = r.json()
+    total_tasks_queued = r_json["detail"]["total_tasks_queued"]
+    total_global_limit = r_json["detail"]["total_global_limit"]
+    logger.info(f"ia_s3_load_avg(): {total_tasks_queued} / {total_global_limit}")
+    return total_tasks_queued / total_global_limit
+
+
 def search_ia(apiurl: Optional[str] = None, indexurl: Optional[str] = None, addeddate_intervals: Optional[List[str]] = None):
     if apiurl is None:
         apiurl = 'api.php'.join(indexurl.rsplit('index.php', 1)) if indexurl else None
