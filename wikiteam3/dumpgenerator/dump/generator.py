@@ -105,9 +105,12 @@ class DumpGenerator:
             else:
                 DumpGenerator.createNewDump(config=config, other=other)
 
-            save_IndexPHP(config=config, session=other["session"])
-            save_SpecialVersion(config=config, session=other["session"])
-            save_siteinfo(config=config, session=other["session"])
+            if config.index:
+                save_IndexPHP(config=config, session=other["session"])
+                save_SpecialVersion(config=config, session=other["session"])
+            if config.api:
+                save_siteinfo(config=config, session=other["session"])
+
             mark_as_done(config=config, mark=ALL_DUMPED_MARK)
             bye(config.path)
             if other["upload"]:
