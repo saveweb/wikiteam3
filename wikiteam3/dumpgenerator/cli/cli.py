@@ -7,6 +7,7 @@ import os
 import queue
 import re
 import sys
+import traceback
 from typing import Dict, Tuple
 
 import requests
@@ -53,12 +54,8 @@ def getArgumentParser():
         action="store_true",
         help="resumes previous incomplete dump (requires --path)",
     )
-    parser.add_argument('--upload', action='store_true', 
-                        help='Upload wikidump to Internet Archive after successfully dumped'
-    )
-    parser.add_argument("-g", "--uploader-arg", dest="uploader_args", action='append', default=[],
-                        help="Arguments for uploader.")
-    parser.add_argument("--force", action="store_true", help="")
+    parser.add_argument("--force", action="store_true", 
+        help="download it even if Wikimedia site or a recent dump exists in the Internet Archive")
     parser.add_argument("--user", help="Username if MediaWiki authentication is required.")
     parser.add_argument(
         "--pass", dest="password", help="Password if MediaWiki authentication is required."
@@ -84,70 +81,86 @@ def getArgumentParser():
     parser.add_argument(
         "--stdout-log-file", dest="stdout_log_path", default=None, help="Path to copy stdout to",
     )
+    parser.add_argument(
+        "--api_chunksize", metavar="50", default=50, help="Chunk size for MediaWiki API (arvlimit, ailimit, etc.)"
+    )
 
     # URL params
-    groupWikiOrAPIOrIndex = parser.add_argument_group()
-    groupWikiOrAPIOrIndex.add_argument(
+    group_WikiOrAPIOrIndex = parser.add_argument_group()
+    group_WikiOrAPIOrIndex.add_argument(
         "wiki", default="", nargs="?", help="URL to wiki (e.g. http://wiki.domain.org), auto detects API and index.php"
     )
-    groupWikiOrAPIOrIndex.add_argument(
+    group_WikiOrAPIOrIndex.add_argument(
         "--api", help="URL to API (e.g. http://wiki.domain.org/w/api.php)"
     )
-    groupWikiOrAPIOrIndex.add_argument(
+    group_WikiOrAPIOrIndex.add_argument(
         "--index", help="URL to index.php (e.g. http://wiki.domain.org/w/index.php), (not supported with --images on newer(?) MediaWiki without --api)"
     )
-    groupWikiOrAPIOrIndex.add_argument(
+    group_WikiOrAPIOrIndex.add_argument(
         "--index-check-threshold", metavar="0.80", default=0.80, type=float,
         help="pass index.php check if result is greater than (>) this value (default: 0.80)"
     )
 
     # Download params
-    groupDownload = parser.add_argument_group(
+    group_download = parser.add_argument_group(
         "Data to download", "What info download from the wiki"
     )
-    groupDownload.add_argument(
+    group_download.add_argument(
         "--xml",
         action="store_true",
         help="Export XML dump using Special:Export (index.php). (supported with --curonly)",
     )
-    groupDownload.add_argument(
+    group_download.add_argument(
         "--curonly", action="store_true", help="store only the lastest revision of pages"
     )
-    groupDownload.add_argument(
+    group_download.add_argument(
         "--xmlapiexport",
         action="store_true",
         help="Export XML dump using API:revisions instead of Special:Export, use this when Special:Export fails and xmlrevisions not supported. (supported with --curonly)",
     )
-    groupDownload.add_argument(
+    group_download.add_argument(
         "--xmlrevisions",
         action="store_true",
         help="Export all revisions from an API generator (API:Allrevisions). MediaWiki 1.27+ only. (not supported with --curonly)",
     )
-    groupDownload.add_argument(
+    group_download.add_argument(
         "--xmlrevisions_page",
         action="store_true",
         help="[[! Development only !]] Export all revisions from an API generator, but query page by page MediaWiki 1.27+ only. (default: --curonly)",
     )
-    groupDownload.add_argument(
+    group_download.add_argument(
+        "--namespaces",
+        metavar="1,2,3",
+        help="comma-separated value of namespaces to include (all by default)",
+    )
+    group_download.add_argument(
+        "--exnamespaces",
+        metavar="1,2,3",
+        help="comma-separated value of namespaces to exclude",
+    )
+    group_download.add_argument(
         "--images", action="store_true", help="Generates an image dump"
     )
-    groupDownload.add_argument(
+    group_image = parser.add_argument_group(
+        "Image dump options", "Options for image dump (--images)"
+    ) # add_referer_header
+    group_image.add_argument(
         "--bypass-cdn-image-compression",
         action="store_true",
         help="Bypass CDN image compression. (CloudFlare Polish, etc.)",
     )
-    groupDownload.add_argument(
+    group_image.add_argument(
         "--disable-image-verify",
         action="store_true",
         help="Don't verify image size and hash while downloading. (useful for wikis with server-side image resizing)"
     )
-    groupDownload.add_argument(
+    group_image.add_argument(
         "--image-timestamp-interval",
         metavar="2019-01-02T01:36:06Z/2023-08-12T10:36:06Z",
         help="[BETA] Only download images uploaded in the given time interval. [format: ISO 8601 UTC interval] "
             "(only works with api)",
     )
-    groupDownload.add_argument(
+    group_image.add_argument(
         "--ia-wbm-booster",
         type=int,
         default=0,
@@ -157,32 +170,27 @@ def getArgumentParser():
             "[0: disabled (default), 1: use earliest snapshot, 2: use latest snapshot, "
             "3: the closest snapshot to the image's upload time]", 
     )
-    groupDownload.add_argument(
-        "--namespaces",
-        metavar="1,2,3",
-        help="comma-separated value of namespaces to include (all by default)",
-    )
-    groupDownload.add_argument(
-        "--exnamespaces",
-        metavar="1,2,3",
-        help="comma-separated value of namespaces to exclude",
-    )
-    parser.add_argument(
-        "--api_chunksize", metavar="50", default=50, help="Chunk size for MediaWiki API (arvlimit, ailimit, etc.)"
-    )
 
     # Meta info params
-    groupMeta = parser.add_argument_group(
+    group_meta = parser.add_argument_group(
         "Meta info", "What meta info to retrieve from the wiki"
     )
-    groupMeta.add_argument(
+    group_meta.add_argument(
         "--get-wiki-engine", action="store_true", help="returns the wiki engine"
     )
-    groupMeta.add_argument(
+    group_meta.add_argument(
         "--failfast",
         action="store_true",
         help="[lack maintenance] Avoid resuming, discard failing wikis quickly. Useful only for mass downloads.",
     )
+
+    group_upload = parser.add_argument_group("wikiteam3uploader params")
+    group_upload.add_argument('--upload', action='store_true', 
+        help='(run `wikiteam3uplaoder` for you) Upload wikidump to Internet Archive after successfully dumped'
+    )
+    group_upload.add_argument("-g", "--uploader-arg", dest="uploader_args", action='append', default=[],
+        help="Arguments for uploader.")
+
     return parser
 
 
@@ -312,8 +320,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         session.mount("https://", HTTPAdapter(max_retries=__retries__))
         session.mount("http://", HTTPAdapter(max_retries=__retries__))
     except Exception:
-        # Our urllib3/requests is too old
-        pass
+        traceback.print_exc()
 
     # Set cookies
     cj = http.cookiejar.MozillaCookieJar()
