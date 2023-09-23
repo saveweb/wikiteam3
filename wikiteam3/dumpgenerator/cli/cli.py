@@ -143,7 +143,14 @@ def getArgumentParser():
     )
     group_image = parser.add_argument_group(
         "Image dump options", "Options for image dump (--images)"
-    ) # add_referer_header
+    )
+    group_image.add_argument(
+        "--add-referer-header",
+        metavar="auto|https://example.com",
+        type=str,
+        # help="Add Referer header to image requests. (auto: use wiki URL, URL: use the given URL)",
+        help=argparse.SUPPRESS, # private option
+    )
     group_image.add_argument(
         "--bypass-cdn-image-compression",
         action="store_true",
@@ -496,6 +503,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "session": session,
         "stdout_log_path": args.stdout_log_path,
         "bypass_cdn_image_compression": args.bypass_cdn_image_compression,
+        "add_referer_header": args.add_referer_header,
         "disable_image_verify": args.disable_image_verify,
         "image_timestamp_interval": args.image_timestamp_interval,
         "ia_wbm_booster": args.ia_wbm_booster,

@@ -45,8 +45,9 @@ class Image:
 
         bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
         disable_image_verify: bool = other["disable_image_verify"]
-        image_timestamp_interval: str = other["image_timestamp_interval"]
+        image_timestamp_interval: Optional[str] = other["image_timestamp_interval"]
         ia_wbm_booster: int = other["ia_wbm_booster"]
+        add_referer_header: Optional[str] = other["add_referer_header"] # None, "auto", {URL}
 
         image_timestamp_intervals = None
         if image_timestamp_interval: # 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
@@ -77,6 +78,22 @@ class Image:
                 params[f"_wiki_{random.randint(10,99)}_"] = "random"
 
             return params
+        
+        def modify_headers(headers: Optional[Dict] = None) -> Dict:
+            """ add HTTP Referer header """
+            if headers is None:
+                headers = {}
+            if add_referer_header:
+                url = config.index if config.index else config.api
+                parsed_url = urllib.parse.urlparse(
+                    add_referer_header
+                    if add_referer_header != "auto"
+                    else url
+                )
+
+                headers["Referer"] = f"{parsed_url.scheme}://{parsed_url.netloc}/"
+
+            return headers
             
 
         patch_sess = SessionMonkeyPatch(session=session, config=config, hard_retries=3)
@@ -207,7 +224,7 @@ class Image:
 
                 if r is None:
                     Delay(config=config)
-                    r = session.get(url=url, params=modify_params(), allow_redirects=True)
+                    r = session.get(url=url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
                     check_response(r)
 
                     # a trick to get original file (fandom)
@@ -218,7 +235,7 @@ class Image:
                         and len(r.content) != int(size):
                         ori_url = url + "&format=original"
                         Delay(config=config)
-                        r = session.get(url=ori_url, params=modify_params(), allow_redirects=True)
+                        r = session.get(url=ori_url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
                         check_response(r)
 
                     # Try to fix a broken HTTP to HTTPS redirect
@@ -231,7 +248,7 @@ class Image:
                         ):
                             url = "https://" + url_raw.split("://")[1]
                             # print 'Maybe a broken http to https redirect, trying ', url
-                            r = session.get(url=url, params=modify_params(), allow_redirects=True)
+                            r = session.get(url=url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
                             check_response(r)
 
                 if r.status_code == 200:
