@@ -67,6 +67,7 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
                 "Trying to get wikitext from the allrevisions API and to build the XML"
             )
             while True:
+                print("[arvcontinue]:", arv_params.get("arvcontinue", ""))
                 try:
                     allrevs_response = site.api(
                         http_method=config.http_method, **arv_params
