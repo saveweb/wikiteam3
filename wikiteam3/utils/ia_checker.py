@@ -27,7 +27,7 @@ def search_ia(apiurl: Optional[str] = None, indexurl: Optional[str] = None, adde
     if indexurl is None:
         indexurl = 'index.php'.join(apiurl.rsplit('api.php', 1)) if apiurl else None
 
-    if not (apiurl and indexurl):
+    if not (apiurl or indexurl):
         raise ValueError('apiurl or indexurl must be provided')
 
     ia_session = ArchiveSession()
