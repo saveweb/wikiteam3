@@ -60,34 +60,31 @@ class DumpGenerator:
             print(welcome())
             print("Analysing %s" % (config.api if config.api else config.index))
 
-            # creating path or resuming if desired
-            c = 2
-            # to avoid concat blabla-2, blabla-2-3, and so on...
-            originalpath = config.path
             # do not enter if resume is requested from begining
             while not other["resume"] and os.path.isdir(config.path):
                 print('\nWarning!: "%s" path exists' % (config.path))
-                reply = ""
-                if config.failfast:
-                    reply = "yes"
-                while reply.lower() not in ["yes", "y", "no", "n"]:
+                reply = "y" if config.failfast else ""
+                while reply.lower()[:1] not in ["y", "n"]:
                     reply = input(
-                        'There is a dump in "%s", probably incomplete.\nIf you choose resume, to avoid conflicts, some parameters you have chosen in the current session will be ignored\nand the parameters available in "%s/%s" will be loaded.\nDo you want to resume ([yes, y], [no, n])? '
+                        'There is a dump in "%s", probably incomplete.\n'
+                        'If you choose resume, to avoid conflicts, some parameters '
+                        'you have chosen in the current session will be ignored\n'
+                        'and the parameters available in "%s/%s" will be loaded.\n'
+                        'Do you want to resume (y/n)? '
                         % (config.path, config.path, config_filename)
                     )
-                if reply.lower() in ["yes", "y"]:
+                    reply = reply.lower()[:1]
+                if reply == "y":
                     if not os.path.isfile("{}/{}".format(config.path, config_filename)):
                         print("No config file found. I can't resume. Aborting.")
                         sys.exit(1)
                     print("You have selected: YES")
                     other["resume"] = True
                     break
-                elif reply.lower() in ["no", "n"]:
-                    print("You have selected: NO")
-                    other["resume"] = False
-                config.path = "%s-%d" % (originalpath, c)
-                print('Trying to use path "%s"...' % (config.path))
-                c += 1
+                elif reply == "n":
+                    print("You have selected: NO.\nbye.")
+                    # other["resume"] = False
+                    sys.exit(0)
 
             if other["resume"]:
                 print("Loading config file...")
