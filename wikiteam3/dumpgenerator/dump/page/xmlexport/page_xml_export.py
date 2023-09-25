@@ -10,6 +10,7 @@ from wikiteam3.dumpgenerator.api import handle_StatusCode
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import uprint
 from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.utils.util import underscore
 
 
 HISTORY_MIN_CHUNKSIZE = 2
@@ -117,7 +118,7 @@ def getXMLPageWithExport(config: Config, title: str,
 
     limit = 1000
     truncated = False
-    title_ = title.replace(" ", "_")
+    title_ = underscore(title)
     # do not convert & into %26, title_ = re.sub('&', '%26', title_)
 
     params: Dict[str, Any]

@@ -29,15 +29,33 @@ def check_index(*, index: str, logged_in: bool, session: requests.Session) -> fl
 
     r = None
 
-    for page in ["Special:Version", "Special:Random", "Special:RecentChanges"]:
+    for page in [
+                 "Special:Random",
+                 "Special:Version",
+                 "Special:AllPages",
+                 "Special:ListFiles",
+                 "Special:Search",
+                 ]:
         print(f"check_index(): Trying {page}...")
+
         try:
-            r = session.post(url=index, data={"title": page}, timeout=30, allow_redirects=False)
+            try:
+                r = session.post(url=index, data={"title": page}, timeout=30, allow_redirects=True)
+            except requests.exceptions.TooManyRedirects:
+                r = session.post(url=index, params={"title": page}, timeout=30, allow_redirects=False)
         except Exception as e:
             print("check_index(): Exception:", e)
             time.sleep(2)
             continue
+
+        for _r in r.history:
+            print(_r.request.method, _r.url, {"title": page}, _r.status_code)
         print(r.request.method, r.url, {"title": page}, r.status_code)
+
+        if r.status_code in [301, 302, 303, 307, 308]:
+            print("The index.php returned a redirect")
+            continue
+
         if r.status_code >= 400:
             print(f"ERROR: The wiki returned status code HTTP {r.status_code}")
             continue
@@ -47,6 +65,10 @@ def check_index(*, index: str, logged_in: bool, session: requests.Session) -> fl
     if r is None:
         print("ERROR: Failed to get index.php")
         return 0.15
+    
+    if r.status_code in [301, 302, 303, 307, 308]:
+        print("The index.php returned a redirect")
+        return 0.3
 
     raw = r.text
     # Workaround for
