@@ -45,7 +45,10 @@ def search_ia(apiurl: Optional[str] = None, indexurl: Optional[str] = None, adde
         # {'identifier': 'wiki-wikiothingxyz-20230315',
         # 'addeddate': '2023-03-15T01:42:12Z',
         # 'subject': ['wiki', 'wikiteam', 'MediaWiki', .....]}
-        if apiurl.lower() == result['originalurl'].lower() or indexurl.lower() == result['originalurl'].lower():
+        if result['originalurl'].lower() in [
+            apiurl.lower() if apiurl else None,
+            indexurl.lower() if indexurl else None
+            ]:
             logger.info(f'Original URL match: {result}')
             yield result
             item = result
