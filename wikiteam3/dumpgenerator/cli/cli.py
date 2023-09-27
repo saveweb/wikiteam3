@@ -211,6 +211,15 @@ def checkParameters(args=argparse.Namespace()) -> bool:
         print("ERROR: Don't mix download params and meta info params")
         passed = False
 
+    if [args.xmlrevisions, args.xmlapiexport, args.xmlrevisions_page].count(True) > 1:
+        print("ERROR: --xmlrevisions, --xmlapiexport, --xmlrevisions_page are mutually exclusive")
+        passed = False
+
+    if not args.xml:
+        if args.xmlrevisions or args.xmlapiexport or args.xmlrevisions_page:
+            print("ERROR: --xmlrevisions, --xmlapiexport, --xmlrevisions_page require --xml")
+            passed = False
+
     # No download params and no meta info params? Exit
     if (not args.xml and not args.images) and (not args.get_wiki_engine):
         print("ERROR: Use at least one download param or meta info param")
