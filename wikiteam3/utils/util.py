@@ -128,3 +128,13 @@ def mark_as_done(config: Config, mark: str, msg: Optional[str] = None):
 
 def is_markfile_exists(config: Config, mark: str) -> bool:
     return (Path(config.path)/ mark).exists()
+
+def int_or_zero(size: Union[int, str]) -> int:
+    return int(size) if (
+                size
+                and (
+                    (isinstance(size, str) and size.isdigit())
+                    or
+                    (isinstance(size, int))
+                )
+            ) else 0

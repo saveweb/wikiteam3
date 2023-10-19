@@ -71,7 +71,7 @@ def reconstructRevisions(root: ET.Element):
                 # NOTE: this is not the same as the text being empty
                 text.set('deleted','deleted')
             # sha1
-            if not 'sha1' in rev.attrib:
+            if 'sha1' not in rev.attrib:
                 if 'sha1hidden' in rev.attrib:
                     ET.SubElement(rev_,'sha1') # stub
                 else:
@@ -187,10 +187,7 @@ def getXMLPageWithApi(config: Config, title="", verbose=True, *, session: reques
                 raise RuntimeError("Retries exceeded")
             # in case the last request is not right, saving last time's progress
             if not firstpartok:
-                try:
-                    lastcontinue = params[continueKey]
-                except:
-                    lastcontinue = None
+                lastcontinue = params.get(continueKey, None) if continueKey is not None else None
 
             xml = getXMLPageCoreWithApi(params=params, config=config, session=session)
             if xml == "":

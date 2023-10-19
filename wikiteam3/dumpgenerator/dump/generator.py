@@ -21,7 +21,7 @@ from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import check_XML_integri
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import url2prefix_from_config, undo_HTML_entities, avoid_WikiMedia_projects
 from wikiteam3.utils.ia_checker import any_recent_ia_item_exists
-from wikiteam3.utils.util import ALL_DUMPED_MARK, mark_as_done, underscore
+from wikiteam3.utils.util import ALL_DUMPED_MARK, int_or_zero, mark_as_done, underscore
 
 # From https://stackoverflow.com/a/57008707
 class Tee(object):
@@ -193,21 +193,14 @@ class DumpGenerator:
 
         if config.images:
             # load images list
-            lastimage = ""
+            last_line = ""
             imagesFilePath = "%s/%s-%s-images.txt" % (config.path, url2prefix_from_config(config=config), config.date)
             if os.path.exists(imagesFilePath):
-                f = open(imagesFilePath)
-                lines = f.read().splitlines()
-                for l in lines:
-                    if re.search(r"\t", l):
-                        images.append(l.split("\t"))
-                if len(lines) == 0: # empty file
-                    lastimage = "--EMPTY--"
-                if lastimage == "":
-                    lastimage = lines[-1].strip()
-                if lastimage == "":
-                    lastimage = lines[-2].strip()
-                f.close()
+                with open(imagesFilePath, "r", encoding="utf-8") as f:
+                    while line := f.readline().rstrip():
+                        last_line = line
+                        if "\t" in line:
+                            images.append(line.split("\t"))
 
             if len(images)>0 and len(images[0]) < 5:
                 print(
@@ -215,7 +208,7 @@ class DumpGenerator:
                     "You can delete 'images.txt' manually and restart the script."
                 )
                 sys.exit(9)
-            if lastimage == "--END--":
+            if last_line == "--END--":
                 print("Image list was completed in the previous session")
             else:
                 print("Image list is incomplete. Reloading...")
@@ -232,28 +225,20 @@ class DumpGenerator:
                     if not file.is_file():
                         print(f"Warning: {file.name} is not a file")
                         continue
+
+                    du_dir += file.stat().st_size
+
                     if underscore(file.name) != file.name: # " " in filename
                         os.rename(f"{config.path}/images/{file.name}",
                                     f"{config.path}/images/{underscore(file.name)}")
                         print(f"Renamed {file.name} to {underscore(file.name)}")
+
                     files.add(underscore(file.name))
-                    du_dir += file.stat().st_size
                     
                     c_loaded += 1
                     if c_loaded % 12000 == 0:
                         print(f"[progress] {c_loaded} files loaded...", end="\r")
                 print(f"{c_loaded} files in $wikidump/images/ dir, du -s: {du_dir} bytes ({du_dir/1024/1024/1024:.2f} GiB)")
-
-            def int_or_zero(size: Union[int, str]) -> int:
-                return int(size) if (
-                            size
-                            and (
-                                (isinstance(size, str) and size.isdigit())
-                                or
-                                (isinstance(size, int))
-                            )
-                        ) else 0
-
 
             c_images_size = 0
             c_images_downloaded = 0
@@ -261,6 +246,7 @@ class DumpGenerator:
             c_checked = 0
 
             for filename, url, uploader, size, sha1, timestamp in images:
+                filename = underscore(filename)
                 if other["filenamelimit"] < len(filename.encode('utf-8')):
                     log_error(
                         config=config, to_stdout=True,

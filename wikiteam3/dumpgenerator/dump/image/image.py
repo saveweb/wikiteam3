@@ -21,7 +21,7 @@ from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.version import getVersion
 from wikiteam3.utils.identifier import url2prefix_from_config
 from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
-from wikiteam3.utils.util import clean_HTML, sha1bytes, sha1sum, space, underscore, undo_HTML_entities
+from wikiteam3.utils.util import clean_HTML, int_or_zero, sha1bytes, sha1sum, space, underscore, undo_HTML_entities
 
 NULL = "null"
 """ NULL value for image metadata"""
@@ -615,6 +615,8 @@ class Image:
         images_file = open(
             "{}/{}".format(config.path, images_filename), "w", encoding="utf-8"
         )
+
+        c_images_size = 0
         for line in images:
             while 3 <= len(line) < 6:
                 line.append(NULL) # At this point, make sure all lines have 5 elements
@@ -624,6 +626,7 @@ class Image:
             assert "_" not in uploader, "Uploader contains underscore, it should be spaced"
 
             # print(line,end='\r')
+            c_images_size += int_or_zero(size)
 
             images_file.write(
                 filename + "\t" + url + "\t" + uploader
@@ -632,10 +635,11 @@ class Image:
                 + "\t" + (timestamp if timestamp else NULL)
                 + "\n"
             )
-        images_file.write("--END--")
+        images_file.write("--END--\n")
         images_file.close()
 
-        print("Image metadata saved at...", images_filename)
+        print("Image metadata (images.txt) saved at:", images_filename)
+        print(f"Estimated size of all images (images.txt): {c_images_size} bytes ({c_images_size/1024/1024/1024:.2f} GiB)")
 
 
     @staticmethod

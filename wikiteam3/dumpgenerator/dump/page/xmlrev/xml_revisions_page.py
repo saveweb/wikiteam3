@@ -12,8 +12,10 @@ def make_xml_page_from_raw(xml: str, arvcontinue: Optional[str] = None) -> str:
     arvcontinue: None -> disable arvcontinue (default)
     arvcontinue: string (including empty "") -> write arvcontinue to XML (for api:allrevisions resuming)
     """
-    tree: ET.ElementTree = ET.XML(xml)
-    page: ET.Element = tree.find(".//{*}page")
+    tree: ET.Element = ET.XML(xml)
+    page: ET.Element | None = tree.find(".//{*}page")
+
+    assert page is not None
 
     if arvcontinue is not None:
         page.attrib['arvcontinue'] = arvcontinue
@@ -67,8 +69,8 @@ def make_xml_from_page(page: Dict, arvcontinue: Optional[str] = None) -> str:
                     '{http://www.w3.org/XML/1998/namespace}space': 'preserve',
                 }))
 
-            if not "user" in rev:
-                if not "userhidden" in rev:
+            if "user" not in rev:
+                if "userhidden" not in rev:
                     print("Warning: user not hidden but missing user in pageid %d revid %d" % (page['pageid'], rev['revid']))
                 revision.append(E.contributor(deleted="deleted"))
             else:
@@ -79,7 +81,7 @@ def make_xml_from_page(page: Dict, arvcontinue: Optional[str] = None) -> str:
                     )
                 )
 
-            if not "sha1" in rev:
+            if "sha1" not in rev:
                 if "sha1hidden" in rev:
                     revision.append(E.sha1()) # stub
                 else:
@@ -118,4 +120,3 @@ def make_xml_from_page(page: Dict, arvcontinue: Optional[str] = None) -> str:
         print(e)
         raise PageMissingError(page["title"], e)
     return etree.tostring(p, pretty_print=True, encoding="unicode")
-

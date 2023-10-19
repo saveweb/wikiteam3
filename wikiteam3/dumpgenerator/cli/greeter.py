@@ -4,27 +4,20 @@ from wikiteam3.dumpgenerator.version import getVersion
 
 
 def welcome():
-    message = ""
     """Opening message"""
-    message += "#" * 73
-    message += "\n"
-    welcome_string = "# Welcome to DumpGenerator %s by WikiTeam3 (GPL v3)" % (
-        getVersion()
-    )
-    welcome_string += " " * (73 - len(welcome_string) - 1) + "#"
-    message += welcome_string
-    message += "\n"
-    message += (
-        "# More info at: https://github.com/saveweb/wikiteam3                  #"
-    )
-    message += "\n"
-    message += (
-        "# Copyright (C) 2011-%d WikiTeam developers                           #\n"
-        % (datetime.datetime.now().year)
-    )
-    message += "#" * 73
 
-    return message
+    welcome_string = f"# Welcome to DumpGenerator {getVersion()} by WikiTeam3 (GPL v3)"
+    welcome_string += " " * (73 - len(welcome_string) - 1) + "#"
+    copyright_string = f"# Copyright (C) 2011-{datetime.datetime.now().year} WikiTeam developers"
+    copyright_string += " " * (73 - len(copyright_string) - 1) + "#"
+
+    return f"""\
+#########################################################################
+{welcome_string}
+# More info at: <https://github.com/saveweb/wikiteam3>                  #
+{copyright_string}
+#########################################################################
+"""
 
 
 def bye(wikidump_dir = None):

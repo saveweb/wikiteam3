@@ -147,7 +147,7 @@ def getXMLPageWithExport(config: Config, title: str,
 
     # if complete history, check if this page history has > limit edits, if so, retrieve all using offset if available
     # else, warning about Special:Export truncating large page histories
-    r_timestamp = "<timestamp>([^<]+)</timestamp>"
+    r_timestamp = r"<timestamp>([^<]+)</timestamp>"
 
     edit_count = 0
     edit_count += len(re.findall(r_timestamp, xml))
