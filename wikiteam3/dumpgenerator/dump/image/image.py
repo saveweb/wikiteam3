@@ -213,7 +213,7 @@ class Image:
                     # verify response
                     if r and r.status_code != 200:
                         r = None
-                    elif r and len(r.content) != int(size): # and r.status_code == 200:
+                    elif r and size != NULL and len(r.content) != int(size): # and r.status_code == 200:
                         # FileSizeError
                         # print(f"WARNING:    {filename_unquoted} size should be {size}, but got {len(r.content)} from WBM, use original url...")
                         r = None
@@ -232,7 +232,10 @@ class Image:
                     if "fandom.com" in config.api \
                         and "static.wikia.nocookie.net" in url \
                         and "?" in url \
-                        and len(r.content) != int(size):
+                        and (
+                               sha1 != NULL and sha1bytes(r.content) != sha1
+                            or size != NULL and len(r.content) != int(size)
+                        ):
                         ori_url = url + "&format=original"
                         Delay(config=config)
                         r = session.get(url=ori_url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
