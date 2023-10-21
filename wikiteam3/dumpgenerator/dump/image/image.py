@@ -272,9 +272,9 @@ class Image:
                             c_savedImageFiles += 1
                         else:
                             if len(r.content) != int(size):
-                                raise FileSizeError(file=filepath_underscore, excpected_size=size)
+                                raise FileSizeError(file=filename_underscore, excpected_size=size)
                             elif sha1bytes(r.content) != sha1:
-                                raise FileSha1Error(file=filepath_underscore, excpected_sha1=sha1)
+                                raise FileSha1Error(file=filename_underscore, excpected_sha1=sha1)
                             else:
                                 raise RuntimeError("Unknown error")
                     except OSError:
