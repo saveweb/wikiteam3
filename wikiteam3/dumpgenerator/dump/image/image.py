@@ -172,6 +172,8 @@ class Image:
 
                 r: Optional[requests.Response] = None
                 if ia_wbm_booster:
+                    if size == NULL or sha1 == NULL:
+                        print(f"[DEBUG] ia_wbm_booster:    {filename_underscore} size or sha1 is {NULL}")
                     def get_ia_wbm_response() -> Optional[requests.Response]:
                         """ Get response from Internet Archive Wayback Machine
                         return None if not found / failed """

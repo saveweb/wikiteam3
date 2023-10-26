@@ -9,7 +9,7 @@ import requests
 
 from wikiteam3.dumpgenerator.api import handle_StatusCode
 from wikiteam3.dumpgenerator.config import Config
-from wikiteam3.dumpgenerator.exceptions import PageMissingError, ExportAbortedError
+from wikiteam3.dumpgenerator.exceptions import InternalApiError_autohandler, MWUnknownContentModelException, PageMissingError, ExportAbortedError
 from wikiteam3.dumpgenerator.log import log_error
 
 
@@ -111,8 +111,8 @@ def getXMLPageCoreWithApi(config: Config, session: requests.Session, params: Dic
             # reducing server load requesting smallest chunks (if curonly then
             # rvlimit = 1 from mother function)
             if params['rvlimit'] > 1:
-                params['rvlimit'] = params['rvlimit'] / 2  # half
-        if c >= maxretries:
+                rvlimit = int(params['rvlimit'] / 2)  # half
+                params['rvlimit'] = rvlimit if rvlimit > 1 else 1
             print('    We have retried %d times' % (c))
             print('    MediaWiki error for "%s", network error or whatever...' % (
             params['titles' if config.xmlapiexport else 'pages']))
@@ -126,7 +126,7 @@ def getXMLPageCoreWithApi(config: Config, session: requests.Session, params: Dic
             log_error(
                 config=config,
                 text='Error while retrieving the last revision of "%s". Skipping.' %
-                     (params['titles' if config.xmlapiexport else 'pages']).decode('utf-8'))
+                     (params['titles' if config.xmlapiexport else 'pages']))
             raise ExportAbortedError(config.index)
             return ''  # empty xml
 
@@ -134,11 +134,12 @@ def getXMLPageCoreWithApi(config: Config, session: requests.Session, params: Dic
         try:
             r = session.get(url=config.api, params=params, headers=headers)
             handle_StatusCode(r)
+            InternalApiError_autohandler(r, xml=True)
             xml = r.text
             # print xml
         except requests.exceptions.ConnectionError as e:
             print('    Connection error: %s' % (str(e.args[0])))
-            xml = ''
+            xml = ""
         except requests.exceptions.ReadTimeout as e:
             print("    Read timeout: %s" % (str(e.args[0])))
             xml = ""
@@ -286,14 +287,8 @@ def getXMLPageWithApi(config: Config, title="", verbose=True, *, session: reques
         xml = getXMLPageCoreWithApi(params=params, config=config, session=session)
         if xml == "":
             raise ExportAbortedError(config.index)
-        if not "</page>" in xml:
+        if "</page>" not in xml:
             raise PageMissingError(title_, xml)
-        else:
-            # strip these sha1s sums which keep showing up in the export and
-            # which are invalid for the XML schema (they only apply to
-            # revisions)
-            xml = re.sub(r'\n\s*<sha1>\w+</sha1>\s*\n', r'\n', xml)
-            xml = re.sub(r'\n\s*<sha1/>\s*\n', r'\n', xml)
 
         yield xml.split("</page>")[0]
 

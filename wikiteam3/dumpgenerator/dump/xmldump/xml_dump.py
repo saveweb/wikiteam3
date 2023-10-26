@@ -8,7 +8,7 @@ import requests
 
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.utils import url2prefix_from_config
-from wikiteam3.dumpgenerator.exceptions import PageMissingError
+from wikiteam3.dumpgenerator.exceptions import ExportAbortedError, PageMissingError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.page_titles import read_titles
 from wikiteam3.dumpgenerator.dump.page.xmlexport.page_xml import get_XML_page
@@ -87,6 +87,9 @@ def doXMLExportDump(config: Config, session: requests.Session, xmlfile: TextIOWr
                 text='The page "%s" was missing in the wiki (probably deleted)'
                      % title,
             )
+        except ExportAbortedError as e:
+            print(title, "ExportAbortedError") # TODE: TODO !!!!!! DO NOT HARD ABORT HERE
+            raise NotImplementedError()
         # here, XML is a correct <page> </page> chunk or
         # an empty string due to a deleted page (logged in errors log) or
         # an empty string due to an error while retrieving the page from server

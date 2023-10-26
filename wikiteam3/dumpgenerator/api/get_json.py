@@ -8,7 +8,7 @@ def get_JSON(request: requests.Response):
     # request.encoding = request.apparent_encoding
     try:
         return request.json()
-    except:
+    except Exception:
         # Maybe an older API version which did not return correct JSON
         print("Error: Could not parse JSON")
         return {}
