@@ -286,14 +286,8 @@ def getXMLPageWithApi(config: Config, title="", verbose=True, *, session: reques
         xml = getXMLPageCoreWithApi(params=params, config=config, session=session)
         if xml == "":
             raise ExportAbortedError(config.index)
-        if not "</page>" in xml:
+        if "</page>" not in xml:
             raise PageMissingError(title_, xml)
-        else:
-            # strip these sha1s sums which keep showing up in the export and
-            # which are invalid for the XML schema (they only apply to
-            # revisions)
-            xml = re.sub(r'\n\s*<sha1>\w+</sha1>\s*\n', r'\n', xml)
-            xml = re.sub(r'\n\s*<sha1/>\s*\n', r'\n', xml)
 
         yield xml.split("</page>")[0]
 
