@@ -126,7 +126,7 @@ def getXMLPageCoreWithApi(config: Config, session: requests.Session, params: Dic
             log_error(
                 config=config,
                 text='Error while retrieving the last revision of "%s". Skipping.' %
-                     (params['titles' if config.xmlapiexport else 'pages']).decode('utf-8'))
+                     (params['titles' if config.xmlapiexport else 'pages']))
             raise ExportAbortedError(config.index)
             return ''  # empty xml
 
