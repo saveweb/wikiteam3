@@ -111,8 +111,8 @@ def getXMLPageCoreWithApi(config: Config, session: requests.Session, params: Dic
             # reducing server load requesting smallest chunks (if curonly then
             # rvlimit = 1 from mother function)
             if params['rvlimit'] > 1:
-                params['rvlimit'] = params['rvlimit'] / 2  # half
-        if c >= maxretries:
+                rvlimit = int(params['rvlimit'] / 2)  # half
+                params['rvlimit'] = rvlimit if rvlimit > 1 else 1
             print('    We have retried %d times' % (c))
             print('    MediaWiki error for "%s", network error or whatever...' % (
             params['titles' if config.xmlapiexport else 'pages']))
