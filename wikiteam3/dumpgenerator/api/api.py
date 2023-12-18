@@ -111,6 +111,15 @@ def mediawiki_get_API_and_Index(url: str, session: requests.Session):
     if not api and index:
         api = urljoin(index, "api.php")
 
+    # remove multiple slashes
+    # https://romancewiki.bham.ac.uk//api.php -> https://romancewiki.bham.ac.uk/api.php
+    # log: https://cdn.digitaldragon.dev/wikibot/jobs/a1847c8b-f01c-4533-8692-579f11da9c94/log.txt
+    # log: https://cdn.digitaldragon.dev/wikibot/jobs/4f18485c-e40c-4dcf-9a6d-6d20bf8a82f5/log.txt
+    if api:
+        api = re.sub(r"([^:])//+", r"\1/", api)
+    if index:
+        index = re.sub(r"([^:])//+", r"\1/", index)
+
     return api, index
 
 
