@@ -16,7 +16,7 @@ def _dataclass_from_dict(klass_or_obj, d: dict):
 '''
 config = {
         "curonly": args.curonly,
-        "date": datetime.datetime.now().strftime("%Y%m%d"),
+        "date": datetime.datetime.utcnow().strftime("%Y%m%d"),
         "api": api,
         "failfast": args.failfast,
         "http_method": "POST",

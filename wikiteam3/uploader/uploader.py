@@ -318,7 +318,7 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
         "title": "Wiki - " + (sitename or wiki_prefix),
         "description": description, # without URL, to bypass IA's anti-spam.
         "language": lang,
-        "last-updated-date": time.strftime("%Y-%m-%d"),
+        "last-updated-date": time.strftime("%Y-%m-%d", time.gmtime()),
         "subject": "; ".join(
             keywords
         ),  # Keywords should be separated by ; but it doesn't matter much; the alternative is to set one per field with subject[0], subject[1], ...

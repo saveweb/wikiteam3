@@ -489,7 +489,7 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
 
     config = new_config({
         "curonly": args.curonly,
-        "date": datetime.datetime.now().strftime("%Y%m%d"),
+        "date": datetime.datetime.utcnow().strftime("%Y%m%d"),
         "api": api,
         "failfast": args.failfast,
         "http_method": "POST",

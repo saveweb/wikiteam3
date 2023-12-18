@@ -7,7 +7,7 @@ def log_error(config: Config, to_stdout=False , text="") -> None:
     if text:
         with open(f"{config.path}/errors.log", "a", encoding="utf-8") as outfile:
             output = "{}: {}\n".format(
-                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
                 text,
             )
             outfile.write(output)
