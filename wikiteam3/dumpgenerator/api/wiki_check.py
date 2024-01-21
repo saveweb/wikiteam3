@@ -12,7 +12,11 @@ def get_WikiEngine(url: str, session: requests.Session) -> str:
         session = requests.Session()  # Create a new session
         session.headers.update({"User-Agent": get_random_UserAgent()})
     r = session.post(url=url, timeout=30)
-    if r.status_code == 405 or r.text == "":
+    if r.text == "" or r.status_code in [405, 403]: # adding 403 here break something elsewhere ?
+        if r.status_code == 403:
+            # https://github.com/saveweb/wikiteam3/issues/13
+            # not sure if this is the best way to handle this
+            print("403 Forbidden, trying GET instead of POST:", url)
         r = session.get(url=url, timeout=120)
     result = r.text
 
