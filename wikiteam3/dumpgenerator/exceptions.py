@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class PageMissingError(Exception):
     def __init__(self, title, xml):
         self.title = title
