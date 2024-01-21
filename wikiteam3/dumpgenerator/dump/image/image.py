@@ -272,7 +272,10 @@ class Image:
                             c_savedImageFiles += 1
                         else:
                             if len(r.content) != int(size):
-                                raise FileSizeError(file=filename_underscore, excpected_size=size)
+                                raise FileSizeError(file=filename_underscore,
+                                                    got_size=len(r.content),
+                                                    excpected_size=int(size),
+                                                    online_url=url)
                             elif sha1bytes(r.content) != sha1:
                                 raise FileSha1Error(file=filename_underscore, excpected_sha1=sha1)
                             else:

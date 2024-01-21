@@ -16,12 +16,15 @@ class ExportAbortedError(Exception):
 
 
 class FileSizeError(Exception):
-    def __init__(self, file, excpected_size):
+    def __init__(self, file: str, got_size: int, excpected_size: int, online_url: Optional[str] = None):
         self.file = file
+        self.got_size = got_size
         self.excpected_size = excpected_size
+        self.online_url = online_url
 
     def __str__(self):
-        return "File '%s' size is not match '%s'." % (self.file, self.excpected_size)
+        return f"File '{self.file}' size {self.got_size} is not match '{self.excpected_size}'." \
+            + (f"(url: {self.online_url})" if self.online_url else "")
 
 
 class FileSha1Error(Exception):
