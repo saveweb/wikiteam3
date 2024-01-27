@@ -100,7 +100,7 @@ In the above example, `--path` is only necessary if the download path (wikidump 
     > Windows: install <https://7-zip.org> and add `7z.exe` to PATH
 - `zstd` (binary)
     > 1.5.5+ (recommended), v1.5.0-v1.5.4(DO NOT USE), 1.4.8 (minimum)  
-    > install from <hhttps://github.com/facebook/zstd>  
+    > install from <https://github.com/facebook/zstd>  
 
     > [!NOTE]
     >
