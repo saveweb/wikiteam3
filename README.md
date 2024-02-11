@@ -1,5 +1,8 @@
 # `wikiteam3`
 
+![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Farchive.org%2Fadvancedsearch.php%3Fq%3Dsubject%3Awikiteam3%26rows%3D1%26page%3D1%26output%3Djson&query=%24.response.numFound&label=WikiTeam3%20Dumps%40IA)
+[![PyPI version](https://badge.fury.io/py/wikiteam3.svg)](https://badge.fury.io/py/wikiteam3)
+
 <!-- !["MediaWikiArchive.png"](./MediaWikiArchive.png) -->
 <div align=center><img width = '150' height ='150' src ="./MediaWikiArchive.png"/></div>
 
