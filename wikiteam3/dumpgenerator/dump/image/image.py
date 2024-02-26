@@ -289,13 +289,13 @@ class Image:
                     except FileSizeError as e:
                         log_error(
                             config=config, to_stdout=True,
-                            text=f"File '{e.file}' size is not match '{e.excpected_size}', skipping",
+                            text=f"{e}, skipping",
                         )
                         continue
                     except FileSha1Error as e:
                         log_error(
                             config=config, to_stdout=True,
-                            text=f"File '{e.file}' sha1 is not match '{e.excpected_sha1}', skipping",
+                            text=f"{e}, skipping",
                         )
                         continue
 

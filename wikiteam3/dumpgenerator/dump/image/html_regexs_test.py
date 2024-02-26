@@ -4,12 +4,13 @@ from typing import Dict, List
 import pytest
 import requests
 from pathlib import Path
+from wikiteam3.dumpgenerator import DUMPER_ROOT_PATH
 
 from wikiteam3.dumpgenerator.dump.image.html_regexs import REGEX_CANDIDATES
 
-ONLINE = True
+ONLINE = False
 
-HTML_DIR = Path("test/data/html_regexs")
+HTML_DIR = DUMPER_ROOT_PATH  / "test/data/html_regexs"
 os.makedirs(HTML_DIR, exist_ok=True)
 
 def prepare_raws_from_urls(urls: Dict[str, str]):
