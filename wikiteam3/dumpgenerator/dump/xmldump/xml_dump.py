@@ -40,7 +40,7 @@ def doXMLRevisionDump(config: Config, session: requests.Session, xmlfile: TextIO
 
             xmltitle = re.search(r"<title>([^<]+)</title>", xml)
             title = undo_HTML_entities(text=xmltitle.group(1))
-            print(f'{title}, {numrevs} edits (--xmlrevisions)')
+            print(f'{title}, {numrevs} edits')
             # Delay(config=config)
     except AttributeError as e:
         print(e)

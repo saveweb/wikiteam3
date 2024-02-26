@@ -36,4 +36,4 @@ class FileSha1Error(Exception):
         self.excpected_sha1 = excpected_sha1
 
     def __str__(self):
-        return "File '%s' sha1 is not match '%s'." % (self.file, self.excpected_sha1)
+        return f"File '{self.file}' sha1 is not match '{self.excpected_sha1}'."

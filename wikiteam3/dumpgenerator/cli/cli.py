@@ -11,6 +11,8 @@ import traceback
 from typing import Dict, Tuple
 
 import requests
+from requests.adapters import DEFAULT_RETRIES as REQUESTS_DEFAULT_RETRIES
+from requests.adapters import HTTPAdapter
 import urllib3
 
 from wikiteam3.dumpgenerator.api import (
@@ -28,6 +30,7 @@ from wikiteam3.utils import (
     url2prefix_from_config,
 )
 from wikiteam3.utils.login import uniLogin
+from wikiteam3.utils.monkey_patch import WakeTLSAdapter
 from wikiteam3.utils.user_agent import setup_random_UserAgent
 
 
@@ -283,15 +286,9 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
     if args.verbose:
         session.hooks['response'].append(print_request)
 
-    # Disable SSL verification
-    if args.insecure:
-        session.verify = False
-        requests.packages.urllib3.disable_warnings() # type: ignore
-        print("WARNING: SSL certificate verification disabled")
-
     # Custom session retry
+    __retries__ = REQUESTS_DEFAULT_RETRIES
     try:
-        from requests.adapters import HTTPAdapter
         from urllib3.util.retry import Retry
 
         # Courtesy datashaman https://stackoverflow.com/a/35504626
@@ -336,10 +333,20 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
             status_forcelist=[500, 502, 503, 504, 429],
             allowed_methods=['DELETE', 'PUT', 'GET', 'OPTIONS', 'TRACE', 'HEAD', 'POST']
         )
-        session.mount("https://", HTTPAdapter(max_retries=__retries__))
-        session.mount("http://", HTTPAdapter(max_retries=__retries__))
     except Exception:
         traceback.print_exc()
+
+    # Mount adapters
+    for protocol in ['http://', 'https://']:
+        session.mount(protocol,
+            WakeTLSAdapter(max_retries=__retries__) if args.insecure
+            else HTTPAdapter(max_retries=__retries__)
+            )
+    # Disable SSL verification
+    if args.insecure:
+        session.verify = False
+        requests.packages.urllib3.disable_warnings() # type: ignore
+        print("WARNING: SSL certificate verification disabled")
 
     # Set cookies
     cj = http.cookiejar.MozillaCookieJar()

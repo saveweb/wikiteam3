@@ -1,9 +1,12 @@
+import ssl
 import time
 from typing import Optional
 import warnings
 
 import requests
 import requests.adapters
+from urllib3.util import create_urllib3_context
+from urllib3 import PoolManager
 
 from wikiteam3.dumpgenerator.cli.delay import Delay
 from wikiteam3.dumpgenerator.config import Config
@@ -27,6 +30,29 @@ def mod_requests_text(requests: requests): # type: ignore
 
     requests.Response.text = property(new_text) # type: ignore
 
+
+class WakeTLSAdapter(requests.adapters.HTTPAdapter):
+    """
+    Workaround for bad SSL/TLS
+    """
+    def init_poolmanager(self, connections, maxsize, block=False):
+        # https://www.openssl.org/docs/manmaster/man1/openssl-ciphers.html
+        ctx = create_urllib3_context(ciphers="ALL:COMPLMENTOFDEFAULT:eNULL:@SECLEVEL=0")
+
+        ctx.options &= ~ssl.OP_NO_TLSv1_3 & ~ssl.OP_NO_TLSv1_2 & ~ssl.OP_NO_TLSv1_1 & ~ssl.OP_NO_TLSv1
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore",category=DeprecationWarning)
+            ctx.minimum_version = ssl.TLSVersion.TLSv1
+
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        self.poolmanager = PoolManager(
+            num_pools=connections,
+            maxsize=maxsize,
+            block=block,
+            ssl_context=ctx
+        )
 
 class SessionMonkeyPatch:
     """
