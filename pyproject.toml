@@ -57,7 +57,6 @@ lxml = "^4.9.2"
 mwclient = "^0.10.1"
 file_read_backwards = "^3.0.0"
 python-slugify = "^8.0.1"
-httpx = "^0.24.1"
 
 [tool.isort]
 profile = "black"
