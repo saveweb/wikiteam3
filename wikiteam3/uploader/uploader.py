@@ -398,12 +398,9 @@ def upload(arg: Args):
         avg_load = ia_s3_tasks_load_avg(session=item.session) # check IA load
         print(f"IA S3 load: {avg_load * 100:.4f}%")
         if avg_load > 0.99:
-            print("WARNING: IA S3 is heavily overloaded, upload may fail")
-            print("Deciding whether to continue even if IA S3 is heavily overloaded... (20% chance to continue, random)")
-            if random.random() < 0.8:
-                print("To prevent IA S3 from being overloaded further, please try uploading later, exiting...")
-                sys.exit(99)
-            print("Continuing anyway...")
+            print("WARNING: IA S3 is heavily overloaded,")
+            print("To prevent IA S3 from being overloaded further, please try uploading later, exiting...")
+            sys.exit(99)
         elif avg_load > 0.9:
             print("WARNING: IA S3 is overloaded, upload may fail") 
     except Exception as e:
