@@ -58,12 +58,27 @@ class Image:
 
         print("Retrieving images...")
         images_dir = Path(config.path) / "images"
-        if not os.path.isdir(images_dir):
-            print(f'Creating "{images_dir}" directory')
-            os.makedirs(images_dir)
+        images_mismatch_dir = Path(config.path) / "images_mismatch"
+        [os.makedirs(dir_, exist_ok=True) or print(f'Creating "{dir_}" directory')
+         for dir_ in (images_dir, images_mismatch_dir) if not dir_.exists()]
 
         c_savedImageFiles = 0
+        c_savedMismatchImageFiles = 0
         c_wbm_speedup_files = 0
+
+
+        def delete_mismatch_image(filename_underscore: str) -> bool:
+            """
+            Delete mismatch image (in `images_mismatch` directory)
+            
+            return True if file is deleted, False if file not exists
+            """
+            assert filename_underscore == underscore(filename_underscore)
+
+            if os.path.exists(images_mismatch_dir / filename_underscore):
+                os.remove(images_mismatch_dir / filename_underscore)
+                return True
+            return False
 
 
         def modify_params(params: Optional[Dict] = None) -> Dict:
@@ -115,7 +130,7 @@ class Image:
             else:
                 skip_to_filename = ''
 
-            downloaded = False
+            to_download = True
 
             if image_timestamp_intervals:
                 if timestamp == NULL:
@@ -149,7 +164,7 @@ class Image:
                 # rename file to underscore
                 shutil.move(filepath_space, filepath_underscore)
 
-            # check if file already exists and has the same size and sha1
+            # check if file already exists in 'images' dir and has the same size and sha1
             if ((size != NULL
                 and filepath_underscore.is_file()
                 and os.path.getsize(filepath_underscore) == int(size)
@@ -158,7 +173,7 @@ class Image:
             # sha1 is NULL if file not in original wiki (probably deleted,
             # you will get a 404 error if you try to download it)
                 c_savedImageFiles += 1
-                downloaded = True
+                to_download = False
                 print_msg=f"    {c_savedImageFiles}|sha1 matched: {filename_underscore}"
                 print(print_msg[0:70], end="\r")
                 if sha1 == NULL:
@@ -267,6 +282,7 @@ class Image:
                                 if filepath_underscore.is_file():
                                     os.remove(filepath_underscore)
                                 raise
+                            delete_mismatch_image(filename_underscore) # delete previous mismatch image
                             c_savedImageFiles += 1
                         else:
                             if len(r.content) != int(size):
@@ -284,17 +300,14 @@ class Image:
                             text=f"File '{filepath_underscore}' could not be created by OS",
                         )
                         continue
-                    except FileSizeError as e:
+                    except (FileSha1Error, FileSizeError) as e:
                         log_error(
                             config=config, to_stdout=True,
-                            text=f"{e}, skipping",
+                            text=f"{e}. saving to images_mismatch dir",
                         )
-                        continue
-                    except FileSha1Error as e:
-                        log_error(
-                            config=config, to_stdout=True,
-                            text=f"{e}, skipping",
-                        )
+                        with open(images_mismatch_dir / filename_underscore, "wb") as imagefile:
+                            imagefile.write(r.content)
+                        c_savedMismatchImageFiles += 1
                         continue
 
                     if timestamp != NULL:
@@ -313,7 +326,7 @@ class Image:
                         text=f"Failed to download '{filename_underscore}' with URL '{url}' due to HTTP '{r.status_code}', skipping"
                     )
 
-            if downloaded: # skip printing
+            if not to_download: # skip printing
                 continue
             print_msg = f"              | {len(images)}=>{filename_underscore[0:50]}"
             print(print_msg, " "*(73 - len(print_msg)), end="\r")
@@ -321,7 +334,8 @@ class Image:
         # NOTE: len(images) == 0 here
 
         patch_sess.release()
-        print(f"Downloaded {c_savedImageFiles} files")
+        print(f"Downloaded {c_savedImageFiles} files to 'images' dir")
+        print(f"Downloaded {c_savedMismatchImageFiles} files to 'images_mismatch' dir")
         if ia_wbm_booster and c_wbm_speedup_files:
             print(f"(WBM speedup: {c_wbm_speedup_files} files)")
 
