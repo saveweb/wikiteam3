@@ -161,11 +161,6 @@ def getArgumentParser():
         help="Bypass CDN image compression. (CloudFlare Polish, etc.)",
     )
     group_image.add_argument(
-        "--disable-image-verify",
-        action="store_true",
-        help="Don't verify image size and hash while downloading. (useful for wikis with server-side image resizing)"
-    )
-    group_image.add_argument(
         "--image-timestamp-interval",
         metavar="2019-01-02T01:36:06Z/2023-08-12T10:36:06Z",
         help="[BETA] Only download images uploaded in the given time interval. [format: ISO 8601 UTC interval] "
@@ -524,7 +519,6 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "stdout_log_path": args.stdout_log_path,
         "bypass_cdn_image_compression": args.bypass_cdn_image_compression,
         "add_referer_header": args.add_referer_header,
-        "disable_image_verify": args.disable_image_verify,
         "image_timestamp_interval": args.image_timestamp_interval,
         "ia_wbm_booster": args.ia_wbm_booster,
         "upload": args.upload,

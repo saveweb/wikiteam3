@@ -44,7 +44,6 @@ class Image:
         """ Save files and descriptions using a file list """
 
         bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
-        disable_image_verify: bool = other["disable_image_verify"]
         image_timestamp_interval: Optional[str] = other["image_timestamp_interval"]
         ia_wbm_booster: int = other["ia_wbm_booster"]
         add_referer_header: Optional[str] = other["add_referer_header"] # None, "auto", {URL}
@@ -256,8 +255,7 @@ class Image:
 
                 if r.status_code == 200:
                     try:
-                        if disable_image_verify \
-                            or (sha1 == NULL and size == NULL) \
+                        if (sha1 == NULL and size == NULL) \
                             or (
                                     (sha1 == NULL or sha1bytes(r.content) == sha1)
                                 and (size == NULL or len(r.content) == int(size) )
