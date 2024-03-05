@@ -25,7 +25,7 @@ from wikiteam3.uploader.socketLock import NoLock, SocketLockServer
 from wikiteam3.utils import url2prefix_from_config, sha1sum
 from wikiteam3.uploader.compresser import ZstdCompressor, SevenZipCompressor
 from wikiteam3.utils.ia_checker import ia_s3_tasks_load_avg
-from wikiteam3.utils.util import ALL_DUMPED_MARK, UPLOADED_MARK, mark_as_done, is_markfile_exists
+from wikiteam3.utils.util import ALL_DUMPED_MARK, UPLOADED_MARK, is_empty_dir, mark_as_done, is_markfile_exists
 
 DEFAULT_COLLECTION = 'opensource'
 TEST_COLLECTION = 'test_collection'
@@ -150,11 +150,22 @@ def prepare_xml_zst_file(wikidump_dir: Path, config: Config, *, parallel: bool,
 
 
 def prepare_images_7z_archive(wikidump_dir: Path, config: Config, parallel: bool, *,
-                              sevenzip_compressor: SevenZipCompressor) -> Path:
-    images_dir = wikidump_dir / "images"
+                              images_source: str = "images",
+                              sevenzip_compressor: SevenZipCompressor) -> Optional[Path]:
+    """ Compress wikidump_dir/images_source dir to .7z file. 
+    
+    return:
+        Path: to the .7z archive
+        None: the dir is empty.
+    """
+    images_dir = wikidump_dir / images_source
+    assert images_source in ["images", "images_mismatch"]
     assert images_dir.exists() and images_dir.is_dir()
 
-    images_7z_archive_path = wikidump_dir / f"{config2basename(config)}-images.7z"
+    if is_empty_dir(images_dir):
+        return None
+
+    images_7z_archive_path = wikidump_dir / f"{config2basename(config)}-{images_source}.7z"
     if not images_7z_archive_path.exists() or not images_7z_archive_path.is_file():
         with NoLock() if parallel else SocketLockServer():
             r = sevenzip_compressor.compress_dir(images_dir)
@@ -219,9 +230,18 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, *, p
         assert zstd_compressor.test_integrity(r)
         filedict[f"{config2basename(config)}-dumpMeta/{images_txt_zstd_path.name}"] = str(images_txt_zstd_path)
 
-        # images.7z
-        images_7z_archive_path = prepare_images_7z_archive(wikidump_dir, config, parallel, sevenzip_compressor=sevenzip_compressor)
-        filedict[f"{images_7z_archive_path.name}"] = str(images_7z_archive_path)
+        # images.7z and images_mismatch.7z
+        for images_source in ["images", "images_mismatch"]:
+            # <--- TODO: remove this block in v4.2.1
+            if images_source == "images_mismatch" and not (wikidump_dir / images_source).exists():
+                print(f"{images_source} dir not found, skip")
+                continue
+            # --->
+            images_7z_archive_path = prepare_images_7z_archive(wikidump_dir, config, parallel, images_source=images_source, sevenzip_compressor=sevenzip_compressor)
+            if images_7z_archive_path:
+                filedict[f"{images_7z_archive_path.name}"] = str(images_7z_archive_path)
+            else:
+                print(f"{images_source} dir is empty, skip creating .7z archive")
 
     print("=== Files already uploaded: ===")
     c = 0

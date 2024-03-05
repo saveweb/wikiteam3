@@ -138,3 +138,7 @@ def int_or_zero(size: Union[int, str]) -> int:
                     (isinstance(size, int))
                 )
             ) else 0
+
+def is_empty_dir(path: Union[str, Path]) -> bool:
+    assert Path(path).is_dir()
+    return not any(Path(path).iterdir())
