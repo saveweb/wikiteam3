@@ -181,8 +181,8 @@ def getArgumentParser():
     group_assert = parser.add_argument_group(
         "Assertions",
           "What assertions to check before actually downloading, if any assertion fails, program will exit with exit code 45. "
-          "[NOTE: This feature requires correct siteinfo API response from the wiki, amd not working properly with some wikis. "
-          "But it's useful for mass automated archiving, so you can schedule a re-run later for HUGE wikis.]"
+          "[NOTE: This feature requires correct siteinfo API response from the wiki, and not working properly with some wikis. "
+          "But it's useful for mass automated archiving, so you can schedule a re-run for HUGE wiki that may run out of your disk]"
     )
     group_assert.add_argument(
         "--assert-max-pages", metavar="123", type=int, default=None, dest="assert_max_pages",
