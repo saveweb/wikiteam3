@@ -177,6 +177,30 @@ def getArgumentParser():
             "3: the closest snapshot to the image's upload time]", 
     )
 
+    # Assertions params
+    group_assert = parser.add_argument_group(
+        "Assertions",
+          "What assertions to check before actually downloading, if any assertion fails, program will exit with exit code 45. "
+          "[NOTE: This feature requires correct siteinfo API response from the wiki, amd not working properly with some wikis. "
+          "But it's useful for mass automated archiving, so you can schedule a re-run later for HUGE wikis.]"
+    )
+    group_assert.add_argument(
+        "--assert-max-pages", metavar="123", type=int, default=None, dest="assert_max_pages",
+        help="Maximum number of pages to download"
+    )
+    group_assert.add_argument(
+        "--assert-max-edits", metavar="123", type=int, default=None, dest="assert_max_edits",
+        help="Maximum number of edits to download"
+    )
+    group_assert.add_argument(
+        "--assert-max-images", metavar="123", type=int, default=None, dest="assert_max_images",
+        help="Maximum number of images to download"
+    )
+    group_assert.add_argument(
+        "--assert-max-images-bytes", metavar="123", type=int, default=None, dest="assert_max_images_bytes",
+        help="Maximum number of bytes to download for images [NOTE: this assert happens after downloading images list]"
+    )
+
     # Meta info params
     group_meta = parser.add_argument_group(
         "Meta info", "What meta info to retrieve from the wiki"
@@ -513,7 +537,6 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
 
     other = {
         "resume": args.resume,
-        "filenamelimit": 240,  # Filename not be longer than 240 **bytes**. (MediaWiki r98430 2011-09-29)
         "force": args.force,
         "session": session,
         "stdout_log_path": args.stdout_log_path,
@@ -521,6 +544,12 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "add_referer_header": args.add_referer_header,
         "image_timestamp_interval": args.image_timestamp_interval,
         "ia_wbm_booster": args.ia_wbm_booster,
+
+        "assert_max_pages": args.assert_max_pages,
+        "assert_max_edits": args.assert_max_edits,
+        "assert_max_images": args.assert_max_images,
+        "assert_max_images_bytes": args.assert_max_images_bytes,
+
         "upload": args.upload,
         "uploader_args": args.uploader_args,
     }

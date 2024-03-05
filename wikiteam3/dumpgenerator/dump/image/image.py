@@ -24,7 +24,9 @@ from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
 from wikiteam3.utils.util import clean_HTML, int_or_zero, sha1bytes, sha1sum, space, underscore, undo_HTML_entities
 
 NULL = "null"
-""" NULL value for image metadata"""
+""" NULL value for image metadata """
+FILENAME_LIMIT = 240
+""" Filename not be longer than 240 **bytes**. (MediaWiki r98430 2011-09-29) """
 
 
 WBM_EARLIEST = 1
@@ -149,10 +151,10 @@ class Image:
             # saving file
             if filename_underscore != urllib.parse.unquote(filename_underscore):
                 print(f"WARNING:    {filename_underscore}|filename may not be unquoted: {filename_underscore}")
-            if len(filename_underscore.encode('utf-8')) > other["filenamelimit"]:
+            if len(filename_underscore.encode('utf-8')) > FILENAME_LIMIT:
                 log_error(
                     config=config, to_stdout=True,
-                    text=f"Filename is too long(>{other['filenamelimit']} bytes), skipping: '{filename_underscore}'",
+                    text=f"Filename is too long(>{FILENAME_LIMIT} bytes), skipping: '{filename_underscore}'",
                 )
                 # TODO: hash as filename instead of skipping
                 continue
@@ -624,7 +626,7 @@ class Image:
 
 
     @staticmethod
-    def save_image_names(config: Config, images: List[List]):
+    def save_image_names(config: Config, other: Dict, images: List[List]):
         """Save image list in a file, including filename, url, uploader and other metadata"""
 
         images_filename = "{}-{}-images.txt".format(
@@ -658,6 +660,18 @@ class Image:
 
         print("Image metadata (images.txt) saved at:", images_filename)
         print(f"Estimated size of all images (images.txt): {c_images_size} bytes ({c_images_size/1024/1024/1024:.2f} GiB)")
+
+        assert_max_images: Optional[int] = other["assert_max_images"]
+        assert_max_images_bytes: Optional[int] = other["assert_max_images_bytes"]
+        try:
+            assert len(images) <= assert_max_images if assert_max_images is not None else True
+            print(f"--assert_max_images: {assert_max_images}, passed")
+            assert c_images_size <= assert_max_images_bytes if assert_max_images_bytes is not None else True
+            print(f"--assert_max_images_bytes: {assert_max_images_bytes}, passed")
+        except AssertionError:
+            import traceback
+            traceback.print_exc()
+            sys.exit(45)
 
 
     @staticmethod

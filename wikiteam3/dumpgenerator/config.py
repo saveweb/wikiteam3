@@ -82,9 +82,9 @@ def load_config(config: Config, config_filename: str):
                 config_dict.update(json.load(infile))
             return new_config(config_dict)
         except FileNotFoundError:
-            pass
+            raise
 
-    raise RuntimeError("There is no config file. we can't resume.")
+    raise FileNotFoundError(f"Config file {config_filename} not found")
 
 def save_config(config: Config, config_filename: str):
     """Save config file"""

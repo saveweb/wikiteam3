@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+from typing import Optional
 
 import requests
 
@@ -9,15 +11,40 @@ from wikiteam3.dumpgenerator.config import Config
 
 
 def save_siteinfo(config: Config, session: requests.Session):
-    """Save a file with site info"""
-
-    assert config.api
-
     if os.path.exists("%s/siteinfo.json" % (config.path)):
         print("siteinfo.json exists, do not overwrite")
         return
-    
+
     print("Downloading site info as siteinfo.json")
+
+    result = get_siteinfo(config, session)
+    with open(
+        "%s/siteinfo.json" % (config.path), "w", encoding="utf-8"
+    ) as outfile:
+        outfile.write(json.dumps(result, indent=4, sort_keys=True, ensure_ascii=False))
+    Delay(config=config)
+
+
+def assert_siteinfo(result, other):
+    """ assert_max_edits, assert_max_pages, assert_max_images """
+    assert_max_edits: Optional[int] = other["assert_max_edits"]
+    assert_max_pages: Optional[int] = other["assert_max_pages"]
+    assert_max_images: Optional[int] = other["assert_max_images"]
+
+    stats = result["query"]["statistics"] if "query" in result else result["statistics"]
+
+    try:
+        assert stats["pages"] <= assert_max_pages if assert_max_pages is not None else True
+        assert stats["images"] <= assert_max_images if assert_max_images is not None else True
+        assert stats["edits"] <= assert_max_edits if assert_max_edits is not None else True
+    except AssertionError:
+        import traceback
+        traceback.print_exc()
+        sys.exit(45)
+
+
+def get_siteinfo(config: Config, session: requests.Session):
+    assert config.api
 
     # MediaWiki 1.13+
     r = session.get(
@@ -32,7 +59,7 @@ def save_siteinfo(config: Config, session: requests.Session):
         timeout=10,
     )
     # MediaWiki 1.11-1.12
-    if not "query" in get_JSON(r):
+    if "query" not in get_JSON(r):
         r = session.get(
             url=config.api,
             params={
@@ -44,7 +71,7 @@ def save_siteinfo(config: Config, session: requests.Session):
             timeout=10,
         )
     # MediaWiki 1.8-1.10
-    if not "query" in get_JSON(r):
+    if "query" not in get_JSON(r):
         r = session.get(
             url=config.api,
             params={
@@ -56,8 +83,5 @@ def save_siteinfo(config: Config, session: requests.Session):
             timeout=10,
         )
     result = get_JSON(r)
-    Delay(config=config)
-    with open(
-        "%s/siteinfo.json" % (config.path), "w", encoding="utf-8"
-    ) as outfile:
-        outfile.write(json.dumps(result, indent=4, sort_keys=True, ensure_ascii=False))
+
+    return result

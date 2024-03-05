@@ -11,11 +11,11 @@ from file_read_backwards import FileReadBackwards
 from wikiteam3.dumpgenerator.config import load_config, save_config
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.dumpgenerator.cli import get_parameters, bye, welcome
-from wikiteam3.dumpgenerator.dump.image.image import Image
+from wikiteam3.dumpgenerator.dump.image.image import FILENAME_LIMIT, Image
 from wikiteam3.dumpgenerator.dump.misc.index_php import save_IndexPHP
 from wikiteam3.dumpgenerator.dump.misc.special_logs import save_SpecialLog
 from wikiteam3.dumpgenerator.dump.misc.special_version import save_SpecialVersion
-from wikiteam3.dumpgenerator.dump.misc.site_info import save_siteinfo
+from wikiteam3.dumpgenerator.dump.misc.site_info import assert_siteinfo, get_siteinfo, save_siteinfo
 from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generate_XML_dump
 from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import check_XML_integrity
 from wikiteam3.dumpgenerator.log import log_error
@@ -86,8 +86,13 @@ class DumpGenerator:
                     # other["resume"] = False
                     sys.exit(0)
 
+            if asserts_enabled := [(arg, v) for arg, v in other.items() if arg.startswith("assert_") and v is not None]:
+                site_info = get_siteinfo(config=config, session=other["session"])
+                assert_siteinfo(site_info, other)
+                [print(f"--{arg}: {v}, passed") for arg, v in asserts_enabled] 
+
             if other["resume"]:
-                print("Loading config file...")
+                print("Loading config file to resume...")
                 config = load_config(config=config, config_filename=config_filename)
             else:
                 if not other['force'] and any_recent_ia_item_exists(config, days=365):
@@ -130,7 +135,7 @@ class DumpGenerator:
             check_XML_integrity(config=config, session=other["session"])
         if config.images:
             images += Image.get_image_names(config=config, session=other["session"])
-            Image.save_image_names(config=config, images=images)
+            Image.save_image_names(config=config, other=other, images=images)
             Image.generate_image_dump(
                 config=config, other=other, images=images, session=other["session"]
             )
@@ -215,7 +220,7 @@ class DumpGenerator:
                 # do not resume, reload, to avoid inconsistences, deleted images or
                 # so
                 images = Image.get_image_names(config=config, session=other["session"])
-                Image.save_image_names(config=config, images=images)
+                Image.save_image_names(config=config, other=other, images=images)
             # checking images directory
             files = set()
             du_dir: int = 0 # du -s {config.path}/images
@@ -247,7 +252,7 @@ class DumpGenerator:
 
             for filename, url, uploader, size, sha1, timestamp in images:
                 filename = underscore(filename)
-                if other["filenamelimit"] < len(filename.encode('utf-8')):
+                if FILENAME_LIMIT < len(filename.encode('utf-8')):
                     log_error(
                         config=config, to_stdout=True,
                         text=f"Filename too long(>240 bytes), skipping: {filename}",

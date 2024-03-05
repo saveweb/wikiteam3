@@ -37,7 +37,7 @@ class Delay:
                 try:
                     config_dynamic = load_config(config=config, config_filename="config.json")
                 except Exception as e:
-                    print(e)
+                    print("Unable to load config.json for dynamic delay (fallback to static delay):", e) 
                     config_dynamic = config
                 delay = config_dynamic.delay - (timeit.default_timer() - t) # compensation
             else:
