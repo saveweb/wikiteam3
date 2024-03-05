@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "wikiteam3"
-version = "4.2.0"
+version = "4.2.1"
 description = "Tools for downloading and preserving MediaWikis. We archive MediaWikis, from Wikipedia to tiniest wikis."
 license = "GPL-3.0-or-later"
 # authors = ["WikiTeam Contributors"] # FIXME: it's not an valid author name
