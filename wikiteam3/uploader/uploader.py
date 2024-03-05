@@ -149,25 +149,26 @@ def prepare_xml_zst_file(wikidump_dir: Path, config: Config, *, parallel: bool,
     return xml_zstd_file_path.resolve()
 
 
-def prepare_images_7z_archive(wikidump_dir: Path, config: Config, parallel: bool) -> Path:
-
+def prepare_images_7z_archive(wikidump_dir: Path, config: Config, parallel: bool, *,
+                              sevenzip_compressor: SevenZipCompressor) -> Path:
     images_dir = wikidump_dir / "images"
     assert images_dir.exists() and images_dir.is_dir()
 
     images_7z_archive_path = wikidump_dir / f"{config2basename(config)}-images.7z"
     if not images_7z_archive_path.exists() or not images_7z_archive_path.is_file():
         with NoLock() if parallel else SocketLockServer():
-            r = SevenZipCompressor.compress_dir(images_dir)
+            r = sevenzip_compressor.compress_dir(images_dir)
             shutil.move(r, images_7z_archive_path)
 
-    assert SevenZipCompressor.test_integrity(images_7z_archive_path)
+    assert sevenzip_compressor.test_integrity(images_7z_archive_path)
 
     assert images_7z_archive_path.exists() and images_7z_archive_path.is_file()
     return images_7z_archive_path.resolve()
 
 
 def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, *, parallel: bool,
-                            zstd_compressor: ZstdCompressor, zstd_level: int
+                            zstd_compressor: ZstdCompressor, zstd_level: int,
+                            sevenzip_compressor: SevenZipCompressor
                             ) -> Dict[str, str]:
     """ return: filedict ("remote filename": "local filename") """
     filedict = {} # "remote filename": "local filename"
@@ -219,7 +220,7 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, *, p
         filedict[f"{config2basename(config)}-dumpMeta/{images_txt_zstd_path.name}"] = str(images_txt_zstd_path)
 
         # images.7z
-        images_7z_archive_path = prepare_images_7z_archive(wikidump_dir, config, parallel)
+        images_7z_archive_path = prepare_images_7z_archive(wikidump_dir, config, parallel, sevenzip_compressor=sevenzip_compressor)
         filedict[f"{images_7z_archive_path.name}"] = str(images_7z_archive_path)
 
     print("=== Files already uploaded: ===")
@@ -340,7 +341,7 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
 
 def upload(arg: Args):
     zstd_compressor = ZstdCompressor(bin_zstd=arg.bin_zstd)
-    SevenZipCompressor()
+    sevenzip_compressor = SevenZipCompressor(bin_7z=arg.bin_7z)
     ia_keys = read_ia_keys(arg.keys_file)
     wikidump_dir = arg.wikidump_dir
     wikidump_dir.name # {prefix}-{wikidump_dumpdate}-wikidump (e.g. wiki.example.org-20230730-wikidump)
@@ -382,8 +383,11 @@ def upload(arg: Args):
     item = get_item(identifier)
 
     print("=== Preparing files to upload ===")
-    filedict = prepare_files_to_upload(wikidump_dir, config, item, parallel=arg.parallel, 
-                              zstd_compressor=zstd_compressor, zstd_level=arg.zstd_level)
+    filedict = prepare_files_to_upload(
+        wikidump_dir, config, item, parallel=arg.parallel, 
+        zstd_compressor=zstd_compressor, zstd_level=arg.zstd_level,
+        sevenzip_compressor=sevenzip_compressor
+        )
 
     print("=== Preparing metadata ===")
     metadata, logo_url = prepare_item_metadata(wikidump_dir, config, arg)
@@ -520,16 +524,14 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Dry run, do not upload anything.")
     parser.add_argument("-u", "--update", action="store_true",
                         help="Update existing item. [!! not implemented yet !!]")
-    parser.add_argument("--bin-zstd", default="zstd", dest="bin_zstd",
+    parser.add_argument("--bin-zstd", default=ZstdCompressor.bin_zstd, dest="bin_zstd",
                         help=f"Path to zstd binary. [default: {ZstdCompressor.bin_zstd}]")
     parser.add_argument("--zstd-level", default=ZstdCompressor.DEFAULT_LEVEL, type=int, choices=range(17, 23),
                         help=f"Zstd compression level. [default: {ZstdCompressor.DEFAULT_LEVEL}] "
                         f"If you have a lot of RAM, recommend to use max level (22)."
                         )
-    parser.add_argument("--bin-7z", default="7z", dest="bin_7z",
-                        help="Path to 7z binary. [default: 7z] "
-                        "[!! not implemented yet !!]"
-                        )
+    parser.add_argument("--bin-7z", default=SevenZipCompressor.bin_7z, dest="bin_7z",
+                        help=f"Path to 7z binary. [default: {SevenZipCompressor.bin_7z}] ")
     parser.add_argument("--parallel", action="store_true", help="Parallelize compression tasks")
     parser.add_argument("wikidump_dir")
     

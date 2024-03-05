@@ -79,13 +79,14 @@ class ZstdCompressor:
         return r.returncode == 0
 
 class SevenZipCompressor:
-    def __init__(self, bin7z: str = "7z"):
-        retcode = subprocess.call([bin7z, "-h"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    bin_7z = "7z"
+    def __init__(self, bin_7z: str = "7z"):
+        self.bin_7z = bin_7z
+        retcode = subprocess.call([self.bin_7z, "-h"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if retcode:
-            raise FileNotFoundError(f"7z binary not found at {bin7z}")
+            raise FileNotFoundError(f"7z binary not found at {self.bin_7z}")
 
-    @staticmethod
-    def compress_dir(dir_path: Union[str, Path], bin7z: str = "7z", level: int = 0):
+    def compress_dir(self, dir_path: Union[str, Path], level: int = 0):
         ''' Compress dir_path into dump_dir.7z and return the resolved path to the compressed file. 
         
         level:
@@ -109,11 +110,11 @@ class SevenZipCompressor:
             return archive_path
 
         if level:
-            cmds = [bin7z, "a", "-t7z", "-m0=lzma2", f"-mx={level}", "-scsUTF-8",
+            cmds = [self.bin_7z, "a", "-t7z", "-m0=lzma2", f"-mx={level}", "-scsUTF-8",
                 "-md=64m", "-ms=off"]
         else: # level == 0
             assert level == 0
-            cmds = [bin7z, "a", "-t7z", f"-mx={level}", "-scsUTF-8", "-ms=off"]
+            cmds = [self.bin_7z, "a", "-t7z", f"-mx={level}", "-scsUTF-8", "-ms=off"]
         cmds.extend([str(archive_temp_path), str(dir_path)])
 
         r = subprocess.run(cmds, check=True)
@@ -124,13 +125,12 @@ class SevenZipCompressor:
         assert archive_path == archive_path.resolve()
         return archive_path
     
-    @staticmethod
-    def test_integrity(path: Union[str, Path], bin7z: str = "7z") -> bool:
+    def test_integrity(self, path: Union[str, Path]) -> bool:
         ''' Test if path is a valid 7z archive. '''
         if isinstance(path, str):
             path = Path(path)
         path = path.resolve()
-        r = subprocess.run([bin7z, "t", str(path)])
+        r = subprocess.run([self.bin_7z, "t", str(path)])
         return r.returncode == 0
 
 if __name__ == "__main__":
