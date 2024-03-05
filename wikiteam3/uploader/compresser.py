@@ -10,9 +10,12 @@ import warnings
 class ZstdCompressor:
     DEFAULT_LEVEL = 17
     MIN_VERSION = (1, 4, 8)
-    def __init__(self, zstd_bin: str = "zstd"):
+    bin_zstd = "zstd"
+
+    def __init__(self, bin_zstd: str = "zstd"):
         """ versionCheck: check if zstd version is >= 1.4.8 """
-        version = self.versionNumber(zstd_bin=zstd_bin)
+        self.bin_zstd = bin_zstd
+        version = self.versionNumber()
         assert version >= self.MIN_VERSION, f"zstd version must be >= {self.MIN_VERSION}"
         # if v1.5.0-v1.5.4
         if (1, 5, 0) <= version <= (1, 5, 4):
@@ -20,19 +23,17 @@ class ZstdCompressor:
             print("sleeping for 20 seconds to let you read this message")
             time.sleep(20)
 
-    @staticmethod
-    def versionNumber(zstd_bin: str = "zstd") -> Tuple[int, int, int]:
+    def versionNumber(self) -> Tuple[int, int, int]:
         """
         Return runtime library version, the value is (`MAJOR`, `MINOR`, `RELEASE`).
         """
-        rettext =  subprocess.check_output([zstd_bin, "-q", "-V"], shell=False).decode().strip()
+        rettext =  subprocess.check_output([self.bin_zstd, "-q", "-V"], shell=False).decode().strip()
         # 1.5.5
         ret_versions = [int(x) for x in rettext.split(".")]
         assert len(ret_versions) == 3
-        return tuple(ret_versions)
+        return tuple(ret_versions) # type: ignore
 
-    @staticmethod
-    def compress_file(path: Union[str, Path], *, level: int = DEFAULT_LEVEL, zstd_bin: str = "zstd"):
+    def compress_file(self, path: Union[str, Path], *, level: int = DEFAULT_LEVEL):
         ''' Compress path into path.zst and return the absolute path to the compressed file.
 
         we set -T0 to use all cores, --long=31 to use 2^31 (2GB) window size
@@ -58,7 +59,7 @@ class ZstdCompressor:
             print(f"File {compressed_path} already exists. Skip compressing.")
             return compressed_path
 
-        cmd =  [zstd_bin, "-T0","-v", "--compress", "--force", "--long=31"]
+        cmd =  [self.bin_zstd, "-T0","-v", "--compress", "--force", "--long=31"]
         if level >= 20:
             cmd.append("--ultra")
         cmd.extend([f"-{level}", str(path), "-o", str(compressing_temp_path)])
@@ -69,13 +70,12 @@ class ZstdCompressor:
         os.rename(compressing_temp_path, compressed_path)
         return compressed_path
 
-    @staticmethod
-    def test_integrity(path: Union[str, Path], zstd_bin: str = "zstd") -> bool:
+    def test_integrity(self, path: Union[str, Path]) -> bool:
         ''' Test if path is a valid zstd compressed file. '''
         if isinstance(path, str):
             path = Path(path)
         path = path.resolve()
-        r = subprocess.run([zstd_bin,"-vv", "-d", "-t", "--long=31", str(path)])
+        r = subprocess.run([self.bin_zstd,"-vv", "-d", "-t", "--long=31", str(path)])
         return r.returncode == 0
 
 class SevenZipCompressor:
