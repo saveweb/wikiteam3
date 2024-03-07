@@ -111,7 +111,7 @@ class SessionMonkeyPatch:
                         self.clear_timeouted_pools()
 
                     return self.old_send_method(request, **kwargs)
-                except KeyboardInterrupt:
+                except (KeyboardInterrupt, requests.exceptions.ContentDecodingError): # don't retry
                     raise
                 except Exception as e:
                     hard_retries_left -= 1

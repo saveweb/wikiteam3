@@ -240,7 +240,23 @@ class Image:
 
                 if r is None:
                     Delay(config=config)
-                    r = session.get(url=url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
+                    try:
+                        r = session.get(url=url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
+                    except requests.exceptions.ContentDecodingError as e:
+                        # Workaround for https://fedoraproject.org/w/uploads/5/54/Duffy-f12-banner.svgz
+                        # (see also https://cdn.digitaldragon.dev/wikibot/jobs/b0f52fc3-927b-4d14-aded-89a2795e8d4d/log.txt)
+                        # server response with "Content-Encoding: gzip" (or other) but the transfer is not encoded/compressed actually
+                        # If this workround can't get the original file, the file will be thrown to images_mismatch dir, not too bad :)
+                        log_error(
+                            config, to_stdout=True,
+                            text=f"{e} when downloading {filename_underscore} with URL {url} . "
+                            "Retrying with 'Accept-Encoding: identity' header and no transfer auto-decompresion..."
+                        )
+                        _headers = modify_headers()
+                        _headers["Accept-Encoding"] = "identity"
+                        r = session.get(url=url, params=modify_params(), headers=_headers, allow_redirects=True, stream=True)
+                        r._content = r.raw.read()
+
                     check_response(r)
 
                     # a trick to get original file (fandom)
