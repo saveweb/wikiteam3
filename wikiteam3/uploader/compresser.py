@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 from typing import Tuple, Union
 import warnings
@@ -12,16 +13,27 @@ class ZstdCompressor:
     MIN_VERSION = (1, 4, 8)
     bin_zstd = "zstd"
 
-    def __init__(self, bin_zstd: str = "zstd"):
-        """ versionCheck: check if zstd version is >= 1.4.8 """
+    # additional options
+    rezstd: bool = False
+    rezstd_endpoint: str = "http://pool-rezstd.saveweb.org/rezstd/"
+
+    def __init__(self, bin_zstd: str = "zstd",
+                 rezstd: bool = False, rezstd_endpoint: str = "http://pool-rezstd.saveweb.org/rezstd/"):
+        """
+        bin_zstd: path to zstd binary
+        rezstd: upload zstd pre-compressed file to rezstd server for recompression with "best" (-22 --ultra --long=31) configuration.
+        rezstd_endpoint: the endpoint of rezstd server 
+        """
         self.bin_zstd = bin_zstd
         version = self.versionNumber()
         assert version >= self.MIN_VERSION, f"zstd version must be >= {self.MIN_VERSION}"
         # if v1.5.0-v1.5.4
         if (1, 5, 0) <= version <= (1, 5, 4):
             warnings.warn("your zstd version is between 1.5.0 and 1.5.4, which is not recommended due to a rare corruption bug in high compression mode, PLEASE UPGRADE TO 1.5.5+")
-            print("sleeping for 20 seconds to let you read this message")
-            time.sleep(20)
+            sys.exit(1)
+
+        self.rezstd = rezstd
+        self.rezstd_endpoint = rezstd_endpoint
 
     def versionNumber(self) -> Tuple[int, int, int]:
         """
@@ -33,10 +45,10 @@ class ZstdCompressor:
         assert len(ret_versions) == 3
         return tuple(ret_versions) # type: ignore
 
-    def compress_file(self, path: Union[str, Path], *, level: int = DEFAULT_LEVEL):
+    def compress_file(self, path: Union[str, Path], *, level: int = DEFAULT_LEVEL, long_level: int = 31) -> Path:
         ''' Compress path into path.zst and return the absolute path to the compressed file.
 
-        we set -T0 to use all cores, --long=31 to use 2^31 (2GB) window size
+        we set -T0 to use all cores
 
         level:
             - 1 -> fast
@@ -44,6 +56,11 @@ class ZstdCompressor:
             - 19 -> high
             - ... (ultra mode)
             - 22 -> best
+        long_level:
+            - 31 -> 2^31 (2GB) window size (default)
+            - 30 -> 2^30 (1GB)
+            - ...
+            - 0 -> Disable --long flag
         '''
         if isinstance(path, str):
             path = Path(path)
@@ -59,13 +76,83 @@ class ZstdCompressor:
             print(f"File {compressed_path} already exists. Skip compressing.")
             return compressed_path
 
-        cmd =  [self.bin_zstd, "-T0","-v", "--compress", "--force", "--long=31"]
+        cmd =  [self.bin_zstd, "-T0","-v", "--compress", "--force"]
         if level >= 20:
             cmd.append("--ultra")
+        if long_level:
+            cmd.append(f"--long={long_level}")
         cmd.extend([f"-{level}", str(path), "-o", str(compressing_temp_path)])
 
         subprocess.run(cmd)
         assert compressing_temp_path.exists()
+        if self.rezstd:
+            pre_compressing_temp_path = compressing_temp_path # alias
+
+            compressing_rezstded_temp_path = path.parent / (path.name + ".rezstded.tmp")
+            compressing_rezstded_temp_path = compressing_rezstded_temp_path.resolve()
+
+            assert self.rezstd_endpoint.endswith("/")
+            import requests
+            session = requests.Session()
+            # upload to rezstd
+            print("Creating rezstd task...")
+            # TODO: reuse previous task_id
+            r = session.post(self.rezstd_endpoint + 'create/chunked')
+            print(r.text)
+            task_id = r.json()["task_id"]
+            # upload chunks
+            total_size = pre_compressing_temp_path.stat().st_size
+            chunk_size = 1024 * 1024 * 50 # 50MB
+            with open(pre_compressing_temp_path, "rb") as f:
+                # /rezstd/upload/chunked/:task_id/:chunk_id
+                upload_bytes = 0
+                chunk_id = 0
+                while chunk := f.read(chunk_size):
+                    # TODO: parrallel upload
+                    r = session.put(self.rezstd_endpoint + f"upload/chunked/{task_id}/{chunk_id}", files={"chunk": chunk})
+                    assert "error" not in r.json()
+                    upload_bytes += len(chunk)
+                    print(f"Uploaded {upload_bytes/1024/1024:.2f}/{total_size/1024/1024:.2f} MB", end="\r")
+                    chunk_id += 1
+            print()
+            # r.POST("/rezstd/concat/chunked/:task_id/:max_chunk_id/:total_size"
+            print("Concatenating chunks...")
+            max_chunk_id = chunk_id - 1 or 0
+            r = session.post(self.rezstd_endpoint + f"concat/chunked/{task_id}/{max_chunk_id}/{total_size}")
+            print(r.text)
+            assert "error" not in r.json()
+
+            os.remove(pre_compressing_temp_path)
+            finished = False
+            while not finished:
+                r = session.get(self.rezstd_endpoint + f"status/{task_id}")
+                print(r.text, end="\r")
+                assert "error" not in r.json()
+                if r.json()["status"] == "finished":
+                    finished = True
+                    break
+                time.sleep(5)
+            print("Server side recompression finished, log:",
+                  f"{self.rezstd_endpoint}log/{task_id}",
+                  "(only available for a few days)")
+            r = session.get(self.rezstd_endpoint + f"download/{task_id}/wikiteam3_task.zst", stream=True)
+            content_length = int(r.headers["Content-Length"])
+            with open(compressing_rezstded_temp_path, "wb") as f:
+                written = 0
+                last_report_time = time.time()
+                for chunk in r.iter_content(chunk_size=1024 * 1024):
+                    if time.time() - last_report_time > 10:
+                        print(f"Downloaded {written/1024/1024:.2f}/{content_length/1024/1024:.2f} MB", end="\r")
+                        last_report_time = time.time()
+                    f.write(chunk)
+                    written += len(chunk)
+            print()
+            # print("Download finished, deleting from server...")
+            # r = session.delete(self.rezstd_endpoint + f"delete/{task_id}")
+            # print(r.text)
+            # assert "error" not in r.json()
+            os.rename(compressing_rezstded_temp_path, compressing_temp_path)
+
         # move tmp file to final file
         os.rename(compressing_temp_path, compressed_path)
         return compressed_path

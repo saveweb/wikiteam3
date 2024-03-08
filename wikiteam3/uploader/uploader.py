@@ -56,6 +56,9 @@ class Args:
     bin_7z: str
     parallel: bool
 
+    rezstd: bool
+    rezstd_endpoint: str
+
     def __post_init__(self):
         self.keys_file = Path(self.keys_file).expanduser().resolve()
         if not self.keys_file.exists():
@@ -360,7 +363,7 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
     return metadata, logo_url
 
 def upload(arg: Args):
-    zstd_compressor = ZstdCompressor(bin_zstd=arg.bin_zstd)
+    zstd_compressor = ZstdCompressor(bin_zstd=arg.bin_zstd, rezstd=arg.rezstd, rezstd_endpoint=arg.rezstd_endpoint)
     sevenzip_compressor = SevenZipCompressor(bin_7z=arg.bin_7z)
     ia_keys = read_ia_keys(arg.keys_file)
     wikidump_dir = arg.wikidump_dir
@@ -546,6 +549,13 @@ def main():
     parser.add_argument("--zstd-level", default=ZstdCompressor.DEFAULT_LEVEL, type=int, choices=range(17, 23),
                         help=f"Zstd compression level. [default: {ZstdCompressor.DEFAULT_LEVEL}] "
                         f"If you have a lot of RAM, recommend to use max level (22)."
+                        )
+    parser.add_argument("--rezstd", action="store_true", default=ZstdCompressor.rezstd, dest="rezstd",
+                        help="[server-side recompression] Upload pre-compressed zstd files to rezstd server for recompression with "
+                            "best settings (which may eat 10GB+ RAM), then download back. (This feature saves your lowend machine, lol)")
+    parser.add_argument("--rezstd-endpoint", default=ZstdCompressor.rezstd_endpoint, metavar="URL", dest="rezstd_endpoint",
+                        help=f"Rezstd server endpoint. [default: {ZstdCompressor.rezstd_endpoint}] "
+                        f"(source code: https://github.com/yzqzss/rezstd)"
                         )
     parser.add_argument("--bin-7z", default=SevenZipCompressor.bin_7z, dest="bin_7z",
                         help=f"Path to 7z binary. [default: {SevenZipCompressor.bin_7z}] ")
