@@ -4,7 +4,7 @@
 [![PyPI version](https://badge.fury.io/py/wikiteam3.svg)](https://badge.fury.io/py/wikiteam3)
 
 <!-- !["MediaWikiArchive.png"](./MediaWikiArchive.png) -->
-<div align=center><img width = '150' height ='150' src ="./MediaWikiArchive.png"/></div>
+<div align=center><img width = "150" height ="150" src ="https://raw.githubusercontent.com/saveweb/wikiteam3/v4-main/MediaWikiArchive.png"/></div>
 
 > Countless MediaWikis are still waiting to be archived.
 >
