@@ -1,4 +1,6 @@
+import os
 import ssl
+import sys
 import time
 from typing import Optional
 import warnings
@@ -12,7 +14,10 @@ from wikiteam3.dumpgenerator.cli.delay import Delay
 from wikiteam3.dumpgenerator.config import Config
 
 def mod_requests_text(requests: requests): # type: ignore
-    """ Monkey patch `requests.Response.text` to handle incorrect encoding """
+    """ 
+    - Monkey patch `requests.Response.text` to handle incorrect encoding.
+    - Replace error characters with � (U+FFFD) if them are not too many. ($WIKITEAM3_REQUESTS_TEXT_FFFD_TOLERANCE)
+    """
     def new_text(_self: requests.Response):
         # Handle incorrect encoding
         encoding = _self.encoding
@@ -26,7 +31,32 @@ def mod_requests_text(requests: requests): # type: ignore
         else:
             content = _self.content
 
-        return content.decode(encoding)
+        try:
+            return content.decode(encoding, errors="strict")
+        except UnicodeDecodeError as e:
+            FFFD_CHAR = u'�'
+            FFFD_TOLERANCE = float(os.environ.get('WIKITEAM3_REQUESTS_TEXT_FFFD_TOLERANCE', '0.01'))
+            assert 0 <= FFFD_TOLERANCE <= 1
+            print('UnicodeDecodeError:', e)
+            ignore_text = content.decode(encoding, errors='ignore')
+            FFFDs_in_ignore_text = ignore_text.count(FFFD_CHAR)
+            replace_text = content.decode(encoding, errors='replace')
+            FFFDs_in_replace_text = replace_text.count(FFFD_CHAR)
+            
+            bad_FFFDs = FFFDs_in_replace_text - FFFDs_in_ignore_text
+            bad_FFFDs_ratio = bad_FFFDs / len(replace_text)
+
+            if bad_FFFDs_ratio > FFFD_TOLERANCE:
+                print(f"ERROR: Bad \\ufffd too many. {bad_FFFDs} bad FFFDs in {len(replace_text)} chars ({bad_FFFDs_ratio}) "
+                      "Check the encoding or set $WIKITEAM3_REQUESTS_TEXT_FFFD_TOLERANCE to a higher value.")
+                raise e
+
+            warnings.warn(
+                message=f"found bad \\ufffd, but tolerable. {bad_FFFDs} bad FFFDs in {len(replace_text)} chars ({bad_FFFDs_ratio})",
+                category=UserWarning
+            )
+            return replace_text
+
 
     requests.Response.text = property(new_text) # type: ignore
 
