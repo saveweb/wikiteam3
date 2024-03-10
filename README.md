@@ -32,6 +32,139 @@ pip install wikiteam3 --upgrade
 
 ## Dumpgenerator usage
 
+<!-- DUMPER -->
+<details>
+
+```bash
+usage: wikiteam3dumpgenerator [-h] [-v] [--cookies cookies.txt] [--delay 1.5]
+                              [--retries 5] [--path PATH] [--resume] [--force]
+                              [--user USER] [--pass PASSWORD]
+                              [--http-user HTTP_USER]
+                              [--http-pass HTTP_PASSWORD] [--insecure]
+                              [--verbose] [--stdout-log-file STDOUT_LOG_PATH]
+                              [--api_chunksize 50] [--api API] [--index INDEX]
+                              [--index-check-threshold 0.80] [--xml]
+                              [--curonly] [--xmlapiexport] [--xmlrevisions]
+                              [--xmlrevisions_page] [--namespaces 1,2,3]
+                              [--exnamespaces 1,2,3] [--images]
+                              [--bypass-cdn-image-compression]
+                              [--image-timestamp-interval 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z]
+                              [--ia-wbm-booster {0,1,2,3}]
+                              [--assert-max-pages 123]
+                              [--assert-max-edits 123]
+                              [--assert-max-images 123]
+                              [--assert-max-images-bytes 123]
+                              [--get-wiki-engine] [--failfast] [--upload]
+                              [-g UPLOADER_ARGS]
+                              [wiki]
+
+options:
+  -h, --help            show this help message and exit
+  -v, --version         show program's version number and exit
+  --cookies cookies.txt
+                        path to a cookies.txt file
+  --delay 1.5           adds a delay (in seconds) [NOTE: most HTTP servers
+                        have a 5s HTTP/1.1 keep-alive timeout, you should
+                        consider it if you wanna reuse the connection]
+  --retries 5           Maximum number of retries for
+  --path PATH           path to store wiki dump at
+  --resume              resumes previous incomplete dump (requires --path)
+  --force               download it even if Wikimedia site or a recent dump
+                        exists in the Internet Archive
+  --user USER           Username if MediaWiki authentication is required.
+  --pass PASSWORD       Password if MediaWiki authentication is required.
+  --http-user HTTP_USER
+                        Username if HTTP authentication is required.
+  --http-pass HTTP_PASSWORD
+                        Password if HTTP authentication is required.
+  --insecure            Disable SSL certificate verification
+  --verbose
+  --stdout-log-file STDOUT_LOG_PATH
+                        Path to copy stdout to
+  --api_chunksize 50    Chunk size for MediaWiki API (arvlimit, ailimit, etc.)
+
+  wiki                  URL to wiki (e.g. http://wiki.domain.org), auto
+                        detects API and index.php
+  --api API             URL to API (e.g. http://wiki.domain.org/w/api.php)
+  --index INDEX         URL to index.php (e.g.
+                        http://wiki.domain.org/w/index.php), (not supported
+                        with --images on newer(?) MediaWiki without --api)
+  --index-check-threshold 0.80
+                        pass index.php check if result is greater than (>)
+                        this value (default: 0.80)
+
+Data to download:
+  What info download from the wiki
+
+  --xml                 Export XML dump using Special:Export (index.php).
+                        (supported with --curonly)
+  --curonly             store only the lastest revision of pages
+  --xmlapiexport        Export XML dump using API:revisions instead of
+                        Special:Export, use this when Special:Export fails and
+                        xmlrevisions not supported. (supported with --curonly)
+  --xmlrevisions        Export all revisions from an API generator
+                        (API:Allrevisions). MediaWiki 1.27+ only. (not
+                        supported with --curonly)
+  --xmlrevisions_page   [[! Development only !]] Export all revisions from an
+                        API generator, but query page by page MediaWiki 1.27+
+                        only. (default: --curonly)
+  --namespaces 1,2,3    comma-separated value of namespaces to include (all by
+                        default)
+  --exnamespaces 1,2,3  comma-separated value of namespaces to exclude
+  --images              Generates an image dump
+
+Image dump options:
+  Options for image dump (--images)
+
+  --bypass-cdn-image-compression
+                        Bypass CDN image compression. (CloudFlare Polish,
+                        etc.)
+  --image-timestamp-interval 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
+                        [BETA] Only download images uploaded in the given time
+                        interval. [format: ISO 8601 UTC interval] (only works
+                        with api)
+  --ia-wbm-booster {0,1,2,3}
+                        Download images from Internet Archive Wayback Machine
+                        if possible, reduce the bandwidth usage of the wiki.
+                        [0: disabled (default), 1: use earliest snapshot, 2:
+                        use latest snapshot, 3: the closest snapshot to the
+                        image's upload time]
+
+Assertions:
+  What assertions to check before actually downloading, if any assertion
+  fails, program will exit with exit code 45. [NOTE: This feature requires
+  correct siteinfo API response from the wiki, and not working properly with
+  some wikis. But it's useful for mass automated archiving, so you can
+  schedule a re-run for HUGE wiki that may run out of your disk]
+
+  --assert-max-pages 123
+                        Maximum number of pages to download
+  --assert-max-edits 123
+                        Maximum number of edits to download
+  --assert-max-images 123
+                        Maximum number of images to download
+  --assert-max-images-bytes 123
+                        Maximum number of bytes to download for images [NOTE:
+                        this assert happens after downloading images list]
+
+Meta info:
+  What meta info to retrieve from the wiki
+
+  --get-wiki-engine     returns the wiki engine
+  --failfast            [lack maintenance] Avoid resuming, discard failing
+                        wikis quickly. Useful only for mass downloads.
+
+wikiteam3uploader params:
+  --upload              (run `wikiteam3uplaoder` for you) Upload wikidump to
+                        Internet Archive after successfully dumped
+  -g UPLOADER_ARGS, --uploader-arg UPLOADER_ARGS
+                        Arguments for uploader.
+
+```
+</details>
+
+<!-- DUMPER -->
+
 ### Downloading a wiki with complete XML history and images
 
 ```bash
@@ -84,6 +217,53 @@ In the above example, `--path` is only necessary if the download path (wikidump 
 </details>
 
 ## Using `wikiteam3uploader`
+
+<!-- UPLOADER -->
+<details>
+
+```bash
+usage:  Upload wikidump to the Internet Archive. [-h] [-kf KEYS_FILE]
+                                                 [-c {opensource,test_collection,wikiteam}]
+                                                 [--dry-run] [-u]
+                                                 [--bin-zstd BIN_ZSTD]
+                                                 [--zstd-level {17,18,19,20,21,22}]
+                                                 [--rezstd]
+                                                 [--rezstd-endpoint URL]
+                                                 [--bin-7z BIN_7Z]
+                                                 [--parallel]
+                                                 wikidump_dir
+
+positional arguments:
+  wikidump_dir
+
+options:
+  -h, --help            show this help message and exit
+  -kf KEYS_FILE, --keys_file KEYS_FILE
+                        Path to the IA S3 keys file. (first line: access key,
+                        second line: secret key) [default:
+                        ~/.wikiteam3_ia_keys.txt]
+  -c {opensource,test_collection,wikiteam}, --collection {opensource,test_collection,wikiteam}
+  --dry-run             Dry run, do not upload anything.
+  -u, --update          Update existing item. [!! not implemented yet !!]
+  --bin-zstd BIN_ZSTD   Path to zstd binary. [default: zstd]
+  --zstd-level {17,18,19,20,21,22}
+                        Zstd compression level. [default: 17] If you have a
+                        lot of RAM, recommend to use max level (22).
+  --rezstd              [server-side recompression] Upload pre-compressed zstd
+                        files to rezstd server for recompression with best
+                        settings (which may eat 10GB+ RAM), then download
+                        back. (This feature saves your lowend machine, lol)
+  --rezstd-endpoint URL
+                        Rezstd server endpoint. [default: http://pool-
+                        rezstd.saveweb.org/rezstd/] (source code:
+                        https://github.com/yzqzss/rezstd)
+  --bin-7z BIN_7Z       Path to 7z binary. [default: 7z]
+  --parallel            Parallelize compression tasks
+
+```
+</details>
+
+<!-- UPLOADER -->
 
 ### Requirements
 
