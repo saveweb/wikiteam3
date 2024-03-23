@@ -27,6 +27,7 @@ NULL = "null"
 """ NULL value for image metadata """
 FILENAME_LIMIT = 240
 """ Filename not be longer than 240 **bytes**. (MediaWiki r98430 2011-09-29) """
+STDOUT_IS_TTY = sys.stdout and sys.stdout.isatty()
 
 
 WBM_EARLIEST = 1
@@ -346,8 +347,11 @@ class Image:
 
             if not to_download: # skip printing
                 continue
-            print_msg = f"              | {len(images)}=>{filename_underscore[0:50]}"
-            print(print_msg, " "*(73 - len(print_msg)), end="\r")
+            if STDOUT_IS_TTY:
+                print_msg = f"              | {len(images)}=>{filename_underscore[0:50]}"
+                print(print_msg, " "*(73 - len(print_msg)), end="\r")
+            else:
+                print(f'{len(images)}=>{filename_underscore}')
 
         # NOTE: len(images) == 0 here
 
