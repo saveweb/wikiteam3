@@ -1,6 +1,5 @@
 import datetime
 import os
-import random
 import re
 import shutil
 import sys
@@ -87,7 +86,7 @@ class Image:
                 # bypass Cloudflare Polish (image optimization)
                 # <https://developers.cloudflare.com/images/polish/>
                 params["_wiki_t"] = int(time.time()*1000)
-                params[f"_wiki_{random.randint(10,99)}_"] = "random"
+                params["_wikiteam3_nocdn"] = "init_req" # this value will be changed on hard retry
 
             return params
         

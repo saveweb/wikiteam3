@@ -1,6 +1,5 @@
 import os
 import ssl
-import sys
 import time
 from typing import Optional
 import warnings
@@ -89,7 +88,7 @@ class SessionMonkeyPatch:
     Monkey patch `requests.Session.send`
     """
     hijacked = False
-    def __init__(self,*, session: requests.Session, config: Config,
+    def __init__(self,*, session: requests.Session, config: Optional[Config]=None,
                  add_delay: bool=False, delay_msg: Optional[str]=None,
                  hard_retries: int=0,
                  free_timeout_connections: bool=True, vaild_lft_sec: int=60 * 3
@@ -127,7 +126,7 @@ class SessionMonkeyPatch:
         # Monkey patch `requests.Session.send`
         self.old_send_method = self.session.send
 
-        def new_send(request, **kwargs):
+        def new_send(request: requests.PreparedRequest, **kwargs):
             hard_retries_left = self.hard_retries + 1
             if hard_retries_left <= 0:
                 raise ValueError('hard_retries must be positive')
@@ -149,6 +148,17 @@ class SessionMonkeyPatch:
                         raise
 
                     print('Hard retry... (%d), due to: %s' % (hard_retries_left, e))
+
+                    # if --bypass-cdn-image-compression is enabled, retry with different url
+                    assert isinstance(request.url, str)
+                    if '_wikiteam3_nocdn=' in request.url:
+                        request.url = request.url.replace('_wikiteam3_nocdn=init_req', f'_wikiteam3_nocdn=retry_{hard_retries_left}')
+                        request.url = request.url.replace(
+                            f'_wikiteam3_nocdn=retry_{hard_retries_left + 1}',
+                            f'_wikiteam3_nocdn=retry_{hard_retries_left}'
+                            )
+                        print('--bypass-cdn-image-compression: change url to', request.url, 'on hard retry...')
+
                     time.sleep(3)
 
         self.session.send = new_send # type: ignore
