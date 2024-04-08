@@ -1,6 +1,8 @@
 import dataclasses
 import json
-from typing import List
+from typing import List, Optional
+
+import requests
 
 
 def _dataclass_from_dict(klass_or_obj, d: dict):
@@ -91,3 +93,25 @@ def save_config(config: Config, config_filename: str):
 
     with open(f"{config.path}/{config_filename}", "w", encoding="utf-8") as outfile:
         json.dump(dataclasses.asdict(config), outfile, indent=4, sort_keys=True)
+
+
+@dataclasses.dataclass
+class OtherConfig:
+    resume: bool
+    force: bool 
+    session: requests.Session 
+    stdout_log_path: Optional[str] 
+    bypass_cdn_image_compression: bool 
+    add_referer_header: Optional[str] 
+    '''None, "auto", {URL}'''
+    image_timestamp_interval: Optional[str]
+    ''' 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z '''
+    ia_wbm_booster: int 
+
+    assert_max_pages: Optional[int] 
+    assert_max_edits: Optional[int] 
+    assert_max_images: Optional[int] 
+    assert_max_images_bytes: Optional[int] 
+
+    upload: bool 
+    uploader_args: List[str]

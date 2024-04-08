@@ -14,7 +14,7 @@ import requests
 
 from wikiteam3.dumpgenerator.api import get_JSON, handle_StatusCode
 from wikiteam3.dumpgenerator.cli import Delay
-from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.dumpgenerator.config import Config, OtherConfig
 from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDATES
 from wikiteam3.dumpgenerator.exceptions import FileSha1Error, FileSizeError
 from wikiteam3.dumpgenerator.log import log_error
@@ -42,18 +42,13 @@ def check_response(r: requests.Response) -> None:
 class Image:
 
     @staticmethod
-    def generate_image_dump(config: Config, other: Dict, images: List[List],
+    def generate_image_dump(config: Config, other: OtherConfig, images: List[List],
                             session: requests.Session):
         """ Save files and descriptions using a file list """
 
-        bypass_cdn_image_compression: bool = other["bypass_cdn_image_compression"]
-        image_timestamp_interval: Optional[str] = other["image_timestamp_interval"]
-        ia_wbm_booster: int = other["ia_wbm_booster"]
-        add_referer_header: Optional[str] = other["add_referer_header"] # None, "auto", {URL}
-
         image_timestamp_intervals = None
-        if image_timestamp_interval: # 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
-            image_timestamp_intervals = image_timestamp_interval.split("/")
+        if other.image_timestamp_interval:
+            image_timestamp_intervals = other.image_timestamp_interval.split("/")
             assert len(image_timestamp_intervals) == 2
             image_timestamp_intervals = [
                 datetime.datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ")
@@ -88,7 +83,7 @@ class Image:
             """ bypass Cloudflare Polish (image optimization) """
             if params is None:
                 params = {}
-            if bypass_cdn_image_compression is True:
+            if other.bypass_cdn_image_compression is True:
                 # bypass Cloudflare Polish (image optimization)
                 # <https://developers.cloudflare.com/images/polish/>
                 params["_wiki_t"] = int(time.time()*1000)
@@ -100,11 +95,11 @@ class Image:
             """ add HTTP Referer header """
             if headers is None:
                 headers = {}
-            if add_referer_header:
+            if other.add_referer_header:
                 url = config.index if config.index else config.api
                 parsed_url = urllib.parse.urlparse(
-                    add_referer_header
-                    if add_referer_header != "auto"
+                    other.add_referer_header
+                    if other.add_referer_header != "auto"
                     else url
                 )
 
@@ -144,10 +139,10 @@ class Image:
                         <= datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ")
                         <= image_timestamp_intervals[1]
                     ):
-                        print(f"    timestamp {timestamp} is not in interval {image_timestamp_interval}: {filename_underscore}")
+                        print(f"    timestamp {timestamp} is not in interval {other.image_timestamp_interval}: {filename_underscore}")
                         continue
                     else:
-                        print(f"    timestamp {timestamp} is in interval {image_timestamp_interval}: {filename_underscore}")
+                        print(f"    timestamp {timestamp} is in interval {other.image_timestamp_interval}: {filename_underscore}")
 
             # saving file
             if filename_underscore != urllib.parse.unquote(filename_underscore):
@@ -188,13 +183,13 @@ class Image:
                 url = url_raw
 
                 r: Optional[requests.Response] = None
-                if ia_wbm_booster:
+                if other.ia_wbm_booster:
                     def get_ia_wbm_response() -> Optional[requests.Response]:
                         """ Get response from Internet Archive Wayback Machine
                         return None if not found / failed """
-                        if ia_wbm_booster in (WBM_EARLIEST, WBN_LATEST):
-                            ia_timestamp = ia_wbm_booster
-                        elif ia_wbm_booster == WBM_BEST:
+                        if other.ia_wbm_booster in (WBM_EARLIEST, WBN_LATEST):
+                            ia_timestamp = other.ia_wbm_booster
+                        elif other.ia_wbm_booster == WBM_BEST:
                             if timestamp != NULL:
                                 ia_timestamp = [x for x in timestamp if x.isdigit()][0:8]
                                 ia_timestamp = "".join(ia_timestamp)
@@ -202,7 +197,7 @@ class Image:
                                 print(f"ia_wbm_booster:    timestamp is {NULL}, use latest timestamp")
                                 ia_timestamp = 2
                         else:
-                            raise ValueError(f"ia_wbm_booster is {ia_wbm_booster}, but it should be 0, 1, 2 or 3")
+                            raise ValueError(f"ia_wbm_booster is {other.ia_wbm_booster}, but it should be 0, 1, 2 or 3")
 
                         available_api = "http://archive.org/wayback/available"
                         # TODO: cdx_api = "http://web.archive.org/cdx/search/cdx"
@@ -358,7 +353,7 @@ class Image:
         patch_sess.release()
         print(f"Downloaded {c_savedImageFiles} files to 'images' dir")
         print(f"Downloaded {c_savedMismatchImageFiles} files to 'images_mismatch' dir")
-        if ia_wbm_booster and c_wbm_speedup_files:
+        if other.ia_wbm_booster and c_wbm_speedup_files:
             print(f"(WBM speedup: {c_wbm_speedup_files} files)")
 
 
@@ -646,7 +641,7 @@ class Image:
 
 
     @staticmethod
-    def save_image_names(config: Config, other: Dict, images: List[List]):
+    def save_image_names(config: Config, other: OtherConfig, images: List[List]):
         """Save image list in a file, including filename, url, uploader and other metadata"""
 
         images_filename = "{}-{}-images.txt".format(
@@ -681,13 +676,11 @@ class Image:
         print("Image metadata (images.txt) saved at:", images_filename)
         print(f"Estimated size of all images (images.txt): {c_images_size} bytes ({c_images_size/1024/1024/1024:.2f} GiB)")
 
-        assert_max_images: Optional[int] = other["assert_max_images"]
-        assert_max_images_bytes: Optional[int] = other["assert_max_images_bytes"]
         try:
-            assert len(images) <= assert_max_images if assert_max_images is not None else True
-            print(f"--assert_max_images: {assert_max_images}, passed")
-            assert c_images_size <= assert_max_images_bytes if assert_max_images_bytes is not None else True
-            print(f"--assert_max_images_bytes: {assert_max_images_bytes}, passed")
+            assert len(images) <= other.assert_max_images if other.assert_max_images is not None else True
+            print(f"--assert_max_images: {other.assert_max_images}, passed")
+            assert c_images_size <= other.assert_max_images_bytes if other.assert_max_images_bytes is not None else True
+            print(f"--assert_max_images_bytes: {other.assert_max_images_bytes}, passed")
         except AssertionError:
             import traceback
             traceback.print_exc()

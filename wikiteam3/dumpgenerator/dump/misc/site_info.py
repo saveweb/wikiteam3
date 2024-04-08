@@ -7,7 +7,7 @@ import requests
 
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.dumpgenerator.api import get_JSON
-from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.dumpgenerator.config import Config, OtherConfig
 
 
 def save_siteinfo(config: Config, session: requests.Session):
@@ -25,18 +25,15 @@ def save_siteinfo(config: Config, session: requests.Session):
     Delay(config=config)
 
 
-def assert_siteinfo(result, other):
+def assert_siteinfo(result, other: OtherConfig):
     """ assert_max_edits, assert_max_pages, assert_max_images """
-    assert_max_edits: Optional[int] = other["assert_max_edits"]
-    assert_max_pages: Optional[int] = other["assert_max_pages"]
-    assert_max_images: Optional[int] = other["assert_max_images"]
 
     stats = result["query"]["statistics"] if "query" in result else result["statistics"]
 
     try:
-        assert stats["pages"] <= assert_max_pages if assert_max_pages is not None else True
-        assert stats["images"] <= assert_max_images if assert_max_images is not None else True
-        assert stats["edits"] <= assert_max_edits if assert_max_edits is not None else True
+        assert stats["pages"] <= other.assert_max_pages if other.assert_max_pages is not None else True
+        assert stats["images"] <= other.assert_max_images if other.assert_max_images is not None else True
+        assert stats["edits"] <= other.assert_max_edits if other.assert_max_edits is not None else True
     except AssertionError:
         import traceback
         traceback.print_exc()

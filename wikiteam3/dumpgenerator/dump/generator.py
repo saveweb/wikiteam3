@@ -8,7 +8,7 @@ from typing import Dict, Union
 
 from file_read_backwards import FileReadBackwards
 
-from wikiteam3.dumpgenerator.config import load_config, save_config
+from wikiteam3.dumpgenerator.config import OtherConfig, load_config, save_config
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.dumpgenerator.cli import get_parameters, bye, welcome
 from wikiteam3.dumpgenerator.dump.image.image import FILENAME_LIMIT, Image
@@ -56,12 +56,12 @@ class DumpGenerator:
         config, other = get_parameters(params=params)
         avoid_WikiMedia_projects(config=config, other=other)
 
-        with (Tee(other["stdout_log_path"]) if other["stdout_log_path"] is not None else contextlib.nullcontext()):
+        with (Tee(other.stdout_log_path) if other.stdout_log_path else contextlib.nullcontext()):
             print(welcome())
             print("Analysing %s" % (config.api if config.api else config.index))
 
             # do not enter if resume is requested from begining
-            while not other["resume"] and os.path.isdir(config.path):
+            while not other.resume and os.path.isdir(config.path):
                 print('\nWarning!: "%s" path exists' % (config.path))
                 reply = "y" if config.failfast else ""
                 while reply.lower()[:1] not in ["y", "n"]:
@@ -79,45 +79,45 @@ class DumpGenerator:
                         print("No config file found. I can't resume. Aborting.")
                         sys.exit(1)
                     print("You have selected: YES")
-                    other["resume"] = True
+                    other.resume = True
                     break
                 elif reply == "n":
                     print("You have selected: NO.\nbye.")
-                    # other["resume"] = False
+                    # other.resume = False
                     sys.exit(0)
 
-            if asserts_enabled := [(arg, v) for arg, v in other.items() if arg.startswith("assert_") and v is not None]:
-                site_info = get_siteinfo(config=config, session=other["session"])
+            if asserts_enabled := [(arg, v) for arg, v in other.__dict__.items() if arg.startswith("assert_") and v is not None]:
+                site_info = get_siteinfo(config=config, session=other.session)
                 assert_siteinfo(site_info, other)
                 [print(f"--{arg}: {v}, passed") for arg, v in asserts_enabled] 
 
-            if other["resume"]:
+            if other.resume:
                 print("Loading config file to resume...")
                 config = load_config(config=config, config_filename=config_filename)
             else:
-                if not other['force'] and any_recent_ia_item_exists(config, days=365):
+                if not other.force and any_recent_ia_item_exists(config, days=365):
                     print("A dump of this wiki was uploaded to IA in the last 365 days. Aborting.")
                     sys.exit(88)
 
                 os.mkdir(config.path)
                 save_config(config=config, config_filename=config_filename)
 
-            if other["resume"]:
+            if other.resume:
                 DumpGenerator.resumePreviousDump(config=config, other=other)
             else:
                 DumpGenerator.createNewDump(config=config, other=other)
 
             if config.index:
-                save_IndexPHP(config=config, session=other["session"])
-                save_SpecialVersion(config=config, session=other["session"])
+                save_IndexPHP(config=config, session=other.session)
+                save_SpecialVersion(config=config, session=other.session)
             if config.api:
-                save_siteinfo(config=config, session=other["session"])
+                save_siteinfo(config=config, session=other.session)
 
             mark_as_done(config=config, mark=ALL_DUMPED_MARK)
             bye(config.path)
-            if other["upload"]:
+            if other.upload:
                 print('Calling uploader... (--upload)')
-                retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other["uploader_args"],
+                retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other.uploader_args,
                     shell=False)
                 if retcode:
                     print(f'--upload: Failed: {retcode}')
@@ -126,25 +126,25 @@ class DumpGenerator:
                 print('--upload: Done')
 
     @staticmethod
-    def createNewDump(config: Config, other: Dict):
+    def createNewDump(config: Config, other: OtherConfig):
         # we do lazy title dumping here :)
         images = []
         print("Trying generating a new dump into a new directory...")
         if config.xml:
-            generate_XML_dump(config=config, session=other["session"])
-            check_XML_integrity(config=config, session=other["session"])
+            generate_XML_dump(config=config, session=other.session)
+            check_XML_integrity(config=config, session=other.session)
         if config.images:
-            images += Image.get_image_names(config=config, session=other["session"])
+            images += Image.get_image_names(config=config, session=other.session)
             Image.save_image_names(config=config, other=other, images=images)
             Image.generate_image_dump(
-                config=config, other=other, images=images, session=other["session"]
+                config=config, other=other, images=images, session=other.session
             )
         if config.logs:
             pass # TODO
-            # save_SpecialLog(config=config, session=other["session"])
+            # save_SpecialLog(config=config, session=other.session)
 
     @staticmethod
-    def resumePreviousDump(config: Config, other: Dict):
+    def resumePreviousDump(config: Config, other: OtherConfig):
         images = []
         print("Resuming previous dump process...")
         if config.xml:
@@ -188,13 +188,13 @@ class DumpGenerator:
                 print('Resuming XML dump from "%s" (revision id %s)' % (last_xml_title, last_xml_revid))
                 generate_XML_dump(
                     config=config,
-                    session=other["session"],
+                    session=other.session,
                     resume=True,
                 )
             else:
                 # corrupt? only has XML header?
                 print("XML is corrupt? Regenerating...")
-                generate_XML_dump(config=config, session=other["session"])
+                generate_XML_dump(config=config, session=other.session)
 
         if config.images:
             # load images list
@@ -219,7 +219,7 @@ class DumpGenerator:
                 print("Image list is incomplete. Reloading...")
                 # do not resume, reload, to avoid inconsistences, deleted images or
                 # so
-                images = Image.get_image_names(config=config, session=other["session"])
+                images = Image.get_image_names(config=config, session=other.session)
                 Image.save_image_names(config=config, other=other, images=images)
             # checking images directory
             files = set()
@@ -282,7 +282,7 @@ class DumpGenerator:
                     config=config,
                     other=other,
                     images=images,
-                    session=other["session"],
+                    session=other.session,
                 )
 
         if config.logs:

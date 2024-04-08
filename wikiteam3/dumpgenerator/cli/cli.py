@@ -8,7 +8,7 @@ import queue
 import re
 import sys
 import traceback
-from typing import Dict, Tuple
+from typing import Tuple
 
 import requests
 from requests.adapters import DEFAULT_RETRIES as REQUESTS_DEFAULT_RETRIES
@@ -22,7 +22,7 @@ from wikiteam3.dumpgenerator.api import (
 )
 from wikiteam3.dumpgenerator.api.index_check import check_index
 from wikiteam3.dumpgenerator.cli.delay import Delay
-from wikiteam3.dumpgenerator.config import Config, new_config
+from wikiteam3.dumpgenerator.config import Config, OtherConfig, new_config
 from wikiteam3.dumpgenerator.version import getVersion
 from wikiteam3.utils import (
     get_random_UserAgent,
@@ -276,7 +276,7 @@ def checkParameters(args=argparse.Namespace()) -> bool:
     
     return passed
 
-def get_parameters(params=None) -> Tuple[Config, Dict]:
+def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
     # if not params:
     #     params = sys.argv
 
@@ -535,24 +535,25 @@ def get_parameters(params=None) -> Tuple[Config, Dict]:
         "retries": int(args.retries),
     })
 
-    other = {
-        "resume": args.resume,
-        "force": args.force,
-        "session": session,
-        "stdout_log_path": args.stdout_log_path,
-        "bypass_cdn_image_compression": args.bypass_cdn_image_compression,
-        "add_referer_header": args.add_referer_header,
-        "image_timestamp_interval": args.image_timestamp_interval,
-        "ia_wbm_booster": args.ia_wbm_booster,
 
-        "assert_max_pages": args.assert_max_pages,
-        "assert_max_edits": args.assert_max_edits,
-        "assert_max_images": args.assert_max_images,
-        "assert_max_images_bytes": args.assert_max_images_bytes,
+    other = OtherConfig(
+        resume = args.resume,
+        force = args.force,
+        session = session,
+        stdout_log_path = args.stdout_log_path,
+        bypass_cdn_image_compression = args.bypass_cdn_image_compression,
+        add_referer_header = args.add_referer_header,
+        image_timestamp_interval = args.image_timestamp_interval,
+        ia_wbm_booster = args.ia_wbm_booster,
 
-        "upload": args.upload,
-        "uploader_args": args.uploader_args,
-    }
+        assert_max_pages = args.assert_max_pages,
+        assert_max_edits = args.assert_max_edits,
+        assert_max_images = args.assert_max_images,
+        assert_max_images_bytes = args.assert_max_images_bytes,
+
+        upload = args.upload,
+        uploader_args = args.uploader_args,
+    )
 
     # calculating path, if not defined by user with --path=
     if not config.path:
