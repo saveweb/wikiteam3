@@ -163,7 +163,7 @@ def getArgumentParser():
     group_image.add_argument(
         "--image-timestamp-interval",
         metavar="2019-01-02T01:36:06Z/2023-08-12T10:36:06Z",
-        help="[BETA] Only download images uploaded in the given time interval. [format: ISO 8601 UTC interval] "
+        help="Only download images uploaded in the given time interval. [format: ISO 8601 UTC interval] "
             "(only works with api)",
     )
     group_image.add_argument(
