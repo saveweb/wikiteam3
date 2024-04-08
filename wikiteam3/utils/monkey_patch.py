@@ -91,7 +91,8 @@ class SessionMonkeyPatch:
     def __init__(self,*, session: requests.Session, config: Optional[Config]=None,
                  add_delay: bool=False, delay_msg: Optional[str]=None,
                  hard_retries: int=0,
-                 free_timeout_connections: bool=True, vaild_lft_sec: int=60 * 3
+                 free_timeout_connections: bool=True, vaild_lft_sec: int=60 * 3,
+                 accept_encoding: str="",
         ):
         """
         hard_retries: hard retries, default 0 (no retry)
@@ -109,6 +110,8 @@ class SessionMonkeyPatch:
         self.free_timeout_connections: bool = free_timeout_connections
         self.vaild_lft_sec = vaild_lft_sec
         self.last_clear_time = time.time()
+
+        self.accept_encoding = accept_encoding
 
     def clear_timeouted_pools(self):
         for adapter in self.session.adapters.values():
@@ -131,6 +134,8 @@ class SessionMonkeyPatch:
             if hard_retries_left <= 0:
                 raise ValueError('hard_retries must be positive')
 
+            accept_encoding = ''
+
             while hard_retries_left > 0:
                 try:
                     if self.add_delay:
@@ -138,6 +143,9 @@ class SessionMonkeyPatch:
 
                     if self.free_timeout_connections:
                         self.clear_timeouted_pools()
+
+                    if _accept_encoding := accept_encoding or self.accept_encoding or request.headers.get("Accept-Encoding", ""):
+                        request.headers["Accept-Encoding"] = _accept_encoding
 
                     return self.old_send_method(request, **kwargs)
                 except (KeyboardInterrupt, requests.exceptions.ContentDecodingError): # don't retry
@@ -148,6 +156,11 @@ class SessionMonkeyPatch:
                         raise
 
                     print('Hard retry... (%d), due to: %s' % (hard_retries_left, e))
+
+                    # workaround for https://wiki.erischan.org/index.php/Main_Page and other ChunkedEncodingError sites
+                    if isinstance(e, requests.exceptions.ChunkedEncodingError):
+                        accept_encoding = 'identity'
+                        print('retry with Accept-Encoding:', accept_encoding)
 
                     # if --bypass-cdn-image-compression is enabled, retry with different url
                     assert isinstance(request.url, str)

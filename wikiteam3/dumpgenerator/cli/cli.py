@@ -30,7 +30,7 @@ from wikiteam3.utils import (
     url2prefix_from_config,
 )
 from wikiteam3.utils.login import uniLogin
-from wikiteam3.utils.monkey_patch import WakeTLSAdapter
+from wikiteam3.utils.monkey_patch import SessionMonkeyPatch, WakeTLSAdapter
 from wikiteam3.utils.user_agent import setup_random_UserAgent
 
 
@@ -293,6 +293,8 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
     # Create session
     mod_requests_text(requests) # monkey patch # type: ignore
     session = requests.Session()
+    patch_sess = SessionMonkeyPatch(session=session, hard_retries=1)
+    patch_sess.hijack()
     def print_request(r: requests.Response, *args, **kwargs):
         # TODO: use logging
         # print("H:", r.request.headers)
@@ -575,4 +577,5 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
             "If you know that this is unnecessary, you can manually specify '--delay 0.0'."
         )
 
+    patch_sess.release()
     return config, other
