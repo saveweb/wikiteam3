@@ -512,27 +512,26 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
                 exnamespaces = [int(i) for i in ns.split(",")]
 
 
-    config = new_config({
-        "curonly": args.curonly,
-        "date": datetime.datetime.utcnow().strftime("%Y%m%d"),
-        "api": api,
-        "failfast": args.failfast,
-        "http_method": "POST",
-        "api_chunksize": int(args.api_chunksize),
-        "index": index,
-        "images": args.images,
-        "logs": False,
-        "xml": args.xml,
-        "xmlapiexport": args.xmlapiexport,
-        "xmlrevisions": args.xmlrevisions or args.xmlrevisions_page,
-        "xmlrevisions_page": args.xmlrevisions_page,
-        "namespaces": namespaces,
-        "exnamespaces": exnamespaces,
-        "path": args.path and os.path.normpath(args.path) or "",
-        "cookies": args.cookies or "",
-        "delay": args.delay,
-        "retries": int(args.retries),
-    })
+    config = Config(
+        curonly = args.curonly,
+        date = datetime.datetime.utcnow().strftime("%Y%m%d"),
+        api = api,
+        failfast = args.failfast,
+        http_method = "POST",
+        api_chunksize = int(args.api_chunksize),
+        index = index,
+        images = args.images,
+        logs = False,
+        xml = args.xml,
+        xmlapiexport = args.xmlapiexport,
+        xmlrevisions = args.xmlrevisions or args.xmlrevisions_page,
+        xmlrevisions_page = args.xmlrevisions_page,
+        namespaces = namespaces,
+        exnamespaces = exnamespaces,
+        path = args.path and os.path.normpath(args.path) or "",
+        delay = args.delay,
+        retries = int(args.retries),
+    )
 
 
     other = OtherConfig(
