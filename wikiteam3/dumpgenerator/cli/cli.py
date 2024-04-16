@@ -83,9 +83,6 @@ def getArgumentParser():
         "--verbose", action="store_true", help=""
     )
     parser.add_argument(
-        "--stdout-log-file", dest="stdout_log_path", default=None, help="Path to copy stdout to",
-    )
-    parser.add_argument(
         "--api_chunksize", metavar="50", default=50, help="Chunk size for MediaWiki API (arvlimit, ailimit, etc.)"
     )
 
@@ -542,7 +539,6 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         resume = args.resume,
         force = args.force,
         session = session,
-        stdout_log_path = args.stdout_log_path,
         bypass_cdn_image_compression = args.bypass_cdn_image_compression,
         add_referer_header = args.add_referer_header,
         image_timestamp_interval = args.image_timestamp_interval,

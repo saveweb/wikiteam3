@@ -23,28 +23,6 @@ from wikiteam3.utils import url2prefix_from_config, undo_HTML_entities, avoid_Wi
 from wikiteam3.utils.ia_checker import any_recent_ia_item_exists
 from wikiteam3.utils.util import ALL_DUMPED_MARK, int_or_zero, mark_as_done, underscore
 
-# From https://stackoverflow.com/a/57008707
-class Tee(object):
-    def __init__(self, filename):
-        self.file = open(filename, 'w', encoding="utf-8")
-        self.stdout = sys.stdout
-
-    def __enter__(self):
-        sys.stdout = self
-
-    def __exit__(self, exc_type, exc_value, tb):
-        sys.stdout = self.stdout
-        if exc_type is not None:
-            self.file.write(traceback.format_exc())
-        self.file.close()
-
-    def write(self, data):
-        self.file.write(data)
-        self.stdout.write(data)
-
-    def flush(self):
-        self.file.flush()
-        self.stdout.flush()
 
 class DumpGenerator:
     configfilename = "config.json"
@@ -56,7 +34,7 @@ class DumpGenerator:
         config, other = get_parameters(params=params)
         avoid_WikiMedia_projects(config=config, other=other)
 
-        with (Tee(other.stdout_log_path) if other.stdout_log_path else contextlib.nullcontext()):
+        with contextlib.nullcontext():
             print(welcome())
             print("Analysing %s" % (config.api if config.api else config.index))
 

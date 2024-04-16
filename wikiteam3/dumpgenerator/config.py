@@ -100,7 +100,6 @@ class OtherConfig:
     resume: bool
     force: bool 
     session: requests.Session 
-    stdout_log_path: Optional[str] 
     bypass_cdn_image_compression: bool 
     add_referer_header: Optional[str] 
     '''None, "auto", {URL}'''
