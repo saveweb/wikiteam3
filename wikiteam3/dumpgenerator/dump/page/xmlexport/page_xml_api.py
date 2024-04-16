@@ -11,6 +11,7 @@ from wikiteam3.dumpgenerator.api import handle_StatusCode
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.dumpgenerator.exceptions import PageMissingError, ExportAbortedError
 from wikiteam3.dumpgenerator.log import log_error
+from wikiteam3.utils.util import underscore
 
 
 def reconstructRevisions(root: ET.Element):
@@ -151,8 +152,7 @@ def getXMLPageWithApi(config: Config, title="", verbose=True, *, session: reques
         if params['curonly'] is set, then using export&exportwrap to export
     """
 
-    title_ = title
-    title_ = re.sub(' ', '_', title_)
+    title_ = underscore(title)
     # do not convert & into %26, title_ = re.sub('&', '%26', title_)
     # action=query&rvlimit=50&format=xml&prop=revisions&titles=TITLE_HERE
     # &rvprop=timestamp%7Cuser%7Ccomment%7Ccontent%7Cids%7Cuserid%7Csha1%7Csize

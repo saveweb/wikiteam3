@@ -1,6 +1,24 @@
 from typing import Optional
 
 
+class InternalApiError(Exception):
+    """ base class for all internal API errors """
+    error_code = "internal_api_error_*"
+    errorclass = "MW*Exception"
+    common_cause = "reason a; reason b; reason c"
+    samples = ["url"]
+
+
+class MWUnknownContentModelException(InternalApiError):
+    error_code = "internal_api_error_MWUnknownContentModelException"
+    errorclass = "MWUnknownContentModelException"
+    common_cause = "The content model xxxxx is not registered on this wiki; Some extensions use special content models for their own purposes, but they did not register a handler to export their content (?)"
+    samples = [
+        "https://web.archive.org/web/20231015082428id_/https://www.wikidoc.org/api.php?titles=Talk%3AMain_Page&action=query&format=xml&prop=revisions&rvprop=timestamp|user|comment|content|ids|flags|size|userid|sha1|contentmodel&rvlimit=50",
+        "https://web.archive.org/web/20231015082600id_/https://www.wikidoc.org/api.php?titles=Talk%3AMain_Page&action=query&format=json&prop=revisions&rvprop=timestamp|user|comment|content|ids|flags|size|userid|sha1|contentmodel&rvlimit=50"
+    ]
+
+
 class PageMissingError(Exception):
     def __init__(self, title, xml):
         self.title = title

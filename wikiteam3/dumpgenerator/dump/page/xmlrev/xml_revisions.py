@@ -9,7 +9,8 @@ import mwclient
 import mwclient.errors
 import requests
 
-from wikiteam3.dumpgenerator.exceptions import PageMissingError
+from wikiteam3.dumpgenerator.cli.delay import Delay
+from wikiteam3.dumpgenerator.exceptions import MWUnknownContentModelException, PageMissingError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI
 from wikiteam3.dumpgenerator.api.page_titles import read_titles
@@ -60,9 +61,10 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
             # We have to build the XML manually...
             # Skip flags, presumably needed to add <minor/> which is in the schema.
             # Also missing: parentid and contentformat.
+            ARV_PROP = "ids|timestamp|user|userid|size|sha1|contentmodel|comment|content|flags"
             arv_params[
                 "arvprop"
-            ] = "ids|timestamp|user|userid|size|sha1|contentmodel|comment|content|flags"
+            ] = ARV_PROP
             print(
                 "Trying to get wikitext from the allrevisions API and to build the XML"
             )
@@ -72,6 +74,33 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
                     allrevs_response = site.api(
                         http_method=config.http_method, **arv_params
                     )
+                    # reset params if the response is OK
+                    arv_params["arvprop"] = ARV_PROP
+                    if arv_params["arvlimit"] != config.api_chunksize:
+                        arv_params["arvlimit"] = min(arv_params["arvlimit"] * 2, config.api_chunksize)
+                        print(f"INFO: response is OK, increasing arvlimit to {arv_params['arvlimit']}")
+                except mwclient.errors.APIError as e:
+                    if e.code == MWUnknownContentModelException.error_code:
+                        if arv_params['arvlimit'] != 1:
+                            # let's retry with arvlimit=1 to retrieve good revisions as much as possible
+                            print("WARNING: API returned MWUnknownContentModelException. retrying with arvlimit=1 (revision by revision)")
+                            arv_params["arvlimit"] = 1
+                            Delay(config=config)
+                            continue
+                        elif '|content' in arv_params["arvprop"]:
+                            log_error(config=config, to_stdout=True,
+                                text=f"ERROR: API returned MWUnknownContentModelException on arvcontinue={arv_params.get('arvcontinue', '')}, " +
+                                "retried with arvlimit=1 and still failed. retrying without arvprop=content. " +
+                                '(wikiteam3 would mark the revision as "<text deleted="deletetd"> in the xmldump)'
+                            )
+                            arv_params["arvprop"] = ARV_PROP.replace('|content', '')
+                            Delay(config=config)
+                            continue
+                        else:
+                            assert False, "This should not happen"
+                    else:
+                        raise
+
                 except requests.exceptions.HTTPError as e:
                     if (
                             e.response.status_code == 405
@@ -79,6 +108,7 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
                     ):
                         print("POST request to the API failed, retrying with GET")
                         config.http_method = "GET"
+                        Delay(config=config)
                         continue
                     else:
                         raise
@@ -98,6 +128,7 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
                     ):
                         print("POST request to the API failed (got HTML), retrying with GET")
                         config.http_method = "GET"
+                        Delay(config=config)
                         continue
                     else:
                         raise
@@ -377,8 +408,6 @@ def getXMLRevisionsByTitles(config: Config, session: requests.Session, site: mwc
 def getXMLRevisions(config: Config, session: requests.Session, lastPage=None, useAllrevision=True):
     # FIXME: actually figure out the various strategies for each MediaWiki version
     apiurl = urlparse(config.api)
-    # FIXME: force the protocol we asked for! Or don't verify SSL if we asked HTTP?
-    # https://github.com/WikiTeam/wikiteam/issues/358
     site = mwclient.Site(
         apiurl.netloc, apiurl.path.replace("api.php", ""), scheme=apiurl.scheme, pool=session
     )

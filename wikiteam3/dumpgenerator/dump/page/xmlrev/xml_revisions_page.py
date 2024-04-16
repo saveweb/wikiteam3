@@ -56,7 +56,7 @@ def make_xml_from_page(page: Dict, arvcontinue: Optional[str] = None) -> str:
                 E.timestamp(rev["timestamp"]),]
 
             # The text, user, comment, sha1 may be deleted/suppressed
-            if (('texthidden' in rev) or ('textmissing' in rev)):
+            if (('texthidden' in rev) or ('textmissing' in rev)) or ('*' not in rev):
                 print("Warning: text missing/hidden in pageid %d revid %d" % (page['pageid'], rev['revid']))
                 revision.append(E.text(**{
                     'bytes': str(size),
@@ -117,6 +117,7 @@ def make_xml_from_page(page: Dict, arvcontinue: Optional[str] = None) -> str:
                 _revision.append(elem)
             p.append(_revision)
     except KeyError as e:
-        print(e)
+        import traceback
+        traceback.print_exc()
         raise PageMissingError(page["title"], e)
     return etree.tostring(p, pretty_print=True, encoding="unicode")
