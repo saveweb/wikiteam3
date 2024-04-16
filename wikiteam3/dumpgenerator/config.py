@@ -15,26 +15,7 @@ def _dataclass_from_dict(klass_or_obj, d: dict):
             setattr(ret, k, v)
     return ret
 
-'''
-config = {
-        "curonly": args.curonly,
-        "date": datetime.datetime.utcnow().strftime("%Y%m%d"),
-        "api": api,
-        "failfast": args.failfast,
-        "http_method": "POST",
-        "index": index,
-        "images": args.images,
-        "logs": False,
-        "xml": args.xml,
-        "xmlrevisions": args.xmlrevisions,
-        "namespaces": namespaces,
-        "exnamespaces": exnamespaces,
-        "path": args.path and os.path.normpath(args.path) or "",
-        "cookies": args.cookies or "",
-        "delay": args.delay,
-        "retries": int(args.retries),
-    }
-'''
+
 @dataclasses.dataclass
 class Config:
     def asdict(self):
@@ -42,10 +23,21 @@ class Config:
 
     # General params
     delay: float = 0.0
+    """ Delay between requests """
     retries: int = 0
+    """ Number of retries """
     path: str = ''
+    """ Path to save the wikidump """
     logs: bool = False
+    """
+    Save MediaWiki logs #NOTE: this feature is not implemented yet
+    https://www.mediawiki.org/wiki/Manual:Logging_table
+    """
     date: str = False
+    """
+    Date of the dump
+    `datetime.datetime.utcnow().strftime("%Y%m%d")`
+    """
 
     # URL params
     index: str = ''
@@ -60,15 +52,24 @@ class Config:
     images: bool = False
     namespaces: List[int] = None
     exnamespaces: List[int] = None
+    """ save images """
 
     api_chunksize: int = 0  # arvlimit, ailimit, etc
-    export: str = '' # Special:Export page name
+    export: str = ''
+    """ `Special:Export` page name """
     http_method: str = ''
+    """ GET/POST """
 
     # Meta info params
     failfast: bool = False
 
-    templates: bool = False
+    templates: bool = False # TODO: rename to `xml_export_include_templates`
+    """
+    Whether to include `&templates=1` parameter in the `Special:Export` (--xml) export action.
+    https://www.mediawiki.org/wiki/Manual:Parameters_to_Special:Export#Available_parameters
+
+    NOTE: this config is not used to control the export of templates namespace (--namespaces).
+    """
 
 def new_config(configDict) -> Config:
     return _dataclass_from_dict(Config, configDict)
