@@ -41,13 +41,12 @@ usage: wikiteam3dumpgenerator [-h] [-v] [--cookies cookies.txt] [--delay 1.5]
                               [--user USER] [--pass PASSWORD]
                               [--http-user HTTP_USER]
                               [--http-pass HTTP_PASSWORD] [--insecure]
-                              [--verbose] [--stdout-log-file STDOUT_LOG_PATH]
-                              [--api_chunksize 50] [--api API] [--index INDEX]
-                              [--index-check-threshold 0.80] [--xml]
-                              [--curonly] [--xmlapiexport] [--xmlrevisions]
-                              [--xmlrevisions_page] [--namespaces 1,2,3]
-                              [--exnamespaces 1,2,3] [--images]
-                              [--bypass-cdn-image-compression]
+                              [--verbose] [--api_chunksize 50] [--api API]
+                              [--index INDEX] [--index-check-threshold 0.80]
+                              [--xml] [--curonly] [--xmlapiexport]
+                              [--xmlrevisions] [--xmlrevisions_page]
+                              [--namespaces 1,2,3] [--exnamespaces 1,2,3]
+                              [--images] [--bypass-cdn-image-compression]
                               [--image-timestamp-interval 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z]
                               [--ia-wbm-booster {0,1,2,3}]
                               [--assert-max-pages 123]
@@ -79,8 +78,6 @@ options:
                         Password if HTTP authentication is required.
   --insecure            Disable SSL certificate verification
   --verbose
-  --stdout-log-file STDOUT_LOG_PATH
-                        Path to copy stdout to
   --api_chunksize 50    Chunk size for MediaWiki API (arvlimit, ailimit, etc.)
 
   wiki                  URL to wiki (e.g. http://wiki.domain.org), auto
@@ -120,7 +117,7 @@ Image dump options:
                         Bypass CDN image compression. (CloudFlare Polish,
                         etc.)
   --image-timestamp-interval 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
-                        [BETA] Only download images uploaded in the given time
+                        Only download images uploaded in the given time
                         interval. [format: ISO 8601 UTC interval] (only works
                         with api)
   --ia-wbm-booster {0,1,2,3}
