@@ -91,7 +91,7 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
                             log_error(config=config, to_stdout=True,
                                 text=f"ERROR: API returned MWUnknownContentModelException on arvcontinue={arv_params.get('arvcontinue', '')}, " +
                                 "retried with arvlimit=1 and still failed. retrying without arvprop=content. " +
-                                '(wikiteam3 would mark the revision as "<text deleted="deletetd"> in the xmldump)'
+                                '(wikiteam3 would mark the revision as "<text deleted="deleted"> in the xmldump)'
                             )
                             arv_params["arvprop"] = ARV_PROP.replace('|content', '')
                             Delay(config=config)
