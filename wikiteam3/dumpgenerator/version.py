@@ -1,4 +1,4 @@
-__VERSION__ = "4.2.5"
+__VERSION__ = "4.2.6"
 
 
 def getVersion():
