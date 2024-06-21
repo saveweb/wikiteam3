@@ -1,4 +1,3 @@
-from .uprint import uprint
 from .util import remove_IP, clean_XML, clean_HTML, undo_HTML_entities, sha1sum
 
 from .user_agent import get_random_UserAgent

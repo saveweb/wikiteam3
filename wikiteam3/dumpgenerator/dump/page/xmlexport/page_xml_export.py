@@ -8,7 +8,6 @@ import requests
 from wikiteam3.dumpgenerator.exceptions import ExportAbortedError, PageMissingError
 from wikiteam3.dumpgenerator.api import handle_StatusCode
 from wikiteam3.dumpgenerator.log import log_error
-from wikiteam3.utils import uprint
 from wikiteam3.dumpgenerator.config import Config
 from wikiteam3.utils.util import underscore
 
@@ -207,6 +206,6 @@ def getXMLPageWithExport(config: Config, title: str,
 
     if verbose:
         if edit_count == 1:
-            uprint("    %s, 1 edit" % (title.strip()))
+            print("    %s, 1 edit" % (title.strip()))
         else:
-            uprint("    %s, %d edits" % (title.strip(), edit_count))
+            print("    %s, %d edits" % (title.strip(), edit_count))
