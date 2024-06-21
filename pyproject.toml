@@ -1,70 +1,53 @@
-[tool.poetry]
+[project]
+# PEP 621 project metadata
+# See https://www.python.org/dev/peps/pep-0621/
 name = "wikiteam3"
 version = "4.2.6"
 description = "Tools for downloading and preserving MediaWikis. We archive MediaWikis, from Wikipedia to tiniest wikis."
-license = "GPL-3.0-or-later"
-# authors = ["WikiTeam Contributors"] # FIXME: it's not an valid author name
-authors = ["yzqzss <yzqzss@yandex.com>"]
-maintainers = [
-    # "saveweb wikiteam3 maintainers", #FIXME
-    # "mediawiki-scarper maintainers",
-    # "wikiteam maintainers",
-    "yzqzss <yzqzss@yandex.com>"
+license = {text = "GPL-3.0-or-later"}
+requires-python = "<4.0.0,>=3.8.1"
+dependencies = [
+    "requests<3.0.0,>=2.32.3",
+    "internetarchive<5.0.0,>=4.1.0",
+    "lxml<6.0.0,>=5.2.2",
+    "mwclient<1.0.0,>=0.10.1",
+    "file-read-backwards<4.0.0,>=3.1.0",
+    "python-slugify<9.0.0,>=8.0.4",
 ]
 readme = "README.md"
-# homepage = "https://wiki.archiveteam.org/index.php/WikiTeam"
-repository = "https://github.com/saveweb/wikiteam3"
-keywords = [
-    "archiveteam",
-    "mediawiki",
-    "preservation",
-    "wiki",
-    "wikipedia"
+keywords = ["archiveteam", "mediawiki", "wikiteam", "wikiteam3", "preservation", "wiki", "wikipedia"]
+classifiers = ["Environment :: Console", "Intended Audience :: Education", "Intended Audience :: End Users/Desktop", "Intended Audience :: Information Technology", "Intended Audience :: Legal Industry", "Intended Audience :: Science/Research", "Intended Audience :: System Administrators", "Natural Language :: English", "Operating System :: OS Independent", "Topic :: Communications", "Topic :: Internet", "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Wiki", "Topic :: Scientific/Engineering :: Information Analysis", "Topic :: Sociology :: History", "Topic :: System :: Archiving", "Topic :: System :: Archiving :: Backup", "Topic :: Utilities"]
+authors = [
+    {name = "yzqzss", email = "yzqzss@saveweb.org"},
+    {name = "emijrp"},
+    {name = "nemobis"},
+    {name = "randomnetcat"},
+    {name = "NyaMisty"},
+    {name = "PiRSquared17"},
+    {name = "Hydriz"},
 ]
-classifiers = [
-    "Environment :: Console",
-    "Intended Audience :: Education",
-    "Intended Audience :: End Users/Desktop",
-    "Intended Audience :: Information Technology",
-    "Intended Audience :: Legal Industry",
-    "Intended Audience :: Science/Research",
-    "Intended Audience :: System Administrators",
-    "Natural Language :: English",
-    "Operating System :: OS Independent",
-    "Topic :: Communications",
-    "Topic :: Internet",
-    "Topic :: Internet :: WWW/HTTP :: Dynamic Content :: Wiki",
-    "Topic :: Scientific/Engineering :: Information Analysis",
-    "Topic :: Sociology :: History",
-    "Topic :: System :: Archiving",
-    "Topic :: System :: Archiving :: Backup",
-    "Topic :: Utilities"
+maintainers = [
+    {name = "yzqzss", email = "yzqzss@saveweb.org"},
 ]
-packages = [
-    { include = "wikiteam3/**/*"},
-]
-exclude = ["wikiteam3/dumpgenerator/test/*"]
 
-[tool.poetry.scripts]
+
+[project.scripts]
 wikiteam3dumpgenerator = "wikiteam3.dumpgenerator:main"
 wikiteam3uploader = "wikiteam3.uploader:main"
 
-[tool.poetry.dependencies]
-python = "^3.8"
-requests = "^2.31.0"
-internetarchive = "^3.5.0"
-lxml = "^4.9.2"
-mwclient = "^0.10.1"
-file_read_backwards = "^3.0.0"
-python-slugify = "^8.0.1"
+[project.urls]
+repository = "https://github.com/saveweb/wikiteam3"
 
-[tool.isort]
-profile = "black"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.5"
-flake8 = "^3.9.2"
+[tool.pdm]
+[tool.pdm.build]
+includes = ["wikiteam3/**/*"]
+excludes = ["wikiteam3/dumpgenerator/test/*"]
+[tool.pdm.dev-dependencies]
+dev = [
+    "pytest<9.0.0,>=8.2.2",
+    "flake8<8.0.0,>=7.1.0",
+]
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
