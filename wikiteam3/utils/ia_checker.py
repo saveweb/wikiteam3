@@ -62,7 +62,7 @@ def search_ia(apiurl: Optional[str] = None, indexurl: Optional[str] = None, adde
 
 def search_ia_recent(config: Config, days: int = 365):
 
-    now_utc = datetime.datetime.utcnow()
+    now_utc = datetime.datetime.now(datetime.UTC)
     now_utc_iso = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     one_year_ago = now_utc - datetime.timedelta(days=days)

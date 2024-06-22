@@ -514,7 +514,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
 
     config = Config(
         curonly = args.curonly,
-        date = datetime.datetime.utcnow().strftime("%Y%m%d"),
+        date = datetime.datetime.now(datetime.UTC).strftime("%Y%m%d"),
         api = api,
         failfast = args.failfast,
         http_method = "POST",
