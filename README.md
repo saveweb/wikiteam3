@@ -268,7 +268,7 @@ options:
 >
 > Please make sure you have the following requirements before using `wikiteam3uploader`, and you don't need to install them if you don't wanna upload the dump to IA.
 
-- [Retrieve your IA S3-like API keys](http://www.archive.org/account/s3.php) and save them one per line (in the order provided) in `~/.wikiteam3_ia_keys.txt` file.
+- [Retrieve your IA API keys](http://www.archive.org/account/s3.php) and save them one per line (in the order provided) in `~/.wikiteam3_ia_keys.txt` file.
 - unbinded localhost port 62954 (for multiple processes compressing queue)
 - 3GB+ RAM (~2.56GB for commpressing)
 - 64-bit OS (required by 2G `wlog` size)
