@@ -30,6 +30,14 @@ Everything still under GPLv3 license.
 pip install wikiteam3 --upgrade
 ```
 
+>[!NOTE]
+> For public MediaWiki, you don't need to install wikiteam3 locally. You can send an archive request (include the reason for the archive request, e.g. wiki is about to shutdown, need a wikidump to migrate to another wikifarm, etc.) to the wikiteam IRC channel. An online voiced member will run a [wikibot](https://github.com/DigitalDwagon/WikiBot) job for your request.
+>
+> Even more, we also accept DokuWiki and PukiWiki archive requests.
+> 
+> - wikiteam IRC (webirc): https://webirc.hackint.org/#irc://irc.hackint.org/wikiteam
+> - wikiteam IRC logs: https://irclogs.archivete.am/wikiteam
+
 ## Dumpgenerator usage
 
 <!-- DUMPER -->
