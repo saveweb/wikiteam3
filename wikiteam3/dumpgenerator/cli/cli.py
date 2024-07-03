@@ -412,7 +412,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
                 pass
             elif index == "":
                 index = "/".join(api.split("/")[:-1]) + "/index.php"
-                print("Gassing index.php from API URL: ", index)
+                print("Getting index.php from API URL: ", index)
 
     # print (api)
     # print (index)
