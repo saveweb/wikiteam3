@@ -64,8 +64,8 @@ def truncateXMLDump(filename: str) -> str:
 def parse_last_page_chunk(chunk: str) -> Optional[lxml.etree._ElementTree]:
     try:
         parser = lxml.etree.XMLParser(recover=True)
-        tree = lxml.etree.parse(StringIO(chunk), parser)
+        tree: lxml.etree._ElementTree = lxml.etree.parse(StringIO(chunk), parser)
         return tree.getroot()
     except lxml.etree.LxmlError:
-        # TODO: log this
+        print("Failed to parse last page chunk")
         return None

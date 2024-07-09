@@ -1,7 +1,7 @@
 from datetime import datetime
 import sys
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional
 from urllib.parse import urlparse
 import lxml.etree
 
@@ -405,7 +405,7 @@ def getXMLRevisionsByTitles(config: Config, session: requests.Session, site: mwc
                 print(f"\n->  Downloaded {c} pages\n")
 
 
-def getXMLRevisions(config: Config, session: requests.Session, lastPage=None, useAllrevision=True):
+def getXMLRevisions(config: Config, session: requests.Session, lastPage: Optional[lxml.etree._ElementTree]=None, useAllrevision=True):
     # FIXME: actually figure out the various strategies for each MediaWiki version
     apiurl = urlparse(config.api)
     site = mwclient.Site(
@@ -416,7 +416,7 @@ def getXMLRevisions(config: Config, session: requests.Session, lastPage=None, us
         # Find last title
         if lastPage is not None:
             try:
-                lastNs = int(lastPage.find('ns').text)
+                lastNs = int(lastPage.find('ns').text) # type: ignore
                 if False:
                     lastRevision = lastPage.find('revision')
                     lastTimestamp = lastRevision.find('timestamp').text
@@ -447,7 +447,7 @@ def getXMLRevisions(config: Config, session: requests.Session, lastPage=None, us
         # Find last title
         if lastPage is not None:
             try:
-                start = lastPage.find('title')
+                start = lastPage.find('title') # type: ignore
             except Exception:
                 print("Failed to find title in last trunk XML: %s" % (lxml.etree.tostring(lastPage)))
                 raise
