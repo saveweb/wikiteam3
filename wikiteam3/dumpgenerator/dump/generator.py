@@ -34,74 +34,73 @@ class DumpGenerator:
         config, other = get_parameters(params=params)
         avoid_WikiMedia_projects(config=config, other=other)
 
-        with contextlib.nullcontext():
-            print(welcome())
-            print("Analysing %s" % (config.api if config.api else config.index))
+        print(welcome())
+        print("Analysing %s" % (config.api if config.api else config.index))
 
-            # do not enter if resume is requested from begining
-            while not other.resume and os.path.isdir(config.path):
-                print('\nWarning!: "%s" path exists' % (config.path))
-                reply = "y" if config.failfast else ""
-                while reply.lower()[:1] not in ["y", "n"]:
-                    reply = input(
-                        'There is a dump in "%s", probably incomplete.\n'
-                        'If you choose resume, to avoid conflicts, some parameters '
-                        'you have chosen in the current session will be ignored\n'
-                        'and the parameters available in "%s/%s" will be loaded.\n'
-                        'Do you want to resume (y/n)? '
-                        % (config.path, config.path, config_filename)
-                    )
-                    reply = reply.lower()[:1]
-                if reply == "y":
-                    if not os.path.isfile("{}/{}".format(config.path, config_filename)):
-                        print("No config file found. I can't resume. Aborting.")
-                        sys.exit(1)
-                    print("You have selected: YES")
-                    other.resume = True
-                    break
-                elif reply == "n":
-                    print("You have selected: NO.\nbye.")
-                    # other.resume = False
-                    sys.exit(0)
+        # do not enter if resume is requested from begining
+        while not other.resume and os.path.isdir(config.path):
+            print('\nWarning!: "%s" path exists' % (config.path))
+            reply = "y" if config.failfast else ""
+            while reply.lower()[:1] not in ["y", "n"]:
+                reply = input(
+                    'There is a dump in "%s", probably incomplete.\n'
+                    'If you choose resume, to avoid conflicts, some parameters '
+                    'you have chosen in the current session will be ignored\n'
+                    'and the parameters available in "%s/%s" will be loaded.\n'
+                    'Do you want to resume (y/n)? '
+                    % (config.path, config.path, config_filename)
+                )
+                reply = reply.lower()[:1]
+            if reply == "y":
+                if not os.path.isfile("{}/{}".format(config.path, config_filename)):
+                    print("No config file found. I can't resume. Aborting.")
+                    sys.exit(1)
+                print("You have selected: YES")
+                other.resume = True
+                break
+            elif reply == "n":
+                print("You have selected: NO.\nbye.")
+                # other.resume = False
+                sys.exit(0)
 
-            if asserts_enabled := [(arg, v) for arg, v in other.__dict__.items() if arg.startswith("assert_") and v is not None]:
-                site_info = get_siteinfo(config=config, session=other.session)
-                assert_siteinfo(site_info, other)
-                [print(f"--{arg}: {v}, passed") for arg, v in asserts_enabled] 
+        if asserts_enabled := [(arg, v) for arg, v in other.__dict__.items() if arg.startswith("assert_") and v is not None]:
+            site_info = get_siteinfo(config=config, session=other.session)
+            assert_siteinfo(site_info, other)
+            [print(f"--{arg}: {v}, passed") for arg, v in asserts_enabled] 
 
-            if other.resume:
-                print("Loading config file to resume...")
-                config = load_config(config=config, config_filename=config_filename)
-            else:
-                if not other.force and any_recent_ia_item_exists(config, days=365):
-                    print("A dump of this wiki was uploaded to IA in the last 365 days. Aborting.")
-                    sys.exit(88)
+        if other.resume:
+            print("Loading config file to resume...")
+            config = load_config(config=config, config_filename=config_filename)
+        else:
+            if not other.force and any_recent_ia_item_exists(config, days=365):
+                print("A dump of this wiki was uploaded to IA in the last 365 days. Aborting.")
+                sys.exit(88)
 
-                os.mkdir(config.path)
-                save_config(config=config, config_filename=config_filename)
+            os.mkdir(config.path)
+            save_config(config=config, config_filename=config_filename)
 
-            if other.resume:
-                DumpGenerator.resumePreviousDump(config=config, other=other)
-            else:
-                DumpGenerator.createNewDump(config=config, other=other)
+        if other.resume:
+            DumpGenerator.resumePreviousDump(config=config, other=other)
+        else:
+            DumpGenerator.createNewDump(config=config, other=other)
 
-            if config.index:
-                save_IndexPHP(config=config, session=other.session)
-                save_SpecialVersion(config=config, session=other.session)
-            if config.api:
-                save_siteinfo(config=config, session=other.session)
+        if config.index:
+            save_IndexPHP(config=config, session=other.session)
+            save_SpecialVersion(config=config, session=other.session)
+        if config.api:
+            save_siteinfo(config=config, session=other.session)
 
-            mark_as_done(config=config, mark=ALL_DUMPED_MARK)
-            bye(config.path)
-            if other.upload:
-                print('Calling uploader... (--upload)')
-                retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other.uploader_args,
-                    shell=False)
-                if retcode:
-                    print(f'--upload: Failed: {retcode}')
-                    sys.exit(retcode)
-                
-                print('--upload: Done')
+        mark_as_done(config=config, mark=ALL_DUMPED_MARK)
+        bye(config.path)
+        if other.upload:
+            print('Calling uploader... (--upload)')
+            retcode = subprocess.call([sys.executable, '-m', 'wikiteam3.uploader', config.path] + other.uploader_args,
+                shell=False)
+            if retcode:
+                print(f'--upload: Failed: {retcode}')
+                sys.exit(retcode)
+            
+            print('--upload: Done')
 
     @staticmethod
     def createNewDump(config: Config, other: OtherConfig):
