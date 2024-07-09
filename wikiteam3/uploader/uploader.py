@@ -25,7 +25,7 @@ from wikiteam3.uploader.socketLock import NoLock, SocketLockServer
 from wikiteam3.utils import url2prefix_from_config, sha1sum
 from wikiteam3.uploader.compresser import ZstdCompressor, SevenZipCompressor
 from wikiteam3.utils.ia_checker import ia_s3_tasks_load_avg
-from wikiteam3.utils.util import ALL_DUMPED_MARK, UPLOADED_MARK, is_empty_dir, mark_as_done, is_markfile_exists
+from wikiteam3.utils.util import ALL_DUMPED_MARK, UPLOADED_MARK, XMLRIVISIONS_INCREMENTAL_DUMP_MARK, is_empty_dir, mark_as_done, is_markfile_exists
 
 DEFAULT_COLLECTION = 'opensource'
 TEST_COLLECTION = 'test_collection'
@@ -384,6 +384,7 @@ def upload(arg: Args):
     assert wikidump_dir == Path(config.path).resolve()
 
     assert is_markfile_exists(config, ALL_DUMPED_MARK), "Imcomplete dump"
+    assert is_markfile_exists(config, XMLRIVISIONS_INCREMENTAL_DUMP_MARK), "xmlrevisions incremental dump is not supported yet"
     if is_markfile_exists(config, UPLOADED_MARK):
         print(f"Already uploaded to IA ({UPLOADED_MARK} exists), bye!")
         return
