@@ -14,31 +14,30 @@ from wikiteam3.utils.util import underscore
 
 HISTORY_MIN_CHUNKSIZE = 2
 """ To loop over all the revisions, we need to retrieve at least 2 revisions at a time. """
-
+MAX_SECONDS = 100
+""" max seconds to wait in a single sleeping. """
 
 def getXMLPageCore(params: Dict, config: Config, session: requests.Session) -> str:
-    """"""
-    # returns a XML containing params['limit'] revisions (or current only), ending in </mediawiki>
-    # if retrieving params['limit'] revisions fails, returns a current only version
-    # if all fail, returns the empty string
+    """
+    returns a XML containing params['limit'] revisions (or current only), ending in </mediawiki>
+    if retrieving params['limit'] revisions fails, returns a current only version
+    if all fail, returns the empty string
+    """
+    assert "pages" in params, "pages not in params"
+    assert "limit" in params, "limit not in params"
 
-    # if not headers:
-    #     headers = session.headers
     xml = ""
     c = 0
-    maxseconds = 100  # max seconds to wait in a single sleeping
     maxretries = config.retries  # x retries and skip
-    increment = 20  # increment every retry
+    increment_delay = max(config.delay, 1.0)
 
     while not re.search(r"</mediawiki>", xml):
-        if c > 0 and c < maxretries:
-            wait = (
-                increment if increment * c < maxseconds else maxseconds
-            )  # incremental until maxseconds
+        if c > 0 and (c < maxretries or params["limit"] > HISTORY_MIN_CHUNKSIZE):
+            delay = min(increment_delay * c, MAX_SECONDS) # incremental until MAX_SECONDS
             print(
-                f'    In attempt {c}, XML for "{params["pages"]}" is wrong. Waiting {wait} seconds and reloading...'
+                f'    In attempt {c}, XML for "{params["pages"]}" is wrong. Waiting {delay} seconds and reloading...'
             )
-            time.sleep(wait)
+            time.sleep(delay)
             # reducing server load requesting smallest chunks (if curonly then
             # limit = 1 from mother function)
             if params["limit"] > 1:
@@ -46,7 +45,9 @@ def getXMLPageCore(params: Dict, config: Config, session: requests.Session) -> s
                 new_limit: int = params["limit"] // 2  # half
                 if new_limit < HISTORY_MIN_CHUNKSIZE:
                     new_limit = HISTORY_MIN_CHUNKSIZE
-                
+
+                assert new_limit >= HISTORY_MIN_CHUNKSIZE, f"new_limit: {new_limit} < {HISTORY_MIN_CHUNKSIZE}"
+
                 # set new limit
                 if new_limit != params["limit"]:
                     print(
@@ -90,7 +91,7 @@ def getXMLPageCore(params: Dict, config: Config, session: requests.Session) -> s
         # FIXME HANDLE HTTP Errors HERE
         try:
             r = session.post(
-                url=config.index, params=params, timeout=10
+                url=config.index, params=params, timeout=120
             )
             handle_StatusCode(r)
             xml = r.text
