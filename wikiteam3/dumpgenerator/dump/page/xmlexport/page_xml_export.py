@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import time
@@ -116,7 +117,7 @@ def getXMLPageWithExport(config: Config, title: str,
     # so it would be partialy truncated
     # http://www.mediawiki.org/wiki/Manual_talk:Parameters_to_Special:Export#Parameters_no_longer_in_use.3F
 
-    limit = 1000
+    PARAM_LIMIT = int(os.getenv("PARAM_XML_LIMIT", 1000))
     truncated = False
     title_ = underscore(title)
     # do not convert & into %26, title_ = re.sub('&', '%26', title_)
@@ -131,7 +132,7 @@ def getXMLPageWithExport(config: Config, title: str,
         params["limit"] = 1
     else:
         params["offset"] = "1"  # 1 always < 2000s
-        params["limit"] = limit
+        params["limit"] = PARAM_LIMIT
     # in other case, do not set params['templates']
     if config.templates:
         params["templates"] = 1
