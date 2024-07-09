@@ -1,7 +1,7 @@
 from io import TextIOWrapper
 import re
 import sys
-from typing import NoReturn
+from typing import Optional
 
 import lxml.etree
 import requests
@@ -20,7 +20,7 @@ from wikiteam3.dumpgenerator.dump.xmldump.xml_truncate import truncateXMLDump, p
 
 
 def doXMLRevisionDump(config: Config, session: requests.Session, xmlfile: TextIOWrapper,
-                      lastPage=None, useAllrevisions: bool=False):
+                      lastPage: Optional[lxml.etree._ElementTree]=None, useAllrevisions: bool=False):
     try:
         r_timestamp = r"<timestamp>([^<]+)</timestamp>"
         r_arvcontinue = r'<page arvcontinue="(.*?)">'
@@ -39,6 +39,7 @@ def doXMLRevisionDump(config: Config, session: requests.Session, xmlfile: TextIO
             xmlfile.write(xml)
 
             xmltitle = re.search(r"<title>([^<]+)</title>", xml)
+            assert xmltitle, f"Failed to find title in XML: {xml}"
             title = undo_HTML_entities(text=xmltitle.group(1))
             print(f'{title}, {numrevs} edits')
             # Delay(config=config)

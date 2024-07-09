@@ -80,17 +80,17 @@ class TestRegexs:
             with open(HTML_DIR / html_file, "r", encoding="utf-8") as f:
                 raws[html_file] = f.read()
         assert len(raws) != 0, f"Could not find any HTML files in {HTML_DIR}"
+        raws_items = raws.items()
 
-        def test_offline(self):
-            assert len(self.raws) != 0, "Could not fetch any of the URLs"
-            for site, raw in self.raws.items():
-                best_matched = 0
-                regexp_best = None
+        @pytest.mark.parametrize('site, html_data', raws_items)
+        def test_offline(self, site, html_data):
+            best_matched = 0
+            regexp_best = None
 
-                for index, regexp in enumerate(REGEX_CANDIDATES):
-                    _count = len(re.findall(regexp, raw))
-                    if _count > best_matched:
-                        best_matched = _count
-                        regexp_best = regexp
+            for index, regexp in enumerate(REGEX_CANDIDATES):
+                _count = len(re.findall(regexp, html_data))
+                if _count > best_matched:
+                    best_matched = _count
+                    regexp_best = regexp
 
-                assert regexp_best is not None, f"Could not find a proper regexp to parse the HTML for {site} (local)"
+            assert regexp_best is not None, f"Could not find a proper regexp to parse the HTML for {site} (local)"
