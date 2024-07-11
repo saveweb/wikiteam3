@@ -112,7 +112,7 @@ def getArgumentParser():
         help="Export XML dump using Special:Export (index.php). (supported with --curonly)",
     )
     group_download.add_argument(
-        "--curonly", action="store_true", help="store only the lastest revision of pages"
+        "--curonly", action="store_true", help="store only the latest revision of pages"
     )
     group_download.add_argument(
         "--xmlapiexport",
