@@ -155,7 +155,7 @@ def getArgumentParser():
     group_image.add_argument(
         "--bypass-cdn-image-compression",
         action="store_true",
-        help="Bypass CDN image compression. (CloudFlare Polish, etc.)",
+        help="Bypass CDN image compression. (CloudFlare Polish, etc.) [WARNING: This will increase CDN origin traffic, and not effective for all HTTP Server/CDN, please don't use this blindly.]",
     )
     group_image.add_argument(
         "--image-timestamp-interval",
@@ -412,7 +412,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
                 pass
             elif index == "":
                 index = "/".join(api.split("/")[:-1]) + "/index.php"
-                print("Gassing index.php from API URL: ", index)
+                print("Guessing index.php from API URL: ", index)
 
     # print (api)
     # print (index)
