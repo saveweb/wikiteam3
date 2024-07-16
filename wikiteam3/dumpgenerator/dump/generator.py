@@ -1,10 +1,7 @@
-import contextlib
 import os
 import re
 import subprocess
 import sys
-import traceback
-from typing import Dict, Union
 
 from file_read_backwards import FileReadBackwards
 
@@ -73,7 +70,8 @@ class DumpGenerator:
             config = load_config(config=config, config_filename=config_filename)
         else:
             if not other.force and any_recent_ia_item_exists(config, days=365):
-                print("A dump of this wiki was uploaded to IA in the last 365 days. Aborting.")
+                print("A dump of this wiki was uploaded to IA in the last 365 days.")
+                print("If you want to generate a new dump, use --force")
                 sys.exit(88)
 
             os.mkdir(config.path)

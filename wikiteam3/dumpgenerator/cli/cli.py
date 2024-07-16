@@ -112,7 +112,7 @@ def getArgumentParser():
         help="Export XML dump using Special:Export (index.php). (supported with --curonly)",
     )
     group_download.add_argument(
-        "--curonly", action="store_true", help="store only the lastest revision of pages"
+        "--curonly", action="store_true", help="store only the latest revision of pages"
     )
     group_download.add_argument(
         "--xmlapiexport",
@@ -155,7 +155,7 @@ def getArgumentParser():
     group_image.add_argument(
         "--bypass-cdn-image-compression",
         action="store_true",
-        help="Bypass CDN image compression. (CloudFlare Polish, etc.)",
+        help="Bypass CDN image compression. (CloudFlare Polish, etc.) [WARNING: This will increase CDN origin traffic, and not effective for all HTTP Server/CDN, please don't use this blindly.]",
     )
     group_image.add_argument(
         "--image-timestamp-interval",
