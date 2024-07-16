@@ -10,14 +10,14 @@
 >
 > _Image by [@gledos](https://github.com/gledos/)_
 
-`wikiteam3` is a fork of `mediawiki-scraper`.
+`wikiteam3` is a fork of `mediawiki-dump-generator`.
 
 <details>
 
-## Why we fork mediawiki-scraper
+## Why we fork mediawiki-dump-generator
 
-Originally, mediawiki-scraper was named wikiteam3, but wikiteam upstream (py2 version) suggested that the name should be changed to avoid confusion with the original wikiteam.  
-Half a year later, we didn't see any py3 porting progress in the original wikiteam, and mediawiki-scraper lacks "code" reviewers.  
+Originally, mediawiki-dump-generator was named wikiteam3, but wikiteam upstream (py2 version) suggested that the name should be changed to avoid confusion with the original wikiteam.  
+Half a year later, we didn't see any py3 porting progress in the original wikiteam, and mediawiki-dump-generator lacks "code" reviewers.  
 So, we decided to break that suggestion, fork and named it back to wikiteam3, put the code here, and release it to pypi wildly.
 
 Everything still under GPLv3 license.
@@ -276,6 +276,7 @@ options:
 >
 > Please make sure you have the following requirements before using `wikiteam3uploader`, and you don't need to install them if you don't wanna upload the dump to IA.
 
+- [Retrieve your IA API keys](http://www.archive.org/account/s3.php) and save them one per line (in the order provided) in `~/.wikiteam3_ia_keys.txt` file.
 - unbinded localhost port 62954 (for multiple processes compressing queue)
 - 3GB+ RAM (~2.56GB for commpressing)
 - 64-bit OS (required by 2G `wlog` size)
@@ -343,6 +344,6 @@ If your first three numbers or your last two numbers are different, then, your X
 **WikiTeam** is the [Archive Team](http://www.archiveteam.org) [[GitHub](https://github.com/ArchiveTeam)] subcommittee on wikis.
 It was founded and originally developed by [Emilio J. Rodríguez-Posada](https://github.com/emijrp), a Wikipedia veteran editor and amateur archivist. Thanks to people who have helped, especially to: [Federico Leva](https://github.com/nemobis), [Alex Buie](https://github.com/ab2525), [Scott Boyd](http://www.sdboyd56.com), [Hydriz](https://github.com/Hydriz), Platonides, Ian McEwen, [Mike Dupont](https://github.com/h4ck3rm1k3), [balr0g](https://github.com/balr0g) and [PiRSquared17](https://github.com/PiRSquared17).
 
-**Mediawiki-Scraper** The Python 3 initiative is currently being led by [Elsie Hupp](https://github.com/elsiehupp), with contributions from [Victor Gambier](https://github.com/vgambier), [Thomas Karcher](https://github.com/t-karcher), [Janet Cobb](https://github.com/randomnetcat), [yzqzss](https://github.com/yzqzss), [NyaMisty](https://github.com/NyaMisty) and [Rob Kam](https://github.com/robkam)
+**MediaWiki Dump Generator** The Python 3 initiative is currently being led by [Elsie Hupp](https://github.com/elsiehupp), with contributions from [Victor Gambier](https://github.com/vgambier), [Thomas Karcher](https://github.com/t-karcher), [Janet Cobb](https://github.com/randomnetcat), [yzqzss](https://github.com/yzqzss), [NyaMisty](https://github.com/NyaMisty) and [Rob Kam](https://github.com/robkam)
 
 **WikiTeam3** Every archivist who has uploaded a wikidump to the [Internet Archive](https://archive.org/search?query=subject%3Awikiteam3).
