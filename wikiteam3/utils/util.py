@@ -9,6 +9,7 @@ from wikiteam3.dumpgenerator.config import Config
 
 ALL_DUMPED_MARK = "all_dumped.mark"
 UPLOADED_MARK = 'uploaded_to_IA.mark'
+XMLRIVISIONS_INCREMENTAL_DUMP_MARK = 'xmlrevisions_incremental_dump.mark'
 
 
 def underscore(text: str) -> str:

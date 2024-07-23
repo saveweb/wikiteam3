@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 import sys
 import time
 from typing import Dict, List, Optional
@@ -17,15 +18,25 @@ from wikiteam3.dumpgenerator.api.page_titles import read_titles
 from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import \
     make_xml_from_page, make_xml_page_from_raw
 from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.utils.util import XMLRIVISIONS_INCREMENTAL_DUMP_MARK, mark_as_done
 
 ALL_NAMESPACE = -1
 
-def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, site: mwclient.Site, nscontinue=None, arvcontinue=None):
+def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, site: mwclient.Site, nscontinue=None, arvcontinue: Optional[str]=None):
     if "all" not in config.namespaces:
         namespaces = config.namespaces
     else:
         # namespaces, namespacenames = getNamespacesAPI(config=config, session=session)
         namespaces = [ALL_NAMESPACE] # magic number refers to "all"
+
+    # <- increasement xmldump
+    if env_arvcontinue := os.getenv("ARVCONTINUE", None):
+        mark_as_done(config, XMLRIVISIONS_INCREMENTAL_DUMP_MARK)
+        print(f"Using [env]ARVCONTINUE={env_arvcontinue}")
+        arvcontinue = env_arvcontinue
+        print("\n\n[NOTE] DO NOT use wikiteam3uploader to upload incremental xmldump to Internet Archive, we haven't implemented it yet\n\n")
+    # ->
+
     _nscontinue_input = nscontinue
     _arvcontinue_input = arvcontinue
     del nscontinue
