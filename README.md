@@ -103,7 +103,7 @@ Data to download:
 
   --xml                 Export XML dump using Special:Export (index.php).
                         (supported with --curonly)
-  --curonly             store only the lastest revision of pages
+  --curonly             store only the latest revision of pages
   --xmlapiexport        Export XML dump using API:revisions instead of
                         Special:Export, use this when Special:Export fails and
                         xmlrevisions not supported. (supported with --curonly)
@@ -123,7 +123,9 @@ Image dump options:
 
   --bypass-cdn-image-compression
                         Bypass CDN image compression. (CloudFlare Polish,
-                        etc.)
+                        etc.) [WARNING: This will increase CDN origin traffic,
+                        and not effective for all HTTP Server/CDN, please
+                        don't use this blindly.]
   --image-timestamp-interval 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z
                         Only download images uploaded in the given time
                         interval. [format: ISO 8601 UTC interval] (only works
@@ -162,7 +164,7 @@ Meta info:
 wikiteam3uploader params:
   --upload              (run `wikiteam3uplaoder` for you) Upload wikidump to
                         Internet Archive after successfully dumped
-  -g UPLOADER_ARGS, --uploader-arg UPLOADER_ARGS
+  -g, --uploader-arg UPLOADER_ARGS
                         Arguments for uploader.
 
 ```
@@ -243,11 +245,11 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  -kf KEYS_FILE, --keys_file KEYS_FILE
+  -kf, --keys_file KEYS_FILE
                         Path to the IA S3 keys file. (first line: access key,
                         second line: secret key) [default:
                         ~/.wikiteam3_ia_keys.txt]
-  -c {opensource,test_collection,wikiteam}, --collection {opensource,test_collection,wikiteam}
+  -c, --collection {opensource,test_collection,wikiteam}
   --dry-run             Dry run, do not upload anything.
   -u, --update          Update existing item. [!! not implemented yet !!]
   --bin-zstd BIN_ZSTD   Path to zstd binary. [default: zstd]
