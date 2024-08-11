@@ -8,7 +8,7 @@ def welcome():
 
     welcome_string = f"# Welcome to DumpGenerator {getVersion()} by WikiTeam3 (GPL v3)"
     welcome_string += " " * (73 - len(welcome_string) - 1) + "#"
-    copyright_string = f"# Copyright (C) 2011-{datetime.datetime.now(datetime.UTC).year} WikiTeam developers"
+    copyright_string = f"# Copyright (C) 2011-{datetime.datetime.now(datetime.timezone.utc).year} WikiTeam developers"
     copyright_string += " " * (73 - len(copyright_string) - 1) + "#"
 
     return f"""\

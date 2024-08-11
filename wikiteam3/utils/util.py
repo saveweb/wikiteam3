@@ -118,7 +118,7 @@ def mark_as_done(config: Config, mark: str, msg: Optional[str] = None):
     if Path(done_path).exists():
         return
     with open(done_path, "w") as f:
-        today = datetime.datetime.isoformat(datetime.datetime.now(datetime.UTC))
+        today = datetime.datetime.isoformat(datetime.datetime.now(datetime.timezone.utc))
         f.write(f"{today}: {msg or ''}\n")
 
     return True

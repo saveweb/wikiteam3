@@ -36,7 +36,7 @@ class Config:
     date: str = False
     """
     Date of the dump
-    `datetime.datetime.now(datetime.UTC).strftime("%Y%m%d")`
+    `datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d")`
     """
 
     # URL params
