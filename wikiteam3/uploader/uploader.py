@@ -384,7 +384,7 @@ def upload(arg: Args):
     assert wikidump_dir == Path(config.path).resolve()
 
     assert is_markfile_exists(config, ALL_DUMPED_MARK), "Imcomplete dump"
-    assert is_markfile_exists(config, XMLRIVISIONS_INCREMENTAL_DUMP_MARK), "xmlrevisions incremental dump is not supported yet"
+    assert not is_markfile_exists(config, XMLRIVISIONS_INCREMENTAL_DUMP_MARK), "xmlrevisions incremental dump is not supported yet"
     if is_markfile_exists(config, UPLOADED_MARK):
         print(f"Already uploaded to IA ({UPLOADED_MARK} exists), bye!")
         return
