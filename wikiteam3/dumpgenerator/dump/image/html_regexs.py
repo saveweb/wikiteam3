@@ -26,7 +26,7 @@ REGEX_CANDIDATES = [
 
     # [4]
     ,(
-        r'(?im)<td class="TablePager_col_img_name">\s*<a href[^>]*?>(?P<filename>[^>]+)</a>[^<]*?<a href="(?P<url>[^>]+)">[^<]*?</a>[^<]*?</td>\s*'
+        r'(?im)<td class="TablePager_col_img_name">\s*<a [^>]+>(?P<filename>[^>]+)</a>[^<]*?<a href="(?P<url>[^>]+)">[^<]*?</a>[^<]*?</td>\s*'
         r'<td class="TablePager_col_thumb">[^\n\r]*?</td>\s*'
         r'<td class="TablePager_col_img_size">[^<]*?</td>\s*'
         r'<td class="(?:TablePager_col_img_user_text|TablePager_col_img_actor)">\s*(<a href="[^>]*?" title="[^>]*?">)?(?P<uploader>[^<]+?)(</a>)?\s*</td>'
@@ -35,7 +35,7 @@ REGEX_CANDIDATES = [
     # [5] mediawiki 1.43.0
     # mediawiki.org-20240924
     ,(
-        r'(?im)<td class="TablePager_col_img_name">\s*<a href[^>]*?>(?P<filename>[^>]+)</a>[^<]*?<a href="(?P<url>[^>]+)">[^<]*?</a>[^<]*?</td>\s*'
+        r'(?im)<td class="TablePager_col_img_name">\s*<a [^>]+>(?P<filename>[^>]+)</a>[^<]*?<a href="(?P<url>[^>]+)">[^<]*?</a>[^<]*?</td>\s*'
         r'<td class="TablePager_col_thumb">[^\n\r]*?</td>\s*'
         r'<td class="TablePager_col_img_size">[^<]*?</td>\s*'
         r'<td class="TablePager_col_img_actor">.*?<bdi[^>]*?>(?P<uploader>[^<]+?)</bdi>.+?</td>'
