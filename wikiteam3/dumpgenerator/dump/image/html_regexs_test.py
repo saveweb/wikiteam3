@@ -1,12 +1,14 @@
 import os
 import re
-from typing import Dict, List
-import pytest
-import requests
-from pathlib import Path
-from wikiteam3.dumpgenerator import DUMPER_ROOT_PATH
+from urllib.parse import unquote
+from typing import Dict
 
+import requests
+import pytest
+
+from wikiteam3.dumpgenerator import DUMPER_ROOT_PATH
 from wikiteam3.dumpgenerator.dump.image.html_regexs import REGEX_CANDIDATES
+from wikiteam3.utils.util import undo_HTML_entities
 
 ONLINE = False
 
@@ -43,6 +45,7 @@ class TestRegexs:
             "wiki.othing.xyz-20230701": "https://wiki.othing.xyz/index.php?title=Special:ListFiles&sort=byname",
             "mediawiki.org-20230701": "https://www.mediawiki.org/w/index.php?title=Special:ListFiles&sort=byname&limit=7",
             "asoiaf.fandom.com-20230701": "https://asoiaf.fandom.com/zh/wiki/Special:文件列表?sort=byname&limit=7",
+            "mediawiki.org-20240924": "https://www.mediawiki.org/w/index.php?title=Special:ListFiles&sort=byname&limit=7"
             
             # only for local testing:
             # "commons.moegirl.org.cn-20230701": "https://commons.moegirl.org.cn/index.php?title=Special:ListFiles&sort=byname&limit=7",
@@ -93,4 +96,11 @@ class TestRegexs:
                     best_matched = _count
                     regexp_best = regexp
 
+            print("site", site, "best_matched", best_matched)
             assert regexp_best is not None, f"Could not find a proper regexp to parse the HTML for {site} (local)"
+
+            for i in re.compile(regexp_best).finditer(html_data):
+                url, filename, uploader = i.group("url"),\
+                    unquote(undo_HTML_entities(i.group("filename"))),\
+                    unquote(undo_HTML_entities(i.group("uploader")))
+                print({"url": url, "filename": filename, "uploader": uploader})

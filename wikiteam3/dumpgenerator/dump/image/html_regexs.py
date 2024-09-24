@@ -22,7 +22,7 @@ REGEX_CANDIDATES = [
     # [3]
     # http://www.memoryarchive.org/en/index.php?title=Special:Imagelist&sort=byname&limit=50&wpIlMatch=
     # (<a href="/en/Image:109_0923.JPG" title="Image:109 0923.JPG">desc</a>) <a href="/en/upload/c/cd/109_0923.JPG">109 0923.JPG</a> . . 885,713 bytes . . <a href="/en/User:Bfalconer" title="User:Bfalconer">Bfalconer</a> . . 18:44, 17 November 2005<br />
-    ,'(?ism)<a href=[^>]+ title="[^:>]+:(?P<filename>[^>]+)">[^<]+</a>[^<]+<a href="(?P<url>[^>]+)">[^<]+</a>[^<]+<a[^>]+>(?P<uploader>[^<]+)</a>'
+    ,r'(?ism)<a href=[^>]+ title="[^:>]+:(?P<filename>[^>]+)">[^<]+</a>[^<]+<a href="(?P<url>[^>]+)">[^<]+</a>[^<]+<a[^>]+>(?P<uploader>[^<]+)</a>'
 
     # [4]
     ,(
@@ -30,5 +30,14 @@ REGEX_CANDIDATES = [
         r'<td class="TablePager_col_thumb">[^\n\r]*?</td>\s*'
         r'<td class="TablePager_col_img_size">[^<]*?</td>\s*'
         r'<td class="(?:TablePager_col_img_user_text|TablePager_col_img_actor)">\s*(<a href="[^>]*?" title="[^>]*?">)?(?P<uploader>[^<]+?)(</a>)?\s*</td>'
+    )
+
+    # [5] mediawiki 1.43.0
+    # mediawiki.org-20240924
+    ,(
+        r'(?im)<td class="TablePager_col_img_name">\s*<a href[^>]*?>(?P<filename>[^>]+)</a>[^<]*?<a href="(?P<url>[^>]+)">[^<]*?</a>[^<]*?</td>\s*'
+        r'<td class="TablePager_col_thumb">[^\n\r]*?</td>\s*'
+        r'<td class="TablePager_col_img_size">[^<]*?</td>\s*'
+        r'<td class="TablePager_col_img_actor">.*?<bdi[^>]*?>(?P<uploader>[^<]+?)</bdi>.+?</td>'
     )
 ]
