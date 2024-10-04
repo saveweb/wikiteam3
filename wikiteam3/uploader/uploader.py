@@ -501,6 +501,10 @@ def upload_logo(item: Item, logo_url: str, ia_keys: IAKeys):
         r_resp.raise_for_status()
 
 def upload_main_resouces(item: Item, filedict: Dict[str, str], metadata: Dict, ia_keys: IAKeys):
+    if not filedict:
+        print("No files to upload, skip")
+        return
+
     r_co = item.upload(
         files=filedict,
         metadata=metadata,
