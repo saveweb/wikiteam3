@@ -28,14 +28,6 @@ from wikiteam3.utils.ia_checker import ia_s3_tasks_load_avg
 from wikiteam3.utils.util import ALL_DUMPED_MARK, UPLOADED_MARK, XMLRIVISIONS_INCREMENTAL_DUMP_MARK, is_empty_dir, mark_as_done, is_markfile_exists
 
 DEFAULT_COLLECTION = 'opensource'
-TEST_COLLECTION = 'test_collection'
-"""
-items here are expected to be automatically removed after 30 days. 
-(see <https://archive.org/details/test_collection?tab=about>)
-"""
-WIKITEAM_COLLECTION = 'wikiteam'
-""" Only admins can add/move items to this collection. """
-
 IDENTIFIER_PREFIX = "wiki-"
 
 @dataclass
@@ -545,7 +537,7 @@ def main():
     parser.add_argument("-kf", "--keys_file", default="~/.wikiteam3_ia_keys.txt", dest="keys_file",
                         help="Path to the IA S3 keys file. (first line: access key, second line: secret key)"
                              " [default: ~/.wikiteam3_ia_keys.txt]")
-    parser.add_argument("-c", "--collection", default=DEFAULT_COLLECTION, choices=[DEFAULT_COLLECTION, TEST_COLLECTION, WIKITEAM_COLLECTION])
+    parser.add_argument("-c", "--collection", default=DEFAULT_COLLECTION)
     parser.add_argument("--dry-run", action="store_true", help="Dry run, do not upload anything.")
     parser.add_argument("-u", "--update", action="store_true",
                         help="Update existing item. [!! not implemented yet !!]")
