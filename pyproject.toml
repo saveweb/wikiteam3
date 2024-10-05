@@ -40,8 +40,7 @@ repository = "https://github.com/saveweb/wikiteam3"
 
 [tool.pdm]
 [tool.pdm.build]
-includes = ["wikiteam3/**/*"]
-excludes = ["wikiteam3/dumpgenerator/test/*"]
+excludes = []
 [tool.pdm.dev-dependencies]
 dev = [
     "pytest<9.0.0,>=8.2.2",

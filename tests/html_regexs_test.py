@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import re
 from urllib.parse import unquote
 from typing import Dict
@@ -6,13 +7,12 @@ from typing import Dict
 import requests
 import pytest
 
-from wikiteam3.dumpgenerator import DUMPER_ROOT_PATH
 from wikiteam3.dumpgenerator.dump.image.html_regexs import REGEX_CANDIDATES
 from wikiteam3.utils.util import undo_HTML_entities
 
 ONLINE = False
 
-HTML_DIR = DUMPER_ROOT_PATH  / "test/data/html_regexs"
+HTML_DIR = Path(__file__).parent / "data/html_regexs"
 os.makedirs(HTML_DIR, exist_ok=True)
 
 def prepare_raws_from_urls(urls: Dict[str, str]):
