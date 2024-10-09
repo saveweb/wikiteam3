@@ -107,7 +107,7 @@ class Image:
             return headers
             
 
-        patch_sess = SessionMonkeyPatch(session=session, config=config, hard_retries=3)
+        patch_sess = SessionMonkeyPatch(session=session, config=config, hard_retries=other.hard_retries)
         patch_sess.hijack()
 
         ia_session = requests.Session()

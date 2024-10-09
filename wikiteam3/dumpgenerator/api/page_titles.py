@@ -27,7 +27,7 @@ def getPageTitlesAPI(config: Config, session: requests.Session):
     delay_session = SessionMonkeyPatch(
             session=session, config=config,
             add_delay=True, delay_msg="Session delay: "+__name__,
-            hard_retries=3
+            hard_retries=3 # TODO: --hard-retries
         )
     delay_session.hijack()
     for namespace in namespaces:

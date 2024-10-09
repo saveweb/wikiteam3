@@ -113,5 +113,8 @@ class OtherConfig:
     assert_max_images: Optional[int] 
     assert_max_images_bytes: Optional[int] 
 
+    hard_retries: int
+    """ Number of hard retries """
+
     upload: bool 
     uploader_args: List[str]

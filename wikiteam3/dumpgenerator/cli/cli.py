@@ -49,7 +49,10 @@ def getArgumentParser():
         "if you wanna reuse the connection]"
     )
     parser.add_argument(
-        "--retries", metavar="5", default=5, help="Maximum number of retries for "
+        "--retries", metavar="5", default=5, help="Maximum number of retries for each request before failing."
+    )
+    parser.add_argument(
+        "--hard-retries", metavar="3", default=3, help="Maximum number of hard retries for each request before failing. (for now, this only controls the hard retries during images downloading)"
     )
     parser.add_argument("--path", help="path to store wiki dump at")
     parser.add_argument(
@@ -290,7 +293,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
     # Create session
     mod_requests_text(requests) # monkey patch # type: ignore
     session = requests.Session()
-    patch_sess = SessionMonkeyPatch(session=session, hard_retries=1)
+    patch_sess = SessionMonkeyPatch(session=session, hard_retries=1) # hard retry once to avoid spending too much time on initial detection
     patch_sess.hijack()
     def print_request(r: requests.Response, *args, **kwargs):
         # TODO: use logging
@@ -547,6 +550,8 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         assert_max_edits = args.assert_max_edits,
         assert_max_images = args.assert_max_images,
         assert_max_images_bytes = args.assert_max_images_bytes,
+
+        hard_retries = int(args.hard_retries),
 
         upload = args.upload,
         uploader_args = args.uploader_args,
