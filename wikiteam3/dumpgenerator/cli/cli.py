@@ -51,6 +51,9 @@ def getArgumentParser():
     parser.add_argument(
         "--retries", metavar="5", default=5, help="Maximum number of retries for "
     )
+    parser.add_argument(
+        "--hard-retries", metavar="3", default=3, help="Maximum number of hard retries for each request before failing."
+    )
     parser.add_argument("--path", help="path to store wiki dump at")
     parser.add_argument(
         "--resume",
@@ -290,7 +293,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
     # Create session
     mod_requests_text(requests) # monkey patch # type: ignore
     session = requests.Session()
-    patch_sess = SessionMonkeyPatch(session=session, hard_retries=1)
+    patch_sess = SessionMonkeyPatch(session=session, hard_retries=int(args.hard_retries))
     patch_sess.hijack()
     def print_request(r: requests.Response, *args, **kwargs):
         # TODO: use logging
@@ -531,6 +534,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         path = args.path and os.path.normpath(args.path) or "",
         delay = args.delay,
         retries = int(args.retries),
+        hard_retries = int(args.hard_retries),
     )
 
 

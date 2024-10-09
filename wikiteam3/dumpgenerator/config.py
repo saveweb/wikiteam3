@@ -26,6 +26,8 @@ class Config:
     """ Delay between requests """
     retries: int = 0
     """ Number of retries """
+    hard_retries: int = 0
+    """ Number of hard retries """
     path: str = ''
     """ Path to save the wikidump """
     logs: bool = False
