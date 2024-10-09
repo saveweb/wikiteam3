@@ -49,7 +49,7 @@ def getArgumentParser():
         "if you wanna reuse the connection]"
     )
     parser.add_argument(
-        "--retries", metavar="5", default=5, help="Maximum number of retries for "
+        "--retries", metavar="5", default=5, help="Maximum number of retries for each request before failing."
     )
     parser.add_argument(
         "--hard-retries", metavar="3", default=3, help="Maximum number of hard retries for each request before failing."
