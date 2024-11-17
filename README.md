@@ -24,6 +24,16 @@ Everything still under GPLv3 license.
 
 </details>
 
+## For webmaster
+
+If you don’t want your wiki to be archived, add the following to your `domain/robots.txt`:
+
+```robots.txt
+User-agent: wikiteam3
+Disallow: /
+```
+
+
 ## Installation/Upgrade
 
 ```shell

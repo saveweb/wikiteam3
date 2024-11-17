@@ -19,6 +19,7 @@ from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.utils import url2prefix_from_config, undo_HTML_entities, avoid_WikiMedia_projects
 from wikiteam3.utils.ia_checker import any_recent_ia_item_exists
 from wikiteam3.utils.util import ALL_DUMPED_MARK, int_or_zero, mark_as_done, underscore
+from wikiteam3.utils.wiki_avoid import avoid_robots_disallow
 
 
 class DumpGenerator:
@@ -30,6 +31,7 @@ class DumpGenerator:
         config_filename = DumpGenerator.configfilename
         config, other = get_parameters(params=params)
         avoid_WikiMedia_projects(config=config, other=other)
+        avoid_robots_disallow(config=config, other=other)
 
         print(welcome())
         print("Analysing %s" % (config.api if config.api else config.index))
