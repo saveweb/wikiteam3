@@ -26,7 +26,9 @@ Everything still under GPLv3 license.
 
 ## For webmaster
 
-If you don’t want your wiki to be archived, add the following to your `domain/robots.txt`:
+We archive every MediaWiki site yearly and upload to the Internet Archive.
+We crawl sites with 1.5s crawl-delay by default, and we respect Retry-After header.
+If you don’t want your wiki to be archived, add the following to your `<domain>/robots.txt`:
 
 ```robots.txt
 User-agent: wikiteam3
@@ -41,7 +43,7 @@ pip install wikiteam3 --upgrade
 ```
 
 >[!NOTE]
-> For public MediaWiki, you don't need to install wikiteam3 locally. You can send an archive request (include the reason for the archive request, e.g. wiki is about to shutdown, need a wikidump to migrate to another wikifarm, etc.) to the wikiteam IRC channel. An online voiced member will run a [wikibot](https://github.com/DigitalDwagon/WikiBot) job for your request.
+> For public MediaWiki, you don't need to install wikiteam3 locally. You can send an archive request (include the reason for the archive request, e.g. wiki is about to shutdown, need a wikidump to migrate to another wikifarm, etc.) to the wikiteam IRC channel. An online member will run a [wikibot](https://wikibot.digitaldragon.dev/) job for your request.
 >
 > Even more, we also accept DokuWiki and PukiWiki archive requests.
 > 
