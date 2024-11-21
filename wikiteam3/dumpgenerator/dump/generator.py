@@ -70,8 +70,8 @@ class DumpGenerator:
         if other.resume:
             print("Loading config file to resume...")
             config = load_config(config=config, config_filename=config_filename)
-        elif not other.force:
-            if any_recent_ia_item_exists(config, days=365):
+        else:
+            if not other.force and any_recent_ia_item_exists(config, days=365):
                 print("A dump of this wiki was uploaded to IA in the last 365 days.")
                 print("If you want to generate a new dump, use --force")
                 sys.exit(88)
