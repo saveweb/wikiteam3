@@ -304,6 +304,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         # print("H:", r.request.headers)
         for _r in r.history:
             print("Resp (history): ", _r.request.method, _r.status_code, _r.reason, _r.url)
+        print(f"Reqs: {r.request.method} {r.url}, {r.request.body}")
         print(f"Resp: {r.request.method} {r.status_code} {r.reason} {r.url}")
         if r.raw._connection.sock:
             print(f"Conn: {r.raw._connection.sock.getsockname()} -> {r.raw._connection.sock.getpeername()[0]}")
