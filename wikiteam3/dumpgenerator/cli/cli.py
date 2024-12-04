@@ -32,6 +32,7 @@ from wikiteam3.utils import (
 from wikiteam3.utils.login import uniLogin
 from wikiteam3.utils.monkey_patch import SessionMonkeyPatch, WakeTLSAdapter
 from wikiteam3.utils.user_agent import setup_random_UserAgent
+from wikiteam3.utils.util import ALL_NAMESPACE_FLAG
 
 
 def getArgumentParser():
@@ -479,14 +480,14 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
                     sys.exit(11)
 
 
-    namespaces = ["all"]
+    namespaces = [ALL_NAMESPACE_FLAG]
     exnamespaces = []
     # Process namespace inclusions
     if args.namespaces:
         # fix, why - ?  and... --namespaces= all with a space works?
         if (
             re.search(r"[^\d, \-]", args.namespaces)
-            and args.namespaces.lower() != "all"
+            and args.namespaces.lower() != ALL_NAMESPACE_FLAG
         ):
             print(
                 "Invalid namespace values.\nValid format is integer(s) separated by commas"
@@ -494,8 +495,8 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
             sys.exit(1)
         else:
             ns = re.sub(" ", "", args.namespaces)
-            if ns.lower() == "all":
-                namespaces = ["all"]
+            if ns.lower() == ALL_NAMESPACE_FLAG:
+                namespaces = [ALL_NAMESPACE_FLAG]
             else:
                 namespaces = [int(i) for i in ns.split(",")]
 

@@ -5,6 +5,7 @@ import requests
 from wikiteam3.dumpgenerator.cli import Delay
 from wikiteam3.dumpgenerator.api import get_JSON
 from wikiteam3.dumpgenerator.config import Config
+from wikiteam3.utils.util import ALL_NAMESPACE_FLAG
 
 def getNamespacesScraper(config: Config, session: requests.Session):
     """Hackishly gets the list of namespaces names and ids from the dropdown in the HTML of Special:AllPages"""
@@ -22,7 +23,7 @@ def getNamespacesScraper(config: Config, session: requests.Session):
         m = re.compile(
             r'<option [^>]*?value=[\'"](?P<namespaceid>\d+)[\'"][^>]*?>(?P<namespacename>[^<]+)</option>'
         ).finditer(raw)
-        if "all" in namespaces:
+        if ALL_NAMESPACE_FLAG in namespaces:
             namespaces = []
             for i in m:
                 namespaces.append(int(i.group("namespaceid")))
@@ -70,7 +71,7 @@ def getNamespacesAPI(config: Config, session: requests.Session):
             print(r.text)
             raise
 
-        if "all" in namespaces:
+        if ALL_NAMESPACE_FLAG in namespaces:
             namespaces = []
             for i in nsquery.keys():
                 if int(i) < 0:  # -1: Special, -2: Media, excluding

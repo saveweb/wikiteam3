@@ -51,6 +51,7 @@ class Config:
     xmlrevisions_page: bool = False
     images: bool = False
     namespaces: List[int] = None
+    """ [ALL_NAMESPACE_FLAG] or [int,...] """
     exnamespaces: List[int] = None
     """ save images """
 

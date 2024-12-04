@@ -18,16 +18,17 @@ from wikiteam3.dumpgenerator.api.page_titles import read_titles
 from wikiteam3.dumpgenerator.dump.page.xmlrev.xml_revisions_page import \
     make_xml_from_page, make_xml_page_from_raw
 from wikiteam3.dumpgenerator.config import Config
-from wikiteam3.utils.util import XMLRIVISIONS_INCREMENTAL_DUMP_MARK, mark_as_done
+from wikiteam3.utils.util import ALL_NAMESPACE_FLAG, XMLRIVISIONS_INCREMENTAL_DUMP_MARK, mark_as_done
 
-ALL_NAMESPACE = -1
+__ALL_NAMESPACE = -20241122
+""" magic number refers to ALL_NAMESPACE_FLAG """
 
 def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, site: mwclient.Site, nscontinue=None, arvcontinue: Optional[str]=None):
-    if "all" not in config.namespaces:
+    if ALL_NAMESPACE_FLAG not in config.namespaces:
         namespaces = config.namespaces
     else:
         # namespaces, namespacenames = getNamespacesAPI(config=config, session=session)
-        namespaces = [ALL_NAMESPACE] # magic number refers to "all"
+        namespaces = [__ALL_NAMESPACE]
 
     # <- increasement xmldump
     if env_arvcontinue := os.getenv("ARVCONTINUE", None):
@@ -44,7 +45,7 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
 
     for namespace in namespaces:
         # Skip retrived namespace
-        if namespace == ALL_NAMESPACE:
+        if namespace == __ALL_NAMESPACE:
             assert len(namespaces) == 1, \
                 "Only one item shoule be there when 'all' namespace are specified"
             _nscontinue_input = None
@@ -63,7 +64,7 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
             "arvlimit": config.api_chunksize,
             "arvdir": "newer",
         }
-        if namespace != ALL_NAMESPACE:
+        if namespace != __ALL_NAMESPACE:
             arv_params['arvnamespace'] = namespace
         if _arvcontinue_input is not None:
             arv_params['arvcontinue'] = _arvcontinue_input
@@ -488,7 +489,7 @@ def handle_infinite_loop(allrevs_response: Dict, arv_params: Dict, config: Confi
     print(f"API warnings: {allrevs_response.get('warnings', {})}")
 
     if "truncated" in allrevs_response.get("warnings",{}).get("result",{}).get("*",""):
-        # workaround for [truncated API requests for "allrevisions" causes infinite loop ]
+        # workaround for [truncated API response for "allrevisions" causes infinite loop ]
         # (https://github.com/mediawiki-client-tools/mediawiki-scraper/issues/166)
         print("Let's try to skip this revision and continue...")
         _arv_params_temp = arv_params.copy()

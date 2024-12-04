@@ -11,6 +11,11 @@ ALL_DUMPED_MARK = "all_dumped.mark"
 UPLOADED_MARK = 'uploaded_to_IA.mark'
 XMLRIVISIONS_INCREMENTAL_DUMP_MARK = 'xmlrevisions_incremental_dump.mark'
 
+ALL_NAMESPACE_FLAG = "all"
+""" DO NOT CHNAGE THIS VALUE, this magic value is used to work with config.json \n\n"""\
+""" I want use "*" as magic flag like MediaWiki does,"""\
+""" but "all" exists in wikiteam codebase years ago :( """
+
 
 def underscore(text: str) -> str:
     """ replace(" ", "_") """
