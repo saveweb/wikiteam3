@@ -57,16 +57,17 @@ pip install wikiteam3 --upgrade
 
 ```bash
 usage: wikiteam3dumpgenerator [-h] [-v] [--cookies cookies.txt] [--delay 1.5]
-                              [--retries 5] [--path PATH] [--resume] [--force]
-                              [--user USER] [--pass PASSWORD]
-                              [--http-user HTTP_USER]
+                              [--retries 5] [--hard-retries 3] [--path PATH]
+                              [--resume] [--force] [--user USER]
+                              [--pass PASSWORD] [--http-user HTTP_USER]
                               [--http-pass HTTP_PASSWORD] [--insecure]
                               [--verbose] [--api_chunksize 50] [--api API]
                               [--index INDEX] [--index-check-threshold 0.80]
                               [--xml] [--curonly] [--xmlapiexport]
                               [--xmlrevisions] [--xmlrevisions_page]
-                              [--namespaces 1,2,3] [--exnamespaces 1,2,3]
-                              [--images] [--bypass-cdn-image-compression]
+                              [--redirects] [--namespaces 1,2,3]
+                              [--exnamespaces 1,2,3] [--images]
+                              [--bypass-cdn-image-compression]
                               [--image-timestamp-interval 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z]
                               [--ia-wbm-booster {0,1,2,3}]
                               [--assert-max-pages 123]
@@ -85,7 +86,11 @@ options:
   --delay 1.5           adds a delay (in seconds) [NOTE: most HTTP servers
                         have a 5s HTTP/1.1 keep-alive timeout, you should
                         consider it if you wanna reuse the connection]
-  --retries 5           Maximum number of retries for
+  --retries 5           Maximum number of retries for each request before
+                        failing.
+  --hard-retries 3      Maximum number of hard retries for each request before
+                        failing. (for now, this only controls the hard retries
+                        during images downloading)
   --path PATH           path to store wiki dump at
   --resume              resumes previous incomplete dump (requires --path)
   --force               download it even if Wikimedia site or a recent dump
@@ -125,9 +130,11 @@ Data to download:
   --xmlrevisions_page   [[! Development only !]] Export all revisions from an
                         API generator, but query page by page MediaWiki 1.27+
                         only. (default: --curonly)
+  --redirects           Dump page redirects via API:Allredirects
   --namespaces 1,2,3    comma-separated value of namespaces to include (all by
                         default)
-  --exnamespaces 1,2,3  comma-separated value of namespaces to exclude
+  --exnamespaces 1,2,3  [lack maintenance] comma-separated value of namespaces
+                        to exclude
   --images              Generates an image dump
 
 Image dump options:
@@ -242,9 +249,8 @@ In the above example, `--path` is only necessary if the download path (wikidump 
 
 ```bash
 usage:  Upload wikidump to the Internet Archive. [-h] [-kf KEYS_FILE]
-                                                 [-c {opensource,test_collection,wikiteam}]
-                                                 [--dry-run] [-u]
-                                                 [--bin-zstd BIN_ZSTD]
+                                                 [-c COLLECTION] [--dry-run]
+                                                 [-u] [--bin-zstd BIN_ZSTD]
                                                  [--zstd-level {17,18,19,20,21,22}]
                                                  [--rezstd]
                                                  [--rezstd-endpoint URL]
@@ -261,7 +267,7 @@ options:
                         Path to the IA S3 keys file. (first line: access key,
                         second line: secret key) [default:
                         ~/.wikiteam3_ia_keys.txt]
-  -c, --collection {opensource,test_collection,wikiteam}
+  -c, --collection COLLECTION
   --dry-run             Dry run, do not upload anything.
   -u, --update          Update existing item. [!! not implemented yet !!]
   --bin-zstd BIN_ZSTD   Path to zstd binary. [default: zstd]
