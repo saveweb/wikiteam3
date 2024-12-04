@@ -13,6 +13,7 @@ from wikiteam3.dumpgenerator.dump.misc.index_php import save_IndexPHP
 from wikiteam3.dumpgenerator.dump.misc.special_logs import save_SpecialLog
 from wikiteam3.dumpgenerator.dump.misc.special_version import save_SpecialVersion
 from wikiteam3.dumpgenerator.dump.misc.site_info import assert_siteinfo, get_siteinfo, save_siteinfo
+from wikiteam3.dumpgenerator.dump.redirect.redirects_dump import generate_redirects_dump
 from wikiteam3.dumpgenerator.dump.xmldump.xml_dump import generate_XML_dump
 from wikiteam3.dumpgenerator.dump.xmldump.xml_integrity import check_XML_integrity
 from wikiteam3.dumpgenerator.log import log_error
@@ -110,6 +111,8 @@ class DumpGenerator:
         if config.xml:
             generate_XML_dump(config=config, session=other.session)
             check_XML_integrity(config=config, session=other.session)
+        if config.redirects:
+            generate_redirects_dump(config=config, session=other.session)
         if config.images:
             images += Image.get_image_names(config=config, session=other.session)
             Image.save_image_names(config=config, other=other, images=images)
@@ -172,6 +175,11 @@ class DumpGenerator:
                 # corrupt? only has XML header?
                 print("XML is corrupt? Regenerating...")
                 generate_XML_dump(config=config, session=other.session)
+
+
+        if config.redirects:
+            generate_redirects_dump(config=config, resume=True, session=other.session)
+
 
         if config.images:
             # load images list

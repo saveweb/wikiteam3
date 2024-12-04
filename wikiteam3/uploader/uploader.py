@@ -214,6 +214,18 @@ def prepare_files_to_upload(wikidump_dir: Path, config: Config, item: Item, *, p
         xml_zstd_path = prepare_xml_zst_file(wikidump_dir, config, parallel=parallel, zstd_compressor=zstd_compressor, zstd_level=zstd_level)
         filedict[f"{xml_zstd_path.name}"] = str(xml_zstd_path)
 
+    # redirects
+    if config.redirects:
+        # osm.bio-20241204-redirects.jsonl
+        redirects_jsonl_path = wikidump_dir / f"{config2basename(config)}-redirects.jsonl"
+        redirects_jsonl_zstd_path = wikidump_dir / f"{config2basename(config)}-redirects.jsonl.zst"
+        assert redirects_jsonl_path.exists()
+        # TODO: check if redirects dump is complete
+        r = zstd_compressor.compress_file(redirects_jsonl_path, level=zstd_level)
+        assert r == redirects_jsonl_zstd_path.resolve()
+        assert zstd_compressor.test_integrity(r)
+        filedict[f"{config2basename(config)}-dumpMeta/{redirects_jsonl_zstd_path.name}"] = str(redirects_jsonl_zstd_path)
+
     # images
     if config.images:
         # images.txt

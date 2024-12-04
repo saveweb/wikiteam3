@@ -602,7 +602,7 @@ class Image:
                     ):
                         gapfrom = jsonimages["continue"]["gapcontinue"]
                     
-                    # legacy code, not sure if it's still needed by some old wikis
+                    # prior to mw1.21, that raw continuation (query-continue) was the only option. 
                     elif (
                         "query-continue" in jsonimages
                         and "allpages" in jsonimages["query-continue"]

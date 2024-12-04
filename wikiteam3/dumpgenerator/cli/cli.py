@@ -134,6 +134,9 @@ def getArgumentParser():
         help="[[! Development only !]] Export all revisions from an API generator, but query page by page MediaWiki 1.27+ only. (default: --curonly)",
     )
     group_download.add_argument(
+        "--redirects", action="store_true", help="Dump page redirects via API:Allredirects"
+    )
+    group_download.add_argument(
         "--namespaces",
         metavar="1,2,3",
         help="comma-separated value of namespaces to include (all by default)",
@@ -244,7 +247,7 @@ def checkParameters(args=argparse.Namespace()) -> bool:
             passed = False
 
     # No download params and no meta info params? Exit
-    if (not args.xml and not args.images) and (not args.get_wiki_engine):
+    if not any([args.xml, args.images, args.redirects, args.get_wiki_engine]):
         print("ERROR: Use at least one download param or meta info param")
         passed = False
 
@@ -520,6 +523,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         api_chunksize = int(args.api_chunksize),
         index = index,
         images = args.images,
+        redirects = args.redirects,
         logs = False,
         xml = args.xml,
         xmlapiexport = args.xmlapiexport,
