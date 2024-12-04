@@ -501,19 +501,13 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
 
     # Process namespace exclusions
     if args.exnamespaces:
-        # if re.search(r"[^\d, \-]", args.exnamespaces):
-        if any([not i.isdigit() for i in args.exnamespaces.split(",")]):
+        try:
+            exnamespaces = [int(i) for i in ns.split(",")]
+        except ValueError:
             print(
                 "Invalid namespace values.\nValid format is integer(s) separated by commas"
             )
             sys.exit(1)
-        else:
-            ns = args.exnamespaces.replace(" ", "")
-            if ns.lower() == "all":
-                print("You cannot exclude all namespaces.")
-                sys.exit(1)
-            else:
-                exnamespaces = [int(i) for i in ns.split(",")]
 
 
     config = Config(
