@@ -270,14 +270,23 @@ def read_titles(config: Config, session: requests.Session, start: Optional[str]=
     )
 
     seeking = start is not None
+    """ If True, we are looking for the `start` title to start reading from """
+    end_reached = False
     with open(f"{config.path}/{titles_filename}", encoding="utf-8") as f:
         for line in f:
             title = line.strip()
+
             if title == "--END--":
-                break
-            elif seeking and title != start:
+                end_reached = True
+            else:
+                end_reached = False
+
+            if seeking and title != start:
                 continue
             else:
                 seeking = False
 
             yield title
+
+    if not end_reached:
+        raise EOFError("End of file flag `--END--` not found in the last line")
