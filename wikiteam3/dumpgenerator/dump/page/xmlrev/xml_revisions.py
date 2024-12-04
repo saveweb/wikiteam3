@@ -320,11 +320,9 @@ def getXMLRevisionsByTitles(config: Config, session: requests.Session, site: mwc
         titlelist = []
         # TODO: Decide a suitable number of a batched request. Careful:
         # batched responses may not return all revisions.
-        for titlelist in read_titles(config, session=session, start=start):
-            if isinstance(titlelist, str):
-                titlelist = [titlelist]
-            for title in titlelist:
-                print(f"    {title}")
+        for title in read_titles(config, session=session, start=start):
+            print(f"    {title}")
+            titlelist = [title]
             # Try and ask everything. At least on MediaWiki 1.16, uknown props are discarded:
             # "warnings":{"revisions":{"*":"Unrecognized values for parameter 'rvprop': userid, sha1, contentmodel"}}}
             pparams = {
