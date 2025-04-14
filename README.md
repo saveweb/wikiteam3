@@ -28,7 +28,7 @@ Everything still under GPLv3 license.
 
 We archive every MediaWiki site yearly and upload to the Internet Archive.
 We crawl sites with 1.5s crawl-delay by default, and we respect Retry-After header.
-If you don’t want your wiki to be archived, add the following to your `<domain>/robots.txt`:
+If you don't want your wiki to be archived, add the following to your `<domain>/robots.txt`:
 
 ```robots.txt
 User-agent: wikiteam3
@@ -61,13 +61,13 @@ usage: wikiteam3dumpgenerator [-h] [-v] [--cookies cookies.txt] [--delay 1.5]
                               [--resume] [--force] [--user USER]
                               [--pass PASSWORD] [--http-user HTTP_USER]
                               [--http-pass HTTP_PASSWORD] [--insecure]
-                              [--verbose] [--api_chunksize 50] [--api API]
-                              [--index INDEX] [--index-check-threshold 0.80]
-                              [--xml] [--curonly] [--xmlapiexport]
-                              [--xmlrevisions] [--xmlrevisions_page]
-                              [--redirects] [--namespaces 1,2,3]
-                              [--exnamespaces 1,2,3] [--images]
-                              [--bypass-cdn-image-compression]
+                              [--verbose] [--api_chunksize 50] [--proxy PROXY]
+                              [--api API] [--index INDEX]
+                              [--index-check-threshold 0.80] [--xml]
+                              [--curonly] [--xmlapiexport] [--xmlrevisions]
+                              [--xmlrevisions_page] [--redirects]
+                              [--namespaces 1,2,3] [--exnamespaces 1,2,3]
+                              [--images] [--bypass-cdn-image-compression]
                               [--image-timestamp-interval 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z]
                               [--ia-wbm-booster {0,1,2,3}]
                               [--assert-max-pages 123]
@@ -104,6 +104,7 @@ options:
   --insecure            Disable SSL certificate verification
   --verbose
   --api_chunksize 50    Chunk size for MediaWiki API (arvlimit, ailimit, etc.)
+  --proxy PROXY         Use a proxy endpoint.
 
   wiki                  URL to wiki (e.g. http://wiki.domain.org), auto
                         detects API and index.php

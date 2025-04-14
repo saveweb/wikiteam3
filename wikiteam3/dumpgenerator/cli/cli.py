@@ -1,4 +1,3 @@
-
 import argparse
 import datetime
 import http
@@ -37,6 +36,10 @@ from wikiteam3.utils.util import ALL_NAMESPACE_FLAG
 
 def getArgumentParser():
     parser = argparse.ArgumentParser(description="")
+
+    parser.add_argument(
+       '--proxy', help='Use a proxy endpoint.'
+    )
 
     # General params
     parser.add_argument("-v", "--version", action="version", version=getVersion())
@@ -297,6 +300,12 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
     # Create session
     mod_requests_text(requests) # monkey patch # type: ignore
     session = requests.Session()
+    if args.proxy:
+        session.proxies.update({
+            'http': args.proxy,
+            'https': args.proxy
+        })
+
     patch_sess = SessionMonkeyPatch(session=session, hard_retries=1) # hard retry once to avoid spending too much time on initial detection
     patch_sess.hijack()
     def print_request(r: requests.Response, *args, **kwargs):
