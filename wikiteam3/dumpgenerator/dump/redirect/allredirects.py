@@ -43,6 +43,7 @@ def get_redirects_by_allredirects(config: Config, session: requests.Session):
                 print(f"  arcontinue={ar_params[continueKey]}")
             else:
                 # End of continuation. We are done with this namespace.
+                ar_params['arcontinue'] = None # Don't pass arcontinue at all
                 break
 
 # TODO: unit test
