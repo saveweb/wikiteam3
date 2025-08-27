@@ -273,13 +273,20 @@ def read_titles(config: Config, session: requests.Session, start: Optional[str]=
     """ If True, we are looking for the `start` title to start reading from """
     end_reached = False
     with open(f"{config.path}/{titles_filename}", encoding="utf-8") as f:
-        for line in f:
-            title = line.strip()
+        it = iter(f)
+        line = next(it, None)
+        next_line = next(it, None)
+        while True:
+            title = line.strip() # Strip trailing '\n'
+                                 # TODO: Can title begins or ends with whitespaces? (https://docs.python.org/3/library/string.html#string.whitespace)
 
-            if title == "--END--":
-                end_reached = True
-            else:
-                end_reached = False
+            if next_line is None:
+                # TODO: Use global variable instead of hardcoding
+                # TODO: '--END--' is a valid title, change it to something invalid
+                if title == '--END--':
+                    break
+                else:
+                    raise EOFError("End of file flag `--END--` not found in the last line")
 
             if seeking and title != start:
                 continue
@@ -287,6 +294,4 @@ def read_titles(config: Config, session: requests.Session, start: Optional[str]=
                 seeking = False
 
             yield title
-
-    if not end_reached:
-        raise EOFError("End of file flag `--END--` not found in the last line")
+            line, next_line = next_line, next(it, None)
