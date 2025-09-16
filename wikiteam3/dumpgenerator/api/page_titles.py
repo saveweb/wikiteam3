@@ -289,10 +289,9 @@ def read_titles(config: Config, session: requests.Session, start: Optional[str]=
                 else:
                     raise EOFError("End of file flag `--END--` not found in the last line")
 
-            if seeking and title != start:
-                continue
-            else:
+            if seeking and title == start:
                 seeking = False
+            if not seeking:
+                yield title
 
-            yield title
             line, next_line = next_line, next(it, None)
