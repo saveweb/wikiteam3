@@ -74,6 +74,9 @@ def getArgumentParser():
         "--http-pass", dest="http_password", help="Password if HTTP authentication is required."
     )
     parser.add_argument(
+        "--http-method", dest="http_method", default="POST", help="HTTP method (GET/POST) to use when making API requests to the wiki (default: POST)"
+    )
+    parser.add_argument(
         '--insecure', action='store_true', help='Disable SSL certificate verification'
     )
     parser.add_argument(
@@ -277,6 +280,10 @@ def checkParameters(args=argparse.Namespace()) -> bool:
             print(url)
             print("ERROR: URLs must start with http:// or https://")
             passed = False
+
+    if args.http_method.upper() not in ["GET", "POST"]:
+        print(f"ERROR: (--http-method {args.http_method}) --http-method must be either \"GET\" or \"POST\"")
+        passed = False
     
     return passed
 
@@ -520,7 +527,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d"),
         api = api,
         failfast = args.failfast,
-        http_method = "POST",
+        http_method = args.http_method.upper(),
         api_chunksize = int(args.api_chunksize),
         index = index,
         images = args.images,
