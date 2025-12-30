@@ -34,9 +34,12 @@ WBN_LATEST = 2
 WBM_BEST = 3
 
 
-def check_response(r: requests.Response) -> None:
+def check_response(r: requests.Response, bypass_cdn_image_compression: bool = False) -> None:
     if r.headers.get("cf-polished", ""):
-        raise RuntimeError("Found cf-polished header in response, use --bypass-cdn-image-compression to bypass it")
+        if bypass_cdn_image_compression:
+            raise RuntimeError("cf-polished header detected despite --bypass-cdn-image-compression. CDN bypass failed.")
+        else:
+            print("cf-polished header detected. Image may be compressed by CDN. Use --bypass-cdn-image-compression to attempt bypass.")
 
 class Image:
 
@@ -264,7 +267,7 @@ class Image:
                         r = session.get(url=url, params=modify_params(), headers=_headers, allow_redirects=True, stream=True)
                         r._content = r.raw.read()
 
-                    check_response(r)
+                    check_response(r, other.bypass_cdn_image_compression)
 
                     # a trick to get original file (fandom)
                     ori_url = url
@@ -278,7 +281,7 @@ class Image:
                         ori_url = url + "&format=original"
                         Delay(config=config)
                         r = session.get(url=ori_url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
-                        check_response(r)
+                        check_response(r, other.bypass_cdn_image_compression)
 
                     # Try to fix a broken HTTP to HTTPS redirect
                     original_url_redirected: bool = r.url in (url, ori_url)
@@ -291,7 +294,7 @@ class Image:
                             url = "https://" + url_raw.split("://")[1]
                             # print 'Maybe a broken http to https redirect, trying ', url
                             r = session.get(url=url, params=modify_params(), headers=modify_headers(), allow_redirects=True)
-                            check_response(r)
+                            check_response(r, other.bypass_cdn_image_compression)
 
                 if r.status_code == 200:
                     try:
