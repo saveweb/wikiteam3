@@ -64,8 +64,3 @@ TODO: File name limitations
 A redirect dump contains a list of all redirects. The output file `<url>-<date>-redirects.jsonl` is in JSONL format, each line contains the infomation of one redirect, taken from the response of [API:Allredirects](https://www.mediawiki.org/wiki/API:Allredirects).
 
 This feature is introduced in commit [`f901972`](https://github.com/saveweb/wikiteam3/commit/f901972ffc7525001f23cc20368d6437369c8953), due to limitations of some APIs. See section [XML dump](#xml-dump).
-
-## References
- -  [WikiTeam tutorial](https://github.com/WikiTeam/wikiteam/wiki/Tutorial#dump-types)
- -  [WikiTeam](https://wiki.archiveteam.org/index.php/WikiTeam) at the ArchiveTeam Wiki
- -  [WikiTeam3 tutorial](https://meta.miraheze.org/wiki/Backups#WikiTeam3) at Miraheze Meta
