@@ -1,13 +1,18 @@
 # Tutorial
 Welcome! You are probably learning how to archive your favorite wiki using wikiteam3.
 
-Before we get started, please answer these questions:
+Before we get started, to make sure that wikiteam3 suits you, please run through this checklist:
 
-## Do I really need wikiteam3?
+## Beginner's checklist
 ### Do you have direct shell access to the server?
-If you have direct shell access to the server, the best option is to backup all server files (see [Manual:Backing up a wiki](https://www.mediawiki.org/wiki/Manual:Backing_up_a_wiki)).
+If you have direct shell access to the server, that makes the backup process much more easier:
 
-Wikiteam3 can only backup public pages and files, it cannot backup deleted pages, logs, user preferences...
+ -  If you want to make a private backup **with sensitive data**, just backup both the database and the filesystem.
+ -  If you want to make a public backup without sensitive data, run `dumpBackup.php` and share the generated XML to others.
+
+For more information, see [Manual:Backing up a wiki](https://www.mediawiki.org/wiki/Manual:Backing_up_a_wiki).
+
+Wikiteam3, on the other hand, lacks a lot of functionality. For example, compared to `dumpBackup.php`, it cannot backup public logs. So, only use wikiteam3 if you don't have direct shell access.
 
 ### Is this wiki recently archived?
 It is recommended to look for existing dumps before making one. Usually, if there is a dump within a year, it would be unnecessary to make another one. Exceptions include that the wiki is going to shut down.
@@ -98,7 +103,10 @@ $ wikiteam3dumpgenerator \
   [OPTIONS]...
 ```
 
-<img src="images/tutorial-entry-point.png" alt="Path to api.php and index.php can be found from the &quot;Entry point URLs&quot; section in &quot;Special:Version&quot;" style="max-height: 15em">
+<figure>
+  <img src="images/tutorial-entry-point.png" alt="Path to api.php and index.php can be found from the &quot;Entry point URLs&quot; section in &quot;Special:Version&quot;" style="max-height: 15em">
+  <figcaption>Path to <code>api.php</code> and <code>index.php</code> can be found from the "Entry point URLs" section in "Special:Version"</figcaption>
+</figure>
 
 ### Dump types
 *Main article: [Dump Types](dump_types.md)*
@@ -122,7 +130,7 @@ $ wikiteam3dumpgenerator \
   --redirects
 ```
 
-Wikiteam3 will create a directory named `<url>-<date>-wikidump`.
+Wikiteam3 will create a directory named `<url>-<date>-wikidump`. Note that dumping a small wiki takes hours, dumping a large wiki takes days.
 
 ### Checking your dump
 Most errors are recorded in `errors.log`.
@@ -131,8 +139,6 @@ Most errors are recorded in `errors.log`.
 How to make sure that the XML dump you just made is valid? The ultimate way is to import it into a running MediaWiki instance, which may be slow and complicated. Here are a few ways to quickly check its integrity:
 
 ---
-
-If you want to check the XML dump integrity, type this into your command line to count title, page and revision XML tags:
 
 An easy approach is to count the numbers of `<title>`, `<page>`, and `<revision>` tags with `grep`, which is available on almost all Linux distributions.
 
@@ -161,7 +167,6 @@ $ xmllint --schema export-0.11-wikiteam3.xsd path/to/<url>-<date>-history.xml --
 Here we are using `export-0.11-wikiteam3.xsd`, a slightly modified version of the official `export-0.11.xsd` schema. Since `xmllint` cannot access remote schemas, please follow the instructions in the schema to replace the remote schema with a local one.
 
 If it says that `<url>-<date>-history.xml validates`, the XML applies to the schema. If it says that `<url>-<date>-history.xml fails to validate`, the XML is problematic. Please report to us.
-`.
 
 ---
 
