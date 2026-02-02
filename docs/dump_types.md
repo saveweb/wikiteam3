@@ -29,7 +29,7 @@ List of export APIs supported by wikiteam3:
 
 If the list of page titles is needed, wikiteam3 tries [API:Allpages](https://www.mediawiki.org/wiki/API:Allpages) (1.8+) first. If it fails, wikiteam3 then tries to extract page titles from Special:Allpages.
 
-**Limitations**: XML dumps produced using API:Allrevisions or API:Revisions are missing `<redirect>` tags, because these API don't return redirect information. Wikiteam3 introduced redirect dumps to retrieve redirect information. Unfortunately, currently there is no way to patch XML dumps using redirect information from redirect dumps, so the XML dumps will remain slightly flawed.
+**Limitations**: XML dumps produced using API:Allrevisions or API:Revisions are missing `<redirect>` tags, because these API don't return redirect information. This doesn't matter, since redirections can be parsed from wikitext. To retrieve redirect information, see [redirect dump](#redirect-dump) below.
 
 Here is a table for comparison. Legend:
  -  **MW version**: Supported MediaWiki versions. The use of old APIs enables wikiteam3 to create dumps for wikis running older versions of MediaWiki software.

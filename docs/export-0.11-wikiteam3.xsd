@@ -3,8 +3,14 @@
 	This is a customized version for wikiteam3. Changes:
 	1. Remove "PageIDConstraint".
 	2. Add optional attribute "arvcontinue" for "PageType".
-	3. Mark "origin" element in "RevisionType" as optional. (This is a bug in wikiteam3! )
-	4. Mark "format" element in "RevisionType" as optional. (This is a bug in wikiteam3! )
+	3. Mark "origin" element in "RevisionType" as optional. (MCR)
+	4. Mark "format" element in "RevisionType" as optional. (MCR)
+
+	NOTE: Changes marked with (MCR) are temporary workaround for the latest
+	MCR-related schema. MCR (Multi-Content Revisions) schema is currently not
+	supported by wikiteam3 - in fact, it is not even fully supported by
+	MediaWiki itself. If you really hope that wikiteam3 can support this, write
+	a patch and submit a PR.
 -->
 <!--
 	This is an XML Schema description of the format
