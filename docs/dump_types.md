@@ -51,7 +51,7 @@ It takes three steps for the program to create an image dump:
 1.  Get file names and metadata.
      -  If the API is available, try [API:Allimages](https://www.mediawiki.org/wiki/API:Allimages) (MW 1.13+) first. If it fails, use [API:Allpages](https://www.mediawiki.org/wiki/API:Allpages) (MW 1.8+).
      -  Otherwise, scrape and parse Special:Imagelist.
-2.  Save file names and metadata at `<url>-<date>-images.txt`. The file format is documented at [`DEV.md`](https://github.com/saveweb/wikiteam3/blob/v4-main/DEV.md).
+2.  Save file names and metadata to `<url>-<date>-images.txt`. The file format is documented at [`DEV.md`](https://github.com/saveweb/wikiteam3/blob/v4-main/DEV.md).
 3.  Download the files. For each file, the actual size and SHA1 are checked against the API responses:
      -  If they match, the file would be saved at the `images` directory.
      -  Otherwise, the file would be saved at the `images_mismatch` directory, and an error message would be written to `errors.log`.
@@ -63,4 +63,4 @@ TODO: File name limitations
 ## Redirect dump
 A redirect dump contains a list of all redirects. The output file `<url>-<date>-redirects.jsonl` is in JSONL format, each line contains the infomation of one redirect, taken from the response of [API:Allredirects](https://www.mediawiki.org/wiki/API:Allredirects).
 
-This feature is introduced in commit [`f901972`](https://github.com/saveweb/wikiteam3/commit/f901972ffc7525001f23cc20368d6437369c8953), due to limitations of some APIs. See section [XML dump](#xml-dump).
+This feature is introduced in [v4.4.0](https://github.com/saveweb/wikiteam3/releases/tag/v4.4.0), due to limitations of some APIs. See section [XML dump](#xml-dump).

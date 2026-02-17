@@ -3,7 +3,7 @@
 Local directory structure:
 
 ```
-<url>-<date>-wikidump
+<wiki>-<date>-wikidump
 ├── config.json
 ├── index.html
 ├── SpecialVersion.html
@@ -11,32 +11,33 @@ Local directory structure:
 ├── all_dumped.mark
 ├── uploaded_to_IA.mark
 ├── errors.log
-├── <url>-<date>-titles.txt
-├── <url>-<date>-history.xml
-├── <url>-<date>-images.txt
+├── <wiki>-<date>-titles.txt
+├── <wiki>-<date>-current.xml
+├── <wiki>-<date>-history.xml
+├── <wiki>-<date>-images.txt
 ├── images
 │   └── ...
 ├── images_mismatch
 │   └── ...
-└── <url>-<date>-redirects.jsonl
+└── <wiki>-<date>-redirects.jsonl
 ```
 
 Internet Archive item structure:
 
 ```
-wiki-<url>-<date>
-├── <url>-<date>-dumpMeta
+wiki-<wiki>-<date>
+├── <wiki>-<date>-dumpMeta
 │   ├── config.json
 │   ├── index.html
 │   ├── SpecialVersion.html
 │   ├── siteinfo.json
 │   ├── errors.log
-│   ├── <url>-<date>-titles.txt.zst
-│   ├── <url>-<date>-images.txt.zst
-│   └── <url>-<date>-redirects.jsonl.zst
-├── <url>-<date>-history.xml.zst
-├── <url>-<date>-images.7z
-├── <url>-<date>-images_mismatch.7z
+│   ├── <wiki>-<date>-titles.txt.zst
+│   ├── <wiki>-<date>-images.txt.zst
+│   └── <wiki>-<date>-redirects.jsonl.zst
+├── <wiki>-<date>-history.xml.zst
+├── <wiki>-<date>-images.7z
+├── <wiki>-<date>-images_mismatch.7z
 └── <identifier>_logo.<suffix>
 ```
 
@@ -51,15 +52,20 @@ wiki-<url>-<date>
  -  `<identifier>_logo.<suffix>`: Logo. This is downloaded when uploading to IA, and would not be stored locally.
 
 ## XML Dump
- -  `<url>-<date>-titles.txt`: List of titles.
- -  `<url>-<date>-history.xml`: The XML dump. See [Manual:Importing XML dumps](https://www.mediawiki.org/wiki/Manual:Importing_XML_dumps) for importing.
+ -  `<wiki>-<date>-titles.txt`: List of titles.
+ -  `<wiki>-<date>-current.xml`: The XML dump of current revision.
+ -  `<wiki>-<date>-history.xml`: The XML dump of all revisions. See [Manual:Importing XML dumps](https://www.mediawiki.org/wiki/Manual:Importing_XML_dumps) for importing.
 
 ## Image Dump
- -  `<url>-<date>-images.txt`: Image metadata in TSV (Tab-Separated Values) format.
+ -  `<wiki>-<date>-images.txt`: Image metadata in TSV (Tab-Separated Values) format.
  -  `images` (directory): The image dump, i.e. the dump of all uploaded files.
- -  `<url>-<date>-images.7z`: Compression of the `images` directory.
+ -  `<wiki>-<date>-images.7z`: Archive of the `images` directory without compression.
  -  `images_mismatch` (directory): Images whose actual size or SHA1 doesn't match API responses. Please contact the webmaster.
- -  `<url>-<date>-images_mismatch.7z`: Compression of the `images_mismatch` directory.
+ -  `<wiki>-<date>-images_mismatch.7z`: Archive of the `images_mismatch` directory without compression.
 
 ## Redirects Dump
- -  `<url>-<date>-redirects.jsonl`: The redirects dump. Each line contains one redirection.
+ -  `<wiki>-<date>-redirects.jsonl`: The redirects dump. Each line contains one redirection.
+
+## Notes
+ -  `<wiki>` - formatted wiki URL
+ -  `<date>` - date in UTC
