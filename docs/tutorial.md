@@ -45,27 +45,61 @@ Most wikis powered by MediaWiki have a banner at the bottom-right corner. There 
 If the wiki is not powered by MediaWiki, you would have to use dedicated tools for other wikis. For DokuWiki, try [DokuWiki Dumper](https://github.com/saveweb/dokuwiki-dumper); for PukiWiki, try [PukiWiki Dumper](https://github.com/saveweb/pukiwiki-dumper).
 
 ## Installing wikiteam3
-Wikiteam3 is a Python package. There is a detailed tutorial for [**installing packages**](https://packaging.python.org/en/latest/tutorials/installing-packages/) at Python Packaging User Guide. Please follow it to install Python (if you haven't installed) and wikiteam3.
 
-Key points:
-1.  First, install Python 3 if you haven't installed it. Make sure you can run both Python and pip from the command line:
+[Wikiteam3](https://pypi.org/project/wikiteam3/) is a Python package which requires Python 3.9+.
 
-    ```console
-    $ python3 --version
-    $ python3 -m pip --version
-    ```
+### Installing via uv
 
-2.  Then, simply install wikiteam3 from [pip](https://pypi.org/project/wikiteam3/). However, it is recommended to install wikiteam3 in a *virtual environment*, which isolates wikiteam3 and other Python packages.
+It is recommended to install wikiteam3 via [uv](https://docs.astral.sh/uv/).
 
-    ```console
-    $ python3 -m pip install wikiteam3
-    ```
+First, install uv. Then, install wikiteam3 (using the default version of Python interpreter):
 
-    If you have installed wikiteam3 correctly, a help message would appear if you run the following command:
+```console
+$ uv tool install wikiteam3@latest
+```
 
-    ```console
-    $ wikiteam3dumpgenerator --help
-    ```
+Note that the above command may fail if your default Python interpreter is below Python 3.9. If so, you must specify a higher version of Python interpreter:
+
+```console
+$ uv tool install --python <PYTHON> wikiteam3@latest
+```
+
+Once installed, the commands `wikiteam3dumpgenerator` and `wikiteam3uploader` are always available.
+
+### Installing via pipx
+
+First, install Python (3.9+) and pipx. Then install wikiteam3.
+
+```console
+$ pipx install wikiteam3
+```
+
+Once installed, the commands `wikiteam3dumpgenerator` and `wikiteam3uploader` are always available.
+
+### Installing via pip
+
+Tip: There is a detailed tutorial for [**installing packages**](https://packaging.python.org/en/latest/tutorials/installing-packages/) at Python Packaging User Guide. We will only cover the key points here.
+
+First, install Python (3.9+) and pip. Make sure you can run both Python and pip from the command line:
+
+```console
+$ python3 --version
+$ python3 -m pip --version
+```
+
+Then, create a *virtual environment* and activate it, which isolates wikiteam3 and other Python packages.
+
+Finally, install wikiteam3 in the virtual environment:
+
+```console
+$ python3 -m pip install wikiteam3
+```
+
+If you have installed wikiteam3 correctly, a help message would appear if you run the following command:
+
+```console
+$ wikiteam3dumpgenerator --help
+```
 
 > [!NOTE]
 > If you are a developer, it is recommended to clone wikiteam3 from [GitHub](https://github.com/saveweb/wikiteam3), and install it in *editable mode*.
