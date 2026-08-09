@@ -36,10 +36,7 @@ def getXMLHeader(config: Config, session: requests.Session) -> Tuple[str, Config
                     + "?action=query&export=1&list=allpages&aplimit=1&format=json",
                     timeout=10,
                 )
-                try:
-                    xml = r.json()["query"]["export"]["*"]
-                except KeyError:
-                    pass
+                xml = r.json()["query"]["export"]["*"]
             if not re.match(r"\s*<mediawiki", xml):
                 # Do without a generator, use our usual trick of a random page title
                 r = session.get(
@@ -57,10 +54,7 @@ def getXMLHeader(config: Config, session: requests.Session) -> Tuple[str, Config
                     + randomtitle,
                     timeout=10,
                 )
-                try:
-                    xml = r.json()["query"]["export"]["*"]
-                except KeyError:
-                    pass
+                xml = r.json()["query"]["export"]["*"]
         except requests.exceptions.RetryError:
             pass
 
