@@ -126,10 +126,10 @@ class Image:
                 "fandom.com" in (config.api or config.index) and
                 "static.wikia.nocookie.net" in url_raw
             )
-            is_pic = filename_underscore.lower().endswith(('.png', '.jpg', '.jpeg'))
+            is_pic = filename_underscore.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))
             mismatch_file = (Path(config.path) / "images_mismatch" / filename_underscore)
             if is_fandom and is_pic and mismatch_file.is_file():
-                print(f"Skipping Fandom PNG/JPG (already in images_mismatch): {filename_underscore}")
+                print(f"Skipping Fandom Picture (already in images_mismatch): {filename_underscore}")
                 continue
             # --- end skip logic ---
 
