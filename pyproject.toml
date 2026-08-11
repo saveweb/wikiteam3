@@ -38,14 +38,25 @@ wikiteam3uploader = "wikiteam3.uploader:main"
 [project.urls]
 repository = "https://github.com/saveweb/wikiteam3"
 
-[tool.pdm]
-[tool.pdm.build]
-excludes = []
-[tool.pdm.dev-dependencies]
-dev = [
-    "pytest<9.0.0,>=8.2.2",
-]
 
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["uv_build"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[tool.ruff]
+line-length = 127
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
+    "ruff>=0.16.2",
+]

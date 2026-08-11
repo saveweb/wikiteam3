@@ -1,6 +1,3 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: dumogenerator test
 
 on:
@@ -18,26 +15,25 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Set up uv
+      uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
       with:
         python-version: ${{ matrix.python-version }}
+        enable-cache: true
     - name: Install dependencies
       run: |
         sudo apt update
         sudo apt install -y libxml2-dev libxslt-dev # for lxml
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        pip install .
-    - name: Lint with flake8
+        uv sync --locked
+    - name: Lint with Ruff
       run: |
         # exit if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        uv run ruff check .
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        uv run ruff check . --select E,F,W,C90 --exit-zero --statistics
     - name: run dumpgenerator
       run: |
-        python -m wikiteam3.dumpgenerator -h
+        uv run python -m wikiteam3.dumpgenerator -h
     - name: Test with pytest
       run: |
-        pytest
+        uv run pytest
