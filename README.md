@@ -40,7 +40,7 @@ Our bots are running on the following IPs: [wikiteam3.txt](https://static.savewe
 ## Installation/Upgrade
 
 ```shell
-pip install wikiteam3 --upgrade
+uv tool install --upgrade wikiteam3
 ```
 
 >[!NOTE]
