@@ -20,7 +20,7 @@ from file_read_backwards import FileReadBackwards
 
 from wikiteam3.dumpgenerator.api.page_titles import checkTitleOk
 from wikiteam3.dumpgenerator.config import Config, load_config
-from wikiteam3.dumpgenerator.version import getVersion
+from wikiteam3.dumpgenerator.version import get_version
 from wikiteam3.uploader.socketLock import NoLock, SocketLockServer
 from wikiteam3.utils import url2prefix_from_config, sha1sum
 from wikiteam3.uploader.compresser import ZstdCompressor, SevenZipCompressor
@@ -358,7 +358,7 @@ def prepare_item_metadata(wikidump_dir: Path, config: Config, arg: Args) -> Tupl
         "rights": rights_text or None,
         "originalurl": config.api or config.index,
         "upload-state": "uploading",
-        "scanner": f"wikiteam3 (v{getVersion()})",
+        "scanner": f"wikiteam3 (v{get_version()})",
     }
     print("=== Item metadata: ===")
     print(json.dumps(metadata, indent=4, sort_keys=True, ensure_ascii=False))

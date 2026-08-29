@@ -23,7 +23,7 @@ from wikiteam3.dumpgenerator.api import (
 from wikiteam3.dumpgenerator.api.index_check import check_index
 from wikiteam3.dumpgenerator.cli.delay import Delay
 from wikiteam3.dumpgenerator.config import Config, OtherConfig, new_config
-from wikiteam3.dumpgenerator.version import getVersion
+from wikiteam3.dumpgenerator.version import get_version
 from wikiteam3.utils import (
     get_random_UserAgent,
     mod_requests_text,
@@ -39,7 +39,7 @@ def getArgumentParser():
     parser = argparse.ArgumentParser(description="")
 
     # General params
-    parser.add_argument("-v", "--version", action="version", version=getVersion())
+    parser.add_argument("-v", "--version", action="version", version=get_version())
     parser.add_argument(
         "--cookies", metavar="cookies.txt", help="path to a cookies.txt file"
     )
@@ -82,7 +82,7 @@ def getArgumentParser():
     parser.add_argument(
         "--user-agent",
         type=str,
-        default=f"wikiteam3/{getVersion()} (WikiTeam; ArchiveTeam) wikiteam3dumpgenerator (+github.com/saveweb/wikiteam3; +wiki.archiveteam.org/index.php/wikiTeam) We respect HTTP Retry-After header",
+        default=f"wikiteam3/{get_version()} (WikiTeam; ArchiveTeam; STWP) wikiteam3dumpgenerator (+github.com/saveweb/wikiteam3; +wiki.archiveteam.org/index.php/wikiTeam) We respect HTTP Retry-After header",
         # help="User-Agent to use for requests (default: wikiteam3/<version> ...)",
         help=argparse.SUPPRESS, # private option
     )

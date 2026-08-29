@@ -17,7 +17,7 @@ from wikiteam3.dumpgenerator.config import Config, OtherConfig
 from wikiteam3.dumpgenerator.dump.image.html_regexs import R_NEXT, REGEX_CANDIDATES
 from wikiteam3.dumpgenerator.exceptions import FileSha1Error, FileSizeError
 from wikiteam3.dumpgenerator.log import log_error
-from wikiteam3.dumpgenerator.version import getVersion
+from wikiteam3.dumpgenerator.version import get_version
 from wikiteam3.utils.identifier import url2prefix_from_config
 from wikiteam3.utils.monkey_patch import SessionMonkeyPatch
 from wikiteam3.utils.util import clean_HTML, int_or_zero, sha1bytes, sha1sum, space, underscore, undo_HTML_entities
@@ -111,7 +111,7 @@ class Image:
         patch_sess.hijack()
 
         ia_session = requests.Session()
-        ia_session.headers.update({"User-Agent": f"wikiteam3/{getVersion()}"})
+        ia_session.headers.update({"User-Agent": f"wikiteam3/{get_version()}"})
 
         skip_to_filename = underscore('') # TODO: use this
 

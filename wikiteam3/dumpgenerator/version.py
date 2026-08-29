@@ -7,5 +7,5 @@ except Exception:
     pass
 
 
-def getVersion():
+def get_version():
     return __VERSION__

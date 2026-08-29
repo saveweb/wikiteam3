@@ -1,12 +1,12 @@
 import datetime
 
-from wikiteam3.dumpgenerator.version import getVersion
+from wikiteam3.dumpgenerator.version import get_version
 
 
 def welcome():
     """Opening message"""
 
-    welcome_string = f"# Welcome to DumpGenerator {getVersion()} by WikiTeam3 (GPL v3)"
+    welcome_string = f"# Welcome to DumpGenerator {get_version()} by WikiTeam3 (GPL v3)"
     welcome_string += " " * (73 - len(welcome_string) - 1) + "#"
     copyright_string = f"# Copyright (C) 2011-{datetime.datetime.now(datetime.timezone.utc).year} WikiTeam developers"
     copyright_string += " " * (73 - len(copyright_string) - 1) + "#"
