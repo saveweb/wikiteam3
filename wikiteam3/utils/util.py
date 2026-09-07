@@ -70,7 +70,7 @@ def undo_HTML_entities(text: str = "") -> str:
     return text
 
 
-def remove_IP(raw: str = "") -> str:
+def remove_IP(raw: str) -> str:
     """Remove IP from HTML comments <!-- -->"""
 
     raw = re.sub(r"\d+\.\d+\.\d+\.\d+", "0.0.0.0", raw)

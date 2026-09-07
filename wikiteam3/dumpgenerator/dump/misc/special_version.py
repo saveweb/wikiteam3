@@ -25,9 +25,9 @@ def save_SpecialVersion(config: Config, session: requests.Session):
             return
         raw = r.text
         Delay(config=config)
-        raw = remove_IP(raw=raw)
+        cleaned = remove_IP(raw)
         with open(
             "%s/SpecialVersion.html" % (config.path), "w", encoding="utf-8"
         ) as outfile:
-            outfile.write(raw)
+            outfile.write(cleaned)
 

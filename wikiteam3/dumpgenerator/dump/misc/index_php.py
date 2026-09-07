@@ -20,6 +20,6 @@ def save_IndexPHP(config: Config, session):
             print("Error: %s" % (e))
             return
         Delay(config=config)
-        raw = remove_IP(raw=raw)
+        cleaned = remove_IP(raw)
         with open("%s/index.html" % (config.path), "w", encoding="utf-8") as outfile:
-            outfile.write(raw)
+            outfile.write(cleaned)
