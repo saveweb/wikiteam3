@@ -729,6 +729,12 @@ class Image:
                 url = url[1:]
             # concat http(s) + domain + relative url
             url = f"{domainalone}/{url}"
+        elif url.startswith("http:///") or url.startswith("https:///"):
+            # handle https://github.com/saveweb/wikiteam3/issues/67:
+            # https://web.archive.org/web/20260907035625id_/https://vicky.citrons.xyz/w/api.php?action=query&list=allimages&aiprop=url|user|size|sha1|timestamp&aifrom=!&format=json&ailimit=50
+            scheme = url.split("://")[0]
+            url = scheme + "://" + url.split("://")[1].lstrip("/")
+
         url = undo_HTML_entities(text=url)
         # url = urllib.parse.unquote(url) #do not use unquote with url, it break some
         # urls with odd chars
