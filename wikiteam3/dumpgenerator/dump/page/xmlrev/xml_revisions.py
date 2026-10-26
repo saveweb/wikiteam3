@@ -92,7 +92,7 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
                         arv_params["arvlimit"] = min(arv_params["arvlimit"] * 2, config.api_chunksize)
                         print(f"INFO: response is OK, increasing arvlimit to {arv_params['arvlimit']}")
                 except mwclient.errors.APIError as e:
-                    if e.code == MWUnknownContentModelException.error_code:
+                    if e.code in MWUnknownContentModelException.error_codes:
                         if arv_params['arvlimit'] != 1:
                             # let's retry with arvlimit=1 to retrieve good revisions as much as possible
                             print("WARNING: API returned MWUnknownContentModelException. retrying with arvlimit=1 (revision by revision)")
