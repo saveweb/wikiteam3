@@ -11,6 +11,11 @@ class InternalApiError(Exception):
 
 class MWUnknownContentModelException(InternalApiError):
     error_code = "internal_api_error_MWUnknownContentModelException"
+    # newer MediaWiki reports the namespaced class name
+    error_codes = (
+        error_code,
+        "internal_api_error_MediaWiki\\Content\\UnknownContentModelException",
+    )
     errorclass = "MWUnknownContentModelException"
     common_cause = "The content model xxxxx is not registered on this wiki; Some extensions use special content models for their own purposes, but they did not register a handler to export their content (?)"
     samples = [
