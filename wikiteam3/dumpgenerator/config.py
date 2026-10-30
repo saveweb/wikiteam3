@@ -118,6 +118,8 @@ class OtherConfig:
 
     hard_retries: int
     """ Number of hard retries """
+    timeout: float
+    """ Default HTTP request timeout in seconds """
 
     upload: bool 
     uploader_args: List[str]

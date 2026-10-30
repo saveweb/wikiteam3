@@ -50,6 +50,10 @@ def getArgumentParser():
         "if you wanna reuse the connection]"
     )
     parser.add_argument(
+        "--timeout", metavar="30", default=30.0, type=float,
+        help="HTTP request timeout in seconds (default: 30)"
+    )
+    parser.add_argument(
         "--retries", metavar="5", default=5, help="Maximum number of retries for each request before failing."
     )
     parser.add_argument(
@@ -230,6 +234,10 @@ def checkParameters(args=argparse.Namespace()) -> bool:
 
     passed = True
 
+    if args.timeout <= 0:
+        print("ERROR: --timeout must be greater than 0 seconds.")
+        passed = False
+
     # Don't mix download params and meta info params
     if (args.xml or args.images) and (args.get_wiki_engine):
         print("ERROR: Don't mix download params and meta info params")
@@ -295,7 +303,11 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
     # Create session
     mod_requests_text(requests) # monkey patch # type: ignore
     session = requests.Session()
-    patch_sess = SessionMonkeyPatch(session=session, hard_retries=1) # hard retry once to avoid spending too much time on initial detection
+    patch_sess = SessionMonkeyPatch(
+        session=session,
+        hard_retries=1,
+        default_timeout=args.timeout,
+    ) # hard retry once to avoid spending too much time on initial detection
     patch_sess.hijack()
     def print_request(r: requests.Response, *args, **kwargs):
         # TODO: use logging
@@ -538,6 +550,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         assert_max_images_bytes = args.assert_max_images_bytes,
 
         hard_retries = int(args.hard_retries),
+        timeout=args.timeout,
 
         upload = args.upload,
         uploader_args = args.uploader_args,
@@ -564,4 +577,5 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         )
 
     patch_sess.release()
+    SessionMonkeyPatch(session=session, default_timeout=other.timeout).hijack()
     return config, other
