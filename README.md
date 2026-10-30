@@ -58,7 +58,8 @@ uv tool install --upgrade wikiteam3
 
 ```bash
 usage: wikiteam3dumpgenerator [-h] [-v] [--cookies cookies.txt] [--delay 1.5]
-                              [--retries 5] [--hard-retries 3] [--path PATH]
+                              [--timeout 30] [--retries 5] [--hard-retries 3]
+                              [--path PATH]
                               [--resume] [--force] [--user USER]
                               [--pass PASSWORD] [--http-user HTTP_USER]
                               [--http-pass HTTP_PASSWORD]
@@ -87,6 +88,7 @@ options:
   --delay 1.5           adds a delay (in seconds) [NOTE: most HTTP servers
                         have a 5s HTTP/1.1 keep-alive timeout, you should
                         consider it if you wanna reuse the connection]
+  --timeout 30          HTTP request timeout in seconds (default: 30)
   --retries 5           Maximum number of retries for each request before
                         failing.
   --hard-retries 3      Maximum number of hard retries for each request before

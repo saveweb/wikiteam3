@@ -91,6 +91,7 @@ class SessionMonkeyPatch:
     def __init__(self,*, session: requests.Session, config: Optional[Config]=None,
                  add_delay: bool=False, delay_msg: Optional[str]=None,
                  hard_retries: int=0,
+                 default_timeout: Optional[float]=None,
                  free_timeout_connections: bool=True, vaild_lft_sec: int=60 * 3,
                  accept_encoding: str="",
         ):
@@ -106,6 +107,7 @@ class SessionMonkeyPatch:
         self.delay_msg = delay_msg
 
         self.hard_retries = hard_retries
+        self.default_timeout = default_timeout
 
         self.free_timeout_connections: bool = free_timeout_connections
         self.vaild_lft_sec = vaild_lft_sec
@@ -146,6 +148,9 @@ class SessionMonkeyPatch:
 
                     if _accept_encoding := accept_encoding or self.accept_encoding or request.headers.get("Accept-Encoding", ""):
                         request.headers["Accept-Encoding"] = _accept_encoding
+
+                    if kwargs.get("timeout") is None and self.default_timeout is not None:
+                        kwargs["timeout"] = self.default_timeout
 
                     return self.old_send_method(request, **kwargs)
                 except (KeyboardInterrupt, requests.exceptions.ContentDecodingError): # don't retry
