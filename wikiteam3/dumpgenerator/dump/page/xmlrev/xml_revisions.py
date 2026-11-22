@@ -492,7 +492,7 @@ def handle_infinite_loop(allrevs_response: Dict, arv_params: Dict, config: Confi
         print("Let's try to skip this revision and continue...")
         _arv_params_temp = arv_params.copy()
         # make sure response is small
-        _arv_params_temp['arvprop'] = _arv_params_temp['arvprop'].replace('|content', '').replace('|comment', '') 
+        _arv_params_temp['arvprop'] = _arv_params_temp['arvprop'].replace('|content', '').replace('|comment', '')
         _arv_params_temp["arvlimit"] = 1
 
         allrevs_response_new = site.api(
