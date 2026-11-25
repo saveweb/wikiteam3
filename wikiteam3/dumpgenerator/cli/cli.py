@@ -61,7 +61,7 @@ def getArgumentParser():
         action="store_true",
         help="resumes previous incomplete dump (requires --path)",
     )
-    parser.add_argument("--force", action="store_true", 
+    parser.add_argument("--force", action="store_true",
         help="download it even if Wikimedia site or a recent dump exists in the Internet Archive")
     parser.add_argument("--user", help="Username if MediaWiki authentication is required.")
     parser.add_argument(
@@ -176,7 +176,7 @@ def getArgumentParser():
         required=False,
         help="Download images from Internet Archive Wayback Machine if possible, reduce the bandwidth usage of the wiki. "
             "[0: disabled (default), 1: use earliest snapshot, 2: use latest snapshot, "
-            "3: the closest snapshot to the image's upload time]", 
+            "3: the closest snapshot to the image's upload time]",
     )
 
     # Assertions params
@@ -217,7 +217,7 @@ def getArgumentParser():
     )
 
     group_upload = parser.add_argument_group("wikiteam3uploader params")
-    group_upload.add_argument('--upload', action='store_true', 
+    group_upload.add_argument('--upload', action='store_true',
         help='(run `wikiteam3uplaoder` for you) Upload wikidump to Internet Archive after successfully dumped'
     )
     group_upload.add_argument("-g", "--uploader-arg", dest="uploader_args", action='append', default=[],
@@ -263,12 +263,12 @@ def checkParameters(args=argparse.Namespace()) -> bool:
     if args.curonly and not args.xml:
         print("ERROR: --curonly requires --xml")
         passed = False
-    
+
     # --xmlrevisions not supported with --curonly
     if args.xmlrevisions and args.curonly:
         print("ERROR: --xmlrevisions not supported with --curonly")
         passed = False
-    
+
     # Check URLs
     for url in [args.api, args.index, args.wiki]:
         if url and (not url.startswith("http://") and not url.startswith("https://")):
