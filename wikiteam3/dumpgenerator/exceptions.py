@@ -3,25 +3,37 @@ from typing import Optional
 
 class InternalApiError(Exception):
     """ base class for all internal API errors """
-    error_code = "internal_api_error_*"
-    errorclass = "MW*Exception"
-    common_cause = "reason a; reason b; reason c"
-    samples = ["url"]
+    errorclass: str
 
+    @classmethod
+    def match(cls, error_code: str)->bool:
+        clserrorclass = cls.__dict__.get("errorclass")
+        if clserrorclass and error_code == f"internal_api_error_{clserrorclass}":
+            return True
+        return any(sub.match(error_code) for sub in cls.__subclasses__())
 
-class MWUnknownContentModelException(InternalApiError):
-    error_code = "internal_api_error_MWUnknownContentModelException"
-    # newer MediaWiki reports the namespaced class name
-    error_codes = (
-        error_code,
-        "internal_api_error_MediaWiki\\Content\\UnknownContentModelException",
-    )
-    errorclass = "MWUnknownContentModelException"
+class UnknownContentModelError(InternalApiError):
     common_cause = "The content model xxxxx is not registered on this wiki; Some extensions use special content models for their own purposes, but they did not register a handler to export their content (?)"
+
+
+class MWUnknownContentModelException(UnknownContentModelError):
+    """ [1.27, 1.43] """
+    errorclass = "MWUnknownContentModelException"
     samples = [
         "https://web.archive.org/web/20231015082428id_/https://www.wikidoc.org/api.php?titles=Talk%3AMain_Page&action=query&format=xml&prop=revisions&rvprop=timestamp|user|comment|content|ids|flags|size|userid|sha1|contentmodel&rvlimit=50",
         "https://web.archive.org/web/20231015082600id_/https://www.wikidoc.org/api.php?titles=Talk%3AMain_Page&action=query&format=json&prop=revisions&rvprop=timestamp|user|comment|content|ids|flags|size|userid|sha1|contentmodel&rvlimit=50"
     ]
+
+
+class ExceptionMWUnknownContentModelException(UnknownContentModelError):
+    """ [1.44, 1.45] """
+    errorclass = r"MediaWiki\Exception\MWUnknownContentModelException"
+
+
+class ContentUnknownContentModelException(UnknownContentModelError):
+    """ 1.46+ """
+    samples = ["https://github.com/saveweb/wikiteam3/pull/71"]
+    errorclass = r"MediaWiki\Content\UnknownContentModelException"
 
 
 class PageMissingError(Exception):

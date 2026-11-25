@@ -73,7 +73,7 @@ https://phabricator.wikimedia.org/T86611
 
 wikiteam3 workaround: https://github.com/saveweb/wikiteam3/commit/76465d34898b80e8c0eb6d9652aa8efa403a7ce7
 
-## MWUnknownContentModelException
+## UnknownContentModelException
 
 > "The content model xxxxxx is not registered on this wiki;"
 
