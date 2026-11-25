@@ -102,24 +102,24 @@ def save_config(config: Config, config_filename: str):
 @dataclasses.dataclass
 class OtherConfig:
     resume: bool
-    force: bool 
-    session: requests.Session 
-    bypass_cdn_image_compression: bool 
-    add_referer_header: Optional[str] 
+    force: bool
+    session: requests.Session
+    bypass_cdn_image_compression: bool
+    add_referer_header: Optional[str]
     '''None, "auto", {URL}'''
     image_timestamp_interval: Optional[str]
     ''' 2019-01-02T01:36:06Z/2023-08-12T10:36:06Z '''
-    ia_wbm_booster: int 
+    ia_wbm_booster: int
 
-    assert_max_pages: Optional[int] 
-    assert_max_edits: Optional[int] 
-    assert_max_images: Optional[int] 
-    assert_max_images_bytes: Optional[int] 
+    assert_max_pages: Optional[int]
+    assert_max_edits: Optional[int]
+    assert_max_images: Optional[int]
+    assert_max_images_bytes: Optional[int]
 
     hard_retries: int
     """ Number of hard retries """
-    timeout: float
+    http_timeout: float
     """ Default HTTP request timeout in seconds """
 
-    upload: bool 
+    upload: bool
     uploader_args: List[str]
