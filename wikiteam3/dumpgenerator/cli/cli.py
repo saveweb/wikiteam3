@@ -50,6 +50,10 @@ def getArgumentParser():
         "if you wanna reuse the connection]"
     )
     parser.add_argument(
+        "--http-timeout", metavar="30", default=30.0, type=float,
+        help="HTTP request timeout in seconds (default: 30)"
+    )
+    parser.add_argument(
         "--retries", metavar="5", default=5, help="Maximum number of retries for each request before failing."
     )
     parser.add_argument(
@@ -61,7 +65,7 @@ def getArgumentParser():
         action="store_true",
         help="resumes previous incomplete dump (requires --path)",
     )
-    parser.add_argument("--force", action="store_true", 
+    parser.add_argument("--force", action="store_true",
         help="download it even if Wikimedia site or a recent dump exists in the Internet Archive")
     parser.add_argument("--user", help="Username if MediaWiki authentication is required.")
     parser.add_argument(
@@ -176,7 +180,7 @@ def getArgumentParser():
         required=False,
         help="Download images from Internet Archive Wayback Machine if possible, reduce the bandwidth usage of the wiki. "
             "[0: disabled (default), 1: use earliest snapshot, 2: use latest snapshot, "
-            "3: the closest snapshot to the image's upload time]", 
+            "3: the closest snapshot to the image's upload time]",
     )
 
     # Assertions params
@@ -217,7 +221,7 @@ def getArgumentParser():
     )
 
     group_upload = parser.add_argument_group("wikiteam3uploader params")
-    group_upload.add_argument('--upload', action='store_true', 
+    group_upload.add_argument('--upload', action='store_true',
         help='(run `wikiteam3uplaoder` for you) Upload wikidump to Internet Archive after successfully dumped'
     )
     group_upload.add_argument("-g", "--uploader-arg", dest="uploader_args", action='append', default=[],
@@ -229,6 +233,10 @@ def getArgumentParser():
 def checkParameters(args=argparse.Namespace()) -> bool:
 
     passed = True
+
+    if args.http_timeout <= 0:
+        print("ERROR: --http-timeout must be greater than 0 seconds.")
+        passed = False
 
     # Don't mix download params and meta info params
     if (args.xml or args.images) and (args.get_wiki_engine):
@@ -263,12 +271,12 @@ def checkParameters(args=argparse.Namespace()) -> bool:
     if args.curonly and not args.xml:
         print("ERROR: --curonly requires --xml")
         passed = False
-    
+
     # --xmlrevisions not supported with --curonly
     if args.xmlrevisions and args.curonly:
         print("ERROR: --xmlrevisions not supported with --curonly")
         passed = False
-    
+
     # Check URLs
     for url in [args.api, args.index, args.wiki]:
         if url and (not url.startswith("http://") and not url.startswith("https://")):
@@ -295,7 +303,11 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
     # Create session
     mod_requests_text(requests) # monkey patch # type: ignore
     session = requests.Session()
-    patch_sess = SessionMonkeyPatch(session=session, hard_retries=1) # hard retry once to avoid spending too much time on initial detection
+    patch_sess = SessionMonkeyPatch(
+        session=session,
+        hard_retries=1,
+        default_timeout=args.http_timeout,
+    ) # hard retry once to avoid spending too much time on initial detection
     patch_sess.hijack()
     def print_request(r: requests.Response, *args, **kwargs):
         # TODO: use logging
@@ -538,6 +550,7 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         assert_max_images_bytes = args.assert_max_images_bytes,
 
         hard_retries = int(args.hard_retries),
+        http_timeout=args.http_timeout,
 
         upload = args.upload,
         uploader_args = args.uploader_args,
@@ -564,4 +577,5 @@ def get_parameters(params=None) -> Tuple[Config, OtherConfig]:
         )
 
     patch_sess.release()
+    SessionMonkeyPatch(session=session, default_timeout=other.http_timeout).hijack()
     return config, other
