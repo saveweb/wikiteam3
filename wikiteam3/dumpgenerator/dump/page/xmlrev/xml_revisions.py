@@ -11,7 +11,7 @@ import mwclient.errors
 import requests
 
 from wikiteam3.dumpgenerator.cli.delay import Delay
-from wikiteam3.dumpgenerator.exceptions import MWUnknownContentModelException, PageMissingError
+from wikiteam3.dumpgenerator.exceptions import UnknownContentModelError, PageMissingError
 from wikiteam3.dumpgenerator.log import log_error
 from wikiteam3.dumpgenerator.api.namespaces import getNamespacesAPI
 from wikiteam3.dumpgenerator.api.page_titles import read_titles
@@ -92,16 +92,16 @@ def getXMLRevisionsByAllRevisions(config: Config, session: requests.Session, sit
                         arv_params["arvlimit"] = min(arv_params["arvlimit"] * 2, config.api_chunksize)
                         print(f"INFO: response is OK, increasing arvlimit to {arv_params['arvlimit']}")
                 except mwclient.errors.APIError as e:
-                    if e.code in MWUnknownContentModelException.error_codes:
+                    if UnknownContentModelError.match(e.code):
                         if arv_params['arvlimit'] != 1:
                             # let's retry with arvlimit=1 to retrieve good revisions as much as possible
-                            print("WARNING: API returned MWUnknownContentModelException. retrying with arvlimit=1 (revision by revision)")
+                            print("WARNING: API returned UnknownContentModelException. retrying with arvlimit=1 (revision by revision)")
                             arv_params["arvlimit"] = 1
                             Delay(config=config)
                             continue
                         elif '|content' in arv_params["arvprop"]:
                             log_error(config=config, to_stdout=True,
-                                text=f"ERROR: API returned MWUnknownContentModelException on arvcontinue={arv_params.get('arvcontinue', '')}, " +
+                                text=f"ERROR: API returned UnknownContentModelException on arvcontinue={arv_params.get('arvcontinue', '')}, " +
                                 "retried with arvlimit=1 and still failed. retrying without arvprop=content. " +
                                 '(wikiteam3 would mark the revision as "<text deleted="deleted"> in the xmldump)'
                             )
